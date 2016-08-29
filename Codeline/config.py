@@ -33,3 +33,5 @@ gpio_pins = [
 status_light_pin = 23
 abook_picture_path = '/home/pi/fairytale/bookData/cover/'
 abook_file_path = '/home/pi/fairytale/bookData/files/'
+picture_extensions = ['png', 'jpg', 'jpeg', 'gif']
+audio_extensions = ['mp3', 'mp4', 'wav', 'au']
