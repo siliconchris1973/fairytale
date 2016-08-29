@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 
 """
@@ -18,7 +18,7 @@ import os
 
 __version_info__ = (0, 0, 1)
 __version__ = '.'.join(map(str, __version_info__))
-__author__ = "Willem van der Jagt"
+__author__ = "c.guenther@mac.com"
 
 
 db_file = "%s/%s" % (os.path.dirname(os.path.realpath(__file__)), 'state.db')

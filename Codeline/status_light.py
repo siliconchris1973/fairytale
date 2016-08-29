@@ -1,3 +1,18 @@
+#!/usr/bin/env python3
+# encoding: utf-8
+
+"""
+status_light.py
+
+have the fron led flash
+"""
+
+
+__version_info__ = (0, 0, 1)
+__version__ = '.'.join(map(str, __version_info__))
+__author__ = "c.guenther@mac.com"
+
+
 import time, sys
 import config
 import RPi.GPIO as GPIO

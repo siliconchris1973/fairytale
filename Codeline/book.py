@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # encoding: utf-8
 
 """
@@ -10,7 +10,7 @@ Contains the class that represents the book that is currently playing
 
 __version_info__ = (0, 0, 1)
 __version__ = '.'.join(map(str, __version_info__))
-__author__ = "Willem van der Jagt"
+__author__ = "c.guenther@mac.com"
 
 
 class Book(object):
