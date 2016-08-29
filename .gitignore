@@ -87,3 +87,8 @@ ENV/
 
 # Rope project settings
 .ropeproject
+.idea/
+fairytale.iml
+
+# Aple folder file
+.DS_Store

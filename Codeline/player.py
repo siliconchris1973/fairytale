@@ -92,7 +92,7 @@ class Player(object):
             with self.mpd_client:
 
                 if elapsed > 20:
-                    # rewind withing current file if possible
+                    # rewind within current file if possible
                     self.mpd_client.seek(song_index, elapsed - 20)
                 elif song_index > 0:
                     # rewind to previous file if we're not yet 20 seconds into
@@ -118,7 +118,6 @@ class Player(object):
 
 
     def volume_down(self, channel):
-
         volume = int(self.get_status()['volume'])
         self.set_volume(max(volume - 10, 0))
 

@@ -31,4 +31,5 @@ gpio_pins = [
     { 'pin_id': 10, 'callback' : 'volume_up', 'bounce_time' : 1000 }
 ]
 status_light_pin = 23
-
+abook_picture_path = '/home/pi/fairytale/bookData/cover/'
+abook_file_path = '/home/pi/fairytale/bookData/files/'

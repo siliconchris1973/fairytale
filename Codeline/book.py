@@ -16,7 +16,6 @@ __author__ = "c.guenther@mac.com"
 class Book(object):
     """The book that is currenty playing"""
 
-
     def __init__(self):
         """Initialize"""
 
@@ -40,5 +39,3 @@ class Book(object):
     def is_playing(self):
         """returns if we have a current book"""
         return self.book_id is not None
-
-
