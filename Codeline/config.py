@@ -31,7 +31,7 @@ gpio_pins = [
     { 'pin_id': 10, 'callback' : 'volume_up', 'bounce_time' : 1000 }
 ]
 status_light_pin = 23
-abook_picture_path = '/home/pi/fairytale/bookData/cover/'
-abook_file_path = '/home/pi/fairytale/bookData/files/'
+abook_picture_path = '/home/pi/fairytale/bookData/Cover/'
+abook_file_path = '/home/pi/fairytale/bookData/Audiobooks/'
 picture_extensions = ['png', 'jpg', 'jpeg', 'gif']
 audio_extensions = ['mp3', 'mp4', 'wav', 'au']

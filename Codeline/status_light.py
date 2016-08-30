@@ -26,6 +26,7 @@ class StatusLight(object):
         'blink_fast' : (.1, [False, True]),
         'blink' : (.1, [False, False, False, True, True, True, True, True, True, True, True, True, True]),
         'blink_pauze' : (.1, [False, False, False, False, False, False, False, False, False, False, False, False, False, False, True]),
+        'blink_import' : (.1, [True, True, False, False, True, False, True, False, True, False, True, False, True, False, False, True, True]),
     }
 
     """placeholder for pattern to tenmporarily interrupt
