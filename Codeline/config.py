@@ -29,8 +29,10 @@ gpio_pins = [
     { 'pin_id': 11, 'callback' : 'toggle_pause', 'bounce_time' : 2000 },
     { 'pin_id': 22, 'callback' : 'volume_down', 'bounce_time' : 1000 },
     { 'pin_id': 10, 'callback' : 'volume_up', 'bounce_time' : 1000 }
+    #{ 'pin_id': 26, 'callback' : 'shutdown', 'bounce_time' : 1000 }
 ]
 status_light_pin = 23
+shutdown_pin = 26
 abook_picture_path = '/home/pi/fairytale/bookData/Cover/'
 abook_file_path = '/home/pi/fairytale/bookData/Audiobooks/'
 picture_extensions = ['png', 'jpg', 'jpeg', 'gif']
