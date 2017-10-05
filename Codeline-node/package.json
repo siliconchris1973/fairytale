@@ -1,0 +1,26 @@
+{
+  "name": "fairytale",
+  "version": "0.0.9",
+  "description": "An audiobook player with node.js, RFID reader and Raspberry Pi",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siliconchris1973/fairytale.git"
+  },
+  "keywords": [
+    "node.js",
+    "RFID",
+    "audiobook",
+    "mp3",
+    "player"
+  ],
+  "author": "c.guenther@mac.com",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/siliconchris1973/fairytale/issues"
+  },
+  "homepage": "https://github.com/siliconchris1973/fairytale#readme"
+}
