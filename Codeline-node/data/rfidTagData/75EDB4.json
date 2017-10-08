@@ -1,0 +1,10 @@
+{
+  "Checksum": "0x23",
+  "TagId": "75EDB4",
+  "PreTag": "0xf00",
+  "RawData": "0F0075EDB423",
+  "AbookTitle": "Frederick",
+  "AbookDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
+  "AbookFileName": [{"part": "1", "name": "Frederick.mp3", "size": "24M"}],
+  "AbookPicture": [{"pic": "1", "name": "Frederick.jpg"}]
+}

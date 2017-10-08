@@ -19,6 +19,13 @@
   ],
   "author": "c.guenther@mac.com",
   "license": "ISC",
+  "dependencies": {
+    "fs": "latest",
+    "play-sound": "latest",
+    "path": "latest",
+    "express": "latest",
+    "body-parser": "latest"
+  },
   "bugs": {
     "url": "https://github.com/siliconchris1973/fairytale/issues"
   },
