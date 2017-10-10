@@ -24,7 +24,8 @@
     "play-sound": "latest",
     "path": "latest",
     "express": "latest",
-    "body-parser": "latest"
+    "body-parser": "latest",
+    "mongoose": "latest"
   },
   "bugs": {
     "url": "https://github.com/siliconchris1973/fairytale/issues"

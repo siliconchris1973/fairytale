@@ -16,8 +16,35 @@ var svrAddr = "http://127.0.0.1:3000"
 
 
 
-
 var appRouter = function(app) {
+  // the staus or health check endpoint
+  app.get("/status", function(req, res) {
+    if (DEBUG) console.log("root entry requested");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
+      var responseContent = "<html><h1>Fairytale is alive</h1>\
+                              <table> \
+                                <tr><td>Service</td> <td>Status</td></tr> \
+                                <tr><td><a href=\""+svrAddr+"/rfid\">/rfid</a></td><td>ok</td></tr> \
+                                <tr><td><a href=\""+svrAddr+"/player\">/player</a></td><td>ok</td></tr> \
+                              </table> \
+                            </html>";
+    } else {
+      if (DEBUG) console.log("json request");
+      var responseContent = "{\"status\": \"info\", \"message\": \"service status\", \
+                              \n  \"endpoints\": [ \
+                                    \n    {\"endpoint\": \""+svrAddr+"/rfid\", \"status\": \"ok\"}, \
+                                    \n    {\"endpoint\": \""+svrAddr+"/player\", \"status\": \"ok\"} \
+                            \n  ]\n}\n";
+    }
+    res.send(responseContent);
+  });
+
   // the root entry shall show what could be done
   app.get("/", function(req, res) {
     if (DEBUG) console.log("root entry requested");
@@ -27,6 +54,7 @@ var appRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
       var responseContent = "<html><h1>Welcome to fairytale</h1>This is the web \
                           API of fairytale. It is designed to work equally well \
                           or bad for humans and machines \
@@ -35,9 +63,12 @@ var appRouter = function(app) {
                           <tr><td><a href=\""+svrAddr+"/rfid\">/rfid</a></td><td>for the rfid reader</td></tr> \
                           <tr><td><a href=\""+svrAddr+"/player\">/player</a></td><td>for the mp3 player</td></tr></table></html"
     } else {
-      var responseContent = "{\"endpoints\": [{\"endpoint\": \""+svrAddr+"/rfid\", \"description\": \"for the rfid reader\"}, \
-                                            {\"endpoint\": \""+svrAddr+"/playrt\", \"description\": \"for the mp3 player\"} \
-                            ]}"
+      if (DEBUG) console.log("json request");
+      var responseContent = "{\"status\": \"info\", \"message\": \"REST API Endpoints\", \
+                              \n  \"endpoints\": [ \
+                                    \n    {\"endpoint\": \""+svrAddr+"/rfid\", \"description\": \"for the rfid reader\"}, \
+                                    \n    {\"endpoint\": \""+svrAddr+"/player\", \"description\": \"for the mp3 player\"} \
+                            \n  ]\n}\n"
     }
 
     res.send(responseContent);
@@ -51,7 +82,29 @@ var appRouter = function(app) {
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    res.send("here comes the player");
+    if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
+      responseContent = "<html><h1>MP3 Player</h1>Dies ist der Root entry des Players<table> \
+                      <tr><td><a href=\""+svrAddr+"/player/play\">play</a></td><td>play a given mp3 file</td></tr> \
+                      <tr><td><a href=\""+svrAddr+"/player/stop\">stop</a></td><td>stop playing</td></tr> \
+                      <tr><td><a href=\""+svrAddr+"/player/pause\">pause</a></td><td>pause playing</td></tr> \
+                      <tr><td><a href=\""+svrAddr+"/player/skip\">skip</a></td><td>skip n number of seconds</td></tr> \
+                      <tr><td><a href=\""+svrAddr+"/player/next\">next</a></td><td>jump to next file</td></tr> \
+                      <tr><td><a href=\""+svrAddr+"/player/previous\">previous</a></td><td>jump to previous file</td></tr> \
+                      </table></html>";
+    } else {
+      if (DEBUG) console.log("json request");
+      responseContent = "{\"status\": \"info\", \"message\": \"MP3 Player REST API Endpoints\", \
+                              \n  \"endpoints\": [\
+                                            \n    {\"endpoint\": \""+svrAddr+"/player/play\", \"description\": \"play a given mp3 file\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"/player/stop\", \"description\": \"stop playing\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"/player/pause\", \"description\": \"pause playing\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"/player/skip\", \"description\": \"skip n number of seconds\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"/player/next\", \"description\": \"jump to next file\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"/player/previous\", \"description\": \"jump to previous file\"} \
+                            \n  ]\n}\n"
+    }
+    res.send(responseContent);
   })
 
   // play a song, takes a filename as argument in the form of:
@@ -65,11 +118,16 @@ var appRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     // holds the response data to be send as either html or json
-    var responseContent = null;
+    acceptsHTML;
 
     if(!req.query.file) {
       console.error("player error: no file provided - provide with ?file=filename.mp3")
-      responseContent = "player error: no file provided - provide with ?file=filename.mp3";
+
+      if (acceptsHTML) {
+        responseContent = "<html><h1>Error</h1>player error: no file provided - provide with ?file=filename.mp3</html>";
+      } else {
+        responseContent = "{\"status\": \"error\", \"message\": \"error: no file provided, provide with ?file=filename\"}\n";
+      }
     } else {
       var songToPlay=req.query.file;
       // holds the file the player shall play :-)
@@ -82,9 +140,11 @@ var appRouter = function(app) {
           if (err && !err.killed) {
             console.error("player error: playing file " + fileToPlay);
             if (acceptsHTML) {
+              if (DEBUG) console.log("html request");
               responseContent = "player error: playing file " + fileToPlay + "\n" + err.toString();
             } else {
-              responseContent = "{\"status\": \"error\", \"message\": \"error player file " + fileToPlay + "\"}";
+              if (DEBUG) console.log("json request");
+              responseContent = "{\"status\": \"error\", \"message\": \"error player file " + fileToPlay + "\"}\n";
             }
             //throw err
           }
@@ -93,7 +153,7 @@ var appRouter = function(app) {
         if (acceptsHTML) {
           responseContent = "player error: playing file " + fileToPlay + "\n" + err.toString();
         } else {
-          responseContent = "{\"status\": \"error\", \"message\": \"error player file " + fileToPlay + "\"}";
+          responseContent = "{\"status\": \"error\", \"message\": \"error player file " + fileToPlay + "\"}\n";
         }
       }
 
@@ -101,7 +161,7 @@ var appRouter = function(app) {
       if (acceptsHTML) {
         responseContent = "player: playing " + fileToPlay;
       } else {
-        responseContent = "{\"status\": \"info\", \"message\": \"player playing " + fileToPlay + "\"}";
+        responseContent = "{\"status\": \"info\", \"message\": \"player playing " + fileToPlay + "\"}\n";
       }
     }
 
@@ -118,15 +178,17 @@ var appRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     // holds the response data to be send as either html or json
-    var responseContent = null;
+    var responseContent = "";
 
     try {
       audio.kill();
     } catch (err) {
       if (acceptsHTML) {
+        if (DEBUG) console.log("html request");
         responseContent = "player error: stopping " + fileToPlay + "\n" + err.toString();
       } else {
-        responseContent = "{\"status\": \"error\", \"message\": \"player error: stopping " + fileToPlay + " -- " + err.toString() + "\"}";
+        if (DEBUG) console.log("json request");
+        responseContent = "{\"status\": \"error\", \"message\": \"player error: stopping " + fileToPlay + " -- " + err.toString() + "\"}\n";
       }
 
       res.send(responseContent);
@@ -143,9 +205,10 @@ var appRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     // holds the response data to be send as either html or json
-    var responseContent = null;
+    var responseContent = "";
 
     if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
       responseContent = "<html><h1>RFID Reader</h1>The API provides access to \
         the RFID reader and also to individual stored tags \
         <h2>Valid Endpoints:</h2> \
@@ -155,10 +218,11 @@ var appRouter = function(app) {
         <tr><td><a href=\""+svrAddr+"/rfid/tags/tag/create\">/rfid/tags/tag/create</td><td>form to register a new rfid tag</td></tr> \
         </table></html>"
     } else {
-      responseContent = "{\"endpoints\": [{\"endpoint\": \""+svrAddr+"/rfid/tags\", \"description\": \"list all stored rfid tags\"}, \
-                                            {\"endpoint\": \""+svrAddr+"//rfid/tags/tag\", \"description\": \"show or update data for one already stored rfid tag\"}, \
-                                            {\"endpoint\": \""+svrAddr+"//rfid/tags/tag/create\", \"description\": \"create a new rfid tag entry\"} \
-                            ]}"
+      if (DEBUG) console.log("json request");
+      responseContent = "{\"endpoints\":\n  [\n    {\"endpoint\": \""+svrAddr+"/rfid/tags\", \"description\": \"list all stored rfid tags\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"//rfid/tags/tag\", \"description\": \"show/update data for stored rfid tag\"}, \
+                                            \n    {\"endpoint\": \""+svrAddr+"//rfid/tags/tag/create\", \"description\": \"create a new rfid tag entry\"} \
+                            \n  ]\n}\n"
     }
     res.send(responseContent);
   })
@@ -173,7 +237,7 @@ var appRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     // holds the response data to be send as either html or json
-    var responseContent = null;
+    var responseContent = "";
 
     try {
       fs.readdir(rfidTagDir, function(err, items) {
@@ -181,10 +245,12 @@ var appRouter = function(app) {
 
         // create a shiny html response content to show in the browser:
         if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
           responseContent = "<html><h1>List of all RFID Tags</h1>RFID Tag Files:<table>"
         // or start the json structure
         } else {
-          responseContent = "{\"tags\":["
+          if (DEBUG) console.log("json request");
+          responseContent = "{\"tags\":\n  ["
         }
 
         for (i in items) {
@@ -192,7 +258,9 @@ var appRouter = function(app) {
           if (acceptsHTML) {
             responseContent += "<tr><td><a href=\""+svrAddr+"/rfid/tags/tag?tag=" + tag + "\">" + items[i] + "</a></td></tr>";
           } else {
-            responseContent += "{\"tag\": \"" + tag + "\", \"endpoint\": \""+svrAddr+"/rfid/tags/tag?tag=" + tag + "\", \"file\": \""+items[i]+"\"}"
+            responseContent += "\n    {\"tag\": \"" + tag + "\", \"endpoint\": \""+svrAddr+"/rfid/tags/tag?tag=" + tag + "\", \"file\": \""+items[i]+"\"}"
+            // we only need to add the , after an array element in the json
+            // structure, if there are sukzessive elements.
             if (i<items.length-1) responseContent += ",";
           }
         }
@@ -200,7 +268,7 @@ var appRouter = function(app) {
         if (acceptsHTML) {
           responseContent += "</table></html>";
         } else {
-          responseContent += "]}"
+          responseContent += "\n  ]\n}\n"
         }
 
         res.send(responseContent);
@@ -210,7 +278,7 @@ var appRouter = function(app) {
       if (acceptsHTML) {
         responseContent = "<html><h1>Directory Listing failed</h1><b>could not read directory "+rfidTagDir+" to get list of all available tags</b></html>";
       } else {
-        responseContent += "{\"status\": \"error\", \"message\": \"could not read directory " + rfidTagDir + " -- " + err.toString() + "\"}";
+        responseContent += "{\"status\": \"error\", \"message\": \"could not read directory " + rfidTagDir + " -- " + err.toString() + "\"}\n";
       }
 
       res.send(responseContent);
@@ -228,14 +296,14 @@ var appRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     // holds the response data to be send as either html or json
-    var responseContent = null
+    var responseContent = ""
 
     if(!req.query.tag) {
       console.error("rfid tag error: no tag identifier provided - provide with ?tag=ID")
       if (acceptsHTML) {
         responseContent = "<html><h1>D<h1>Error</h1>rfid tag error: no tag identifier provided - provide with ?tag=ID</html>";
       } else {
-        responseContent += "{\"status\": \"error\", \"message\": \"no tag identifier provided\"}";
+        responseContent = "{\"status\": \"error\", \"message\": \"no tag identifier provided\"}\n";
       }
     } else {
       var tag = req.query.tag.toString().toUpperCase();
@@ -249,6 +317,11 @@ var appRouter = function(app) {
       } catch (ex) {
         console.error("could not read data for tag " + tag + " from file " + rfidTagFile + "\nException output: " + ex.toString());
         //process.exit();
+        if (acceptsHTML) {
+          responseContent = "<html><h1>D<h1>Error</h1>could not read data for tag " + tag + " from file " + rfidTagFile + "\nException output: " + ex.toString() + "</html>";
+        } else {
+          responseContent = "{\"status\": \"error\", \"message\": \"could not read data for tag " + tag + " from file " + rfidTagFile + "\nException output: " + ex.toString() + "\"}\n";
+        }
       }
       var audiobookName = "<h1>" + obj.AbookTitle;
 
@@ -257,6 +330,7 @@ var appRouter = function(app) {
       //    browser means we'll need to send html
       //    machine means we'll send a json structure
       if (acceptsHTML) {
+        if (DEBUG) console.log("html request");
         // create a shiny html response content to show in the browser:
         responseContent += audiobookName + "</h1>Available Data:<table>\
                                             <tr><td>RFID Tag ID</td><td>"+tag+"</td></tr>\
@@ -298,6 +372,7 @@ var appRouter = function(app) {
 
         responseContent += "</table> &nbsp;<h2>Description</h2> "+obj.AbookDescription+"</html>";
       } else {
+        if (DEBUG) console.log("json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
         responseContent = obj;
       }

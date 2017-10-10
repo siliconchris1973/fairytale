@@ -1,6 +1,10 @@
 var express = require('express'),
   app = express(),
+  // TODO: I'd like to put the server stuff in server.js but for now, it's here
   port = process.env.PORT || 3000;
+
+// mongodb connection
+var db = require('./modules/db');
 
 var bodyParser = require("body-parser");
 var path = require('path');
@@ -20,6 +24,6 @@ var jsonFileSuffix = "json";
 
 var routes = require("./routes/routes.js")(app);
 
-var server = app.listen(3000, function () {
+var server = app.listen(port, function () {
     console.log("Listening on port %s...", server.address().port);
 });
