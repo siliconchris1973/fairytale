@@ -1,10 +1,12 @@
 {
-  "Checksum": "0x62",
+  "TagChecksum": "0x62",
   "TagId": "318BD5",
-  "PreTag": "0xd00",
-  "RawData": "0D00318BD562",
-  "AbookTitle": "Der Froschkönig",
-  "AbookDescription": "Ein Märchen aus der alten Zeit, als aus Fröschen noch wirklich Prinzen wurden",
-  "AbookFileName": "froschkoenig.mp3",
-  "AbookPicture": "NOPIC"
+  "TagPreTag": "0xd00",
+  "TagRawData": "0D00318BD562",
+  "MediaTitle": "Der Froschkönig",
+  "MediaType": "Audiobook",
+  "MediaGenre": "Maerchen",
+  "MediaDescription": "Ein Märchen aus der alten Zeit, als aus Fröschen noch wirklich Prinzen wurden",
+  "MediaFileName": "froschkoenig.mp3",
+  "MediaPicture": "NOPIC"
 }

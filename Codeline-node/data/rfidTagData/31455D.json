@@ -1,10 +1,12 @@
 {
-  "Checksum": "0x24",
+  "TagChecksum": "0x24",
   "TagId": "31455D",
-  "PreTag": "0xd00",
-  "RawData": "0D0031455D24",
-  "AbookTitle": "The 8th book",
-  "AbookDescription": "",
-  "AbookFileName": "31455D",
-  "AbookPicture": "31455D"
+  "TagPreTag": "0xd00",
+  "TagRawData": "0D0031455D24",
+  "MediaTitle": "The 8th book",
+  "MediaType": "UNDEFINED",
+  "MediaGenre": "UNDEFINED",
+  "MediaDescription": "",
+  "MediaFileName": "31455D",
+  "MediaPicture": "31455D"
 }

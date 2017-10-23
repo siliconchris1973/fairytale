@@ -1,10 +1,12 @@
 {
-  "Checksum": "0xb",
+  "TagChecksum": "0xb",
   "TagId": "756D1C",
-  "PreTag": "0xf00",
-  "RawData": "0F00756D1C0B",
-  "AbookTitle": "The 5th book",
-  "AbookDescription": "",
-  "AbookFileName": "756D1C",
-  "AbookPicture": "756D1C"
+  "TagPreTag": "0xf00",
+  "TagRawData": "0F00756D1C0B",
+  "MediaTitle": "The 5th book",
+  "MediaType": "UNDEFINED",
+  "MediaGenre": "UNDEFINED",
+  "MediaDescription": "",
+  "MediaFileName": "756D1C",
+  "MediaPicture": "756D1C"
 }

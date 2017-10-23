@@ -1,10 +1,12 @@
 {
-  "Checksum": "0x5",
+  "TagChecksum": "0x5",
   "TagId": "755B24",
-  "PreTag": "0xf00",
-  "RawData": "0F00755B2405",
-  "AbookTitle": "The 4th book",
-  "AbookDescription": "",
-  "AbookFileName": "755B24",
-  "AbookPicture": "755B24"
+  "TagPreTag": "0xf00",
+  "TagRawData": "0F00755B2405",
+  "MediaTitle": "The 4th book",
+  "MediaType": "UNDEFINED",
+  "MediaGenre": "UNDEFINED",
+  "MediaDescription": "",
+  "MediaFileName": "755B24",
+  "MediaPicture": "755B24"
 }

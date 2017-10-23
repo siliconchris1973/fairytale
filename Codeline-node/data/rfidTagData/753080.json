@@ -1,10 +1,12 @@
 {
-  "Checksum": "0xca",
+  "TagChecksum": "0xca",
   "TagId": "753080",
-  "PreTag": "0xf00",
-  "RawData": "0F00753080CA",
-  "AbookTitle": "The 10th book",
-  "AbookDescription": "",
-  "AbookFileName": "753080",
-  "AbookPicture": "753080"
+  "TagPreTag": "0xf00",
+  "TagRawData": "0F00753080CA",
+  "MediaTitle": "The 10th book",
+  "MediaType": "UNDEFINED",
+  "MediaGenre": "UNDEFINED",
+  "MediaDescription": "",
+  "MediaFileName": "753080",
+  "MediaPicture": "753080"
 }

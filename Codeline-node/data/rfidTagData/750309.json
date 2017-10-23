@@ -1,10 +1,12 @@
 {
-  "Checksum": "0x70",
+  "TagChecksum": "0x70",
   "TagId": "750309",
-  "PreTag": "0xf00",
-  "RawData": "0F0075030970",
-  "AbookTitle": "The 9th book",
-  "AbookDescription": "description for the 9th book",
-  "AbookFileName": "picture of 750309",
-  "AbookPicture": "picture of 750309"
+  "TagPreTag": "0xf00",
+  "TagRawData": "0F0075030970",
+  "MediaTitle": "The 9th book",
+  "MediaType": "UNDEFINED",
+  "MediaGenre": "UNDEFINED",
+  "MediaDescription": "description for the 9th book",
+  "MediaFileName": "picture of 750309",
+  "MediaPicture": "picture of 750309"
 }
