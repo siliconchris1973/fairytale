@@ -1,9 +1,11 @@
 extends layout
 block maincontent
-  h1!= headline
+  div.container
+    div.content
+      div.page-header
+        h3!= headline
 
   .content
       block content
-
 
   include footer.pug

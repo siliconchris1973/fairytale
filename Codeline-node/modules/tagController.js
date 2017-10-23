@@ -56,7 +56,7 @@ var getTagList = function(app, callback){
   }
 }
 
-var getTagData = function(app, tagId, callback){
+var getTagData = function(app, tagid, callback){
   // get global app variables
   var DEBUG = app.get('DEBUG');
   var svrAddr = app.get('svrAddr');
@@ -64,32 +64,6 @@ var getTagData = function(app, tagId, callback){
   var obj = null;
 
   var tagStorage = path.join(rfidTagDir, tagid.toUpperCase()+'.json');
-
-  /* This is how a typical rfid tag with data to an audiobook looks like
-  {
-    "TagChecksum": "0x23",
-    "TagId": "75EDB4",
-    "TagPreTag": "0xf00",
-    "TagRawData": "0F0075EDB423",
-    "MediaTitle": "Frederick",
-    "MediaType": "UNDEFINED",
-    "MediaGenre": "UNDEFINED",
-    "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
-    "MediaFileName": [{"part": "1", "name": "Frederick.mp3", "size": "24M"}],
-    "MediaPicture": [{"pic": "1", "name": "Frederick.jpg"}],
-    "MediaType": "Audiobook"
-  }
-  */
-  var TagChecksum = "";
-  var TagId = "";
-  var TagPreTag = "";
-  var TagRawData = "";
-  var MediaTitle = "";
-  var MediaType = "";
-  var MediaGenre = "";
-  var MediaDescription = "";
-  var MediaFileName = [];
-  var MediaPicture = [];
 
   try {
     jsonfile.readFile(tagStorage, function(err, obj) {
@@ -101,30 +75,12 @@ var getTagData = function(app, tagId, callback){
         if (DEBUG) console.log(obj);
         // auslesen des Titels, da das einfach eine gute informtion ist - packen
         // wir gleich in den ResponseContent mit rein.
-        try {
-          obj=jsonfile.readFileSync(tagStorage);
-          console.log(obj);
-          TagChecksum = obj.TagChecksum;
-          TagId = obj.TagId;
-          TagPreTag = obj.TagPreTag;
-          TagRawData = obj.TagRawData;
-          MediaTitle = obj.MediaTitle;
-          MediaType = obj.MediaType;
-          MediaGenre = obj.MediaGenre
-          MediaDescription = obj.MediaDescription;
-          MediaFileName = obj.MediaFileName;
-          MediaPicture = obj.MediaPicture;
-
-        } catch (err) {
-          console.error('could not read tag data from file ' + tagStorage);
-          callback(err)
-        }
+        callback(null, obj)
       }
     })
   } catch (err) {
     callback('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagid+' from '+tagStorage+'\', \'exception\': \' '+err.toString()+'\'}');
   }
-  callback(null, responseContent);
 }
 
 module.exports = {

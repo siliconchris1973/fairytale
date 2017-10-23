@@ -91,17 +91,55 @@ var tagRouter = function(app) {
       }
   })
 
+  // the root entry shall show what could be done
+  app.get("/tags/tag/create", function(req, res) {
+    if (DEBUG) console.log("create tag entry requested");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
+      res.render('tag_form', {
+          title: 'Neues RFID Tag registrieren',
+          subheadline: 'Neues RFID Tag registrieren',
+          messagetext: 'Bitte Daten f&uuml;r das neue Tag eintragen und Dateien ausw&auml;hlen',
+          controlheadline: 'Verf&uuml;gbare Kommandos'
+      });
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json({response: 'unavailable', message: 'this endpoint is not available for json requests'});
+    }
+  });
+
   // get the the content of one stored rfid tag
-  app.get("/tags/tag", function(req, res) {
+  app.get("/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log("list content of one rfid tag requested");
+
+    /* This is how a typical rfid tag with data to an audiobook looks like
+    {
+      "TagChecksum": "0x23",
+      "TagId": "75EDB4",
+      "TagPreTag": "0xf00",
+      "TagRawData": "0F0075EDB423",
+      "MediaTitle": "Frederick",
+      "MediaType": "UNDEFINED",
+      "MediaGenre": "UNDEFINED",
+      "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
+      "MediaFileName": [{"part": "1", "name": "Frederick.mp3", "size": "24M"}],
+      "MediaPicture": [{"pic": "1", "name": "Frederick.jpg"}],
+      "MediaType": "Audiobook"
+    }
+    */
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    if(!req.query.tag) {
-      console.error("rfid tag error: no tag identifier provided - provide with ?tag=ID")
+    if(!req.params.id) {
+      console.error("rfid tag error: no tag identifier provided")
 
       if (acceptsHTML) {
         res.render('tags_error', {
@@ -120,94 +158,65 @@ var tagRouter = function(app) {
         });
       }
     } else {
-      var tag = req.query.tag.toString().toUpperCase();
-
-      // TODO: move this into a script in modules directory so that we only deal with the routes here.
+      var tag = req.params.id.toString().toUpperCase();
       rfidTagFile = tag + "." + rfidTagFileSuffix;
-      // read in the json file and create a javascript object from it
-      try {
-        var content = fs.readFileSync(path.join(rfidTagDir, rfidTagFile));
-        var obj = JSON.parse(content);
+      if (DEBUG) console.log('data for tag ' + tag + ' requested');
 
-        // check whether or not this is an interactive browser session or a
-        // machine to machine communication.
-        //    browser means we'll need to send html
-        //    machine means we'll send a json structure
-        if (acceptsHTML) {
-          if (DEBUG) console.log("html request");
-
-          // create a shiny html response content to show in the browser:
-          var responseContent = "<table>\
-                                          <tr><td>RFID Tag ID</td><td>"+tag+"</td></tr>\
-                                          <tr><td>RFID Tag File</td><td>"+rfidTagFile+"</td></tr>\
-                                          <tr><td>RFID Tag Checksum</td><td>"+obj.Checksum+"</td></tr>\
-                                          <tr><td>RFID Tag PreTag</td><td>"+obj.PreTag+"</td></tr>\
-                                          <tr><td>RFID Tag Rawdata</td><td>"+obj.RawData+"</td></tr>";
-
-          // for audio and picture files we need to check, whether or not multiple
-          // entries are provided in the json file for the tag. In case there are
-          // multiple files, it is actually an array.
-          // Even more, it could be that we have an array of json structures as
-          // opposed to a simple array of elements and we need to deal with that,
-          // so that we can provide all files completely and in the correct order
-          // to the player.
-
-          // iterate through all provided mp3 files
-          responseContent += "<tr><td>.</td><td>.</td></tr>";
-          responseContent += "<tr><td>Audio File</td><td>Size</td></tr>";
-          if (typeof obj.AbookFileName == "string"){
-              responseContent += "<tr><td>" + path.join(app.Media,obj.AbookFileName) + "</td></tr>"
+      // check whether or not this is an interactive browser session or a
+      // machine to machine communication.
+      //    browser means we'll need to send html
+      //    machine means we'll send a json structure
+      if (acceptsHTML) {
+        if (DEBUG) console.log("html request");
+        tagController.getTagData(app, tag, function(err, result) {
+          if (err) {
+            console.log(err);
+            res.render('tags_error', {
+              title: 'RFID Tag Fehlerseite',
+              headline: 'RFID Tag Fehler',
+              errorname: 'Error',
+              errortext: 'Fehler beim abrufen der Daten f&uuml;r ' + tag,
+              exceptionname: 'Exception',
+              exceptiontext: err.toString(),
+              controlheadline: 'Verf&uuml;gbare Kommandos'
+            });
           } else {
-              for (i in obj.AbookFileName){
-                  responseContent += "<tr><td>" + path.join(app.Media,obj.AbookFileName[i].name) + "</td><td>"+obj.AbookFileName[i].size+"</td></tr>"
-              }
+            var obj = result;
+            if (DEBUG) console.log('providing following data to form:');
+            if (DEBUG) console.log(obj);
+            res.render('tags', {
+                title: 'RFID Tag Datenseite',
+                headline: 'RFID Tag Daten',
+                subheadline: 'Tag ' + obj.TagId + ' - ' + obj.MediaTitle,
+                varTagId: obj.TagId,
+                varTagPreTag: obj.TagPreTag,
+                varTagChecksum: obj.TagChecksum,
+                varTagRawData: obj.TagRawData,
+                varMediaTitle: obj.MediaTitle,
+                varMediaType: obj.MediaType,
+                varMediaGenre: obj.MediaGenre,
+                varMediaDescription: obj.MediaDescription,
+                varMediaFiles: obj.MediaFileName,
+                varMediaPictures: obj.MediaPicture
+            });
           }
-
-          // iterate through all provided picture files
-          responseContent += "<tr><td>.</td><td>.</td></tr>";
-          responseContent += "</tr><td>Picture File</td><td>Icon</td></tr>";
-          if (typeof obj.AbookPicture == "string"){
-              responseContent += "<tr><td>" + path.join(app.Cover,obj.AbookPicture) + "</td><td><img src=\""+ path.join('..','..',coverPicDir,obj.AbookPicture) +"\"></td></tr>";
+        });
+      } else {
+        if (DEBUG) console.log("json request");
+        // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
+        tagController.getTagData(app, tag, function(err, result) {
+          if (err) {
+            console.log(err);
+            res.json({
+                response: 'error',
+                message: 'could not read data for tag ' + tag,
+                exception: err.toString()
+            });
           } else {
-              for (i in obj.AbookFileName){
-                  responseContent += "<tr><td>" + path.join(app.Cover,obj.AbookPicture[i].name) + "</td><td><img src=\""+ path.join('..','..',coverPicDir,obj.AbookPicture[i].name) +"\"></td></tr>";
-              }
+            var obj = result;
+            res.json(obj);
           }
-
-          responseContent += "</table> &nbsp;<h2>Description</h2> "+obj.AbookDescription+"</html>";
-
-          res.render('tags', {
-            title: 'RFID Tag Datenseite',
-            headline: 'Daten',
-            subheadline: 'Verf&uuml;gbare Daten f&uuml;r ' + obj.MediaTitle,
-            messagetext: responseContent,
-            controlheadline: 'Verf&uuml;gbare Kommandos'
-          });
-        } else {
-          if (DEBUG) console.log("json request");
-          // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
-          res.json(obj);
-        }
-      } catch (ex) {
-        console.error("could not read data for tag " + tag + " from file " + rfidTagFile + "\nException output: " + ex.toString());
-        //process.exit();
-        if (acceptsHTML) {
-          res.render('tags_error', {
-            title: 'RFID Tag Fehlerseite',
-            headline: 'RFID Tag Fehler',
-            errorname: 'Error',
-            errortext: 'could not read data for tag ' + tag + ' from file ' + rfidTagFile,
-            exceptionname: 'Exception',
-            exceptiontext: ex.toString(),
-            controlheadline: 'Verf&uuml;gbare Kommandos'
-          });
-        } else {
-          res.json({
-              response: 'error',
-              message: 'could not read data for tag ' + tag + ' from file ' + rfidTagFile,
-              exception: ex.toString()
-          });
-        }
+        });
       }
     }
   })
@@ -294,28 +303,6 @@ var tagRouter = function(app) {
       }
     }
   })
-
-  // the root entry shall show what could be done
-  app.get("/tags/tag/create", function(req, res) {
-    if (DEBUG) console.log("create tag entry requested");
-    // the server checks whether the client accepts html (browser) or
-    // json machine to machine communication
-    var acceptsHTML = req.accepts('html');
-    var acceptsJSON = req.accepts('json');
-
-    if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
-      res.render('create_tag', {
-          title: 'Neues RFID Tag registrieren',
-          subheadline: 'Neues RFID Tag registrieren',
-          messagetext: 'Bitte Daten f&uuml;r das neue Tag eintragen und Dateien ausw&auml;hlen',
-          controlheadline: 'Verf&uuml;gbare Kommandos'
-      });
-    } else {
-      if (DEBUG) console.log("json request");
-      res.json({response: 'unavailable', message: 'this endpoint is not available for json requests'});
-    }
-  });
 }
 
 module.exports = tagRouter;

@@ -4,9 +4,9 @@
   "TagPreTag": "0xf00",
   "TagRawData": "0F00759C7197",
   "MediaTitle": "The 6th book",
-  "MediaType": "UNDEFINED",
+  "MediaType": "Audiobook",
   "MediaGenre": "UNDEFINED",
-  "MediaDescription": "",
-  "MediaFileName": "759C71",
-  "MediaPicture": "759C71"
+  "MediaDescription": "Beschreibung",
+  "MediaFileName": [{"part": "1", "name": "1st-file.mp3", "size": "6M"}, {"part": "2", "name": "2nd-file.mp3", "size": "8M"}],
+  "MediaPicture": [{"pic": "1", "name": "1st-pic.jpg"}, {"pic": "2", "name": "2nd-pic.jpg"}, {"pic": "3", "name": "3rd-pic.jpg"}]
 }
