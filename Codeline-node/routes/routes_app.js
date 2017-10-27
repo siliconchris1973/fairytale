@@ -1,7 +1,25 @@
 var appRouter = function(app) {
   // get global app variables
   var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
   var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
+  // player service
+  var playerAddr = app.get('playerAddr');
+  var playerPort = app.get('playerPort');
+  var playerApi = app.get('playerApi');
+  var playerUrl = app.get('playerUrl');
+  // file Service Service
+  var fileServiceAddr = app.get('fileServiceAddr');
+  var fileServicePort = app.get('fileServicePort');
+  var fileServiceApi = app.get('fileServiceApi');
+  var fileServiceUrl = app.get('fileServiceUrl');
+  // file Service Service
+  var rfidReaderAddr = app.get('rfidReaderAddr');
+  var rfidReaderPort = app.get('rfidReaderPort');
+  var rfidReaderApi = app.get('rfidReaderApi');
+  var rfidReaderUrl = app.get('rfidReaderUrl');
 
     // the staus or health check endpoint
     app.get("/status", function(req, res) {
@@ -23,9 +41,10 @@ var appRouter = function(app) {
             if (DEBUG) console.log("json request");
             res.json({response: 'status information requested',
                         endpoints: [
-                            {endpoint: svrAddr+'/tags', status: 'ok'},
-                            {endpoint: svrAddr+'/rfid', status: 'ok'},
-                            {endpoint: svrAddr+'/player', status: 'ok'}
+                            {endpoint: svrAddr+':'+svrPort+svrApi+'/tags', status: 'ok'},
+                            {endpoint: rfidReaderAddr+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, status: 'ok'},
+                            {endpoint: fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl, status: 'ok'},
+                            {endpoint: playerAddr+':'+playerPort+playerApi+playerUrl, status: 'ok'}
                         ]
                     });
         }
@@ -52,9 +71,10 @@ var appRouter = function(app) {
           if (DEBUG) console.log("json request");
           res.json({response: 'REST API Endpoints available',
                         endpoints: [
-                            {endpoint: svrAddr+'/tags', description: 'the rfid tags'},
-                            {endpoint: svrAddr+'/rfid', status: 'the rfid reader'},
-                            {endpoint: svrAddr+'/player', status: 'the mp3 player'}
+                            {endpoint: svrAddr+':'+svrPort+svrApi+'/tags', description: 'the rfid tags'},
+                            {endpoint: rfidReaderAddr+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, description: 'the rfid reader'},
+                            {endpoint: fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl, description: 'file upload form'},
+                            {endpoint: playerAddr+':'+playerPort+playerApi+playerUrl, description: 'the mp3 player'}
                         ]
 
           });

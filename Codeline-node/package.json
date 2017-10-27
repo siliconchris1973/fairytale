@@ -25,6 +25,8 @@
     "path": "latest",
     "express": "latest",
     "body-parser": "latest",
+    "stylus": "latest",
+    "nib": "latest",
     "mongoose": "latest",
     "pug": "latest",
     "multer": "latest",

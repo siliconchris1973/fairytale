@@ -1,91 +1,105 @@
+// - var MediaFiles = [{"part": "1", "name": "1st-file.mp3", "size": "6M"}, {"part": "2", "name": "2nd-file.mp3", "size": "8M"}]
 // form element to show tag data
-form(id='create_tag_form' name='addTag' method='post' action='/tags/tag')
+form(id='create_tag_form', name='addTag', method='POST', action='/tags/tag')
   div.form-group
-    div.row
-      div.col-2
-        label(for='varTagId') Tag ID:
-      div.col-3
-        input#TagId.form-control(type='text', placeholder=varTagId, name='varTagId', required)
-      div.col-2
-        label(for='varTagPreTag') PreTag:
-      div.col-3
-        input#TagRawData.form-control(type='text', placeholder=varTagPreTag, name='varTagPreTag', required)
-    div.row
-      div.col-2
-        label(for='varTagId') Checksum:
-      div.col-3
-        input#TagRawData.form-control(type='text', placeholder=varTagChecksum, name='varTagChecksum', required)
-      div.col-2
-        label(for='varTagRawData') Raw Data:
-      div.col-3
-        input#TagRawData.form-control(type='text', placeholder=varTagRawData, name='varTagRawData', required)
-  div.form-group
-    div.row
-      div.col-2
-        label(for='varMediaTitle') Titel:
-      div.col
-        input#MediaTitle.form-control(type='text', placeholder=varMediaTitle, name='varMediaTitle', required)
-    div.row
-      div.col-2
-        label(for='varMediaType') Typ:
-      div.col-4
-        select#MediaType.form-control(type='select', placeholder=varMediaType, name='varMediaType')
-          option(value='Audiobook') Hoerbuch
-          option(value='Musical') Hoerspiel
-          option(value='Music') Musik
-          option(value='Sounds') Sound
-      div.col-2
-        label(for='varMediaTitle') Genre:
-      div.col-4
-        select#MediaGenre.form-control(type='select', placeholder=varMediaGenre, name='varMediaGenre')
-          option(value='Fairytale') Maerchen
-          option(value='Kids') Kindergeschichte
-          option(value='Funny') Lustiges
-    div.row
-      div.col
-        label(for='MediaDescription') Beschreibung:
-        input#Description.form-control(type='text', placeholder=varMediaDescription, name='varMediaDescription')
-  div.form-group
-    div.row
-      div.col-4
-        label(for='MediaFileName') Audio Dateien:
-      div-col
-        varMediaFiles
-    div.row
-      div.col-1 Nr
-      div.col-5 Name
-      div.col-2 Groesse
-    each mediaFile in varMediaFiles
+    form(id='update_tag_data', name='updTagData', method='POST', action='/tags/tag/'+varTagId+'/tagdata')
       div.row
-        each itemM in mediaFile
+        div.col-2
+          label(for='varTagId') Tag ID:
+        div.col-3
+          input#TagId.form-control(type='text', placeholder=varTagId, name='varTagId', required)
+        div.col-2
+          label(for='varTagPreTag') PreTag:
+        div.col-3
+          input#TagRawData.form-control(type='text', placeholder=varTagPreTag, name='varTagPreTag', required)
+      div.row
+        div.col-2
+          label(for='varTagId') Checksum:
+        div.col-3
+          input#TagRawData.form-control(type='text', placeholder=varTagChecksum, name='varTagChecksum', required)
+        div.col-2
+          label(for='varTagRawData') Raw Data:
+        div.col-3
+          input#TagRawData.form-control(type='text', placeholder=varTagRawData, name='varTagRawData', required)
+
+  div.form-group
+    form(id='update_media_data', name='updMediaData', method='POST', action='/tags/tag/'+varTagId)
+      div.row
+        div.col-2
+          label(for='varMediaTitle') Titel:
+        div.col
+          input#MediaTitle.form-control(type='text', placeholder=varMediaTitle, name='varMediaTitle', required)
+      div.row
+        div.col-2
+          label(for='varMediaType') Typ:
+        div.col-4
+          select#MediaType.form-control(type='select', placeholder=varMediaType, name='varMediaType')
+            option(value='Audiobook') Hoerbuch
+            option(value='Musical') Hoerspiel
+            option(value='Music') Musik
+            option(value='Sounds') Sound
+        div.col-2
+          label(for='varMediaTitle') Genre:
+        div.col-4
+          select#MediaGenre.form-control(type='select', placeholder=varMediaGenre, name='varMediaGenre')
+            option(value='Fairytale') Maerchen
+            option(value='Kids') Kindergeschichte
+            option(value='Funny') Lustiges
+      div.row
+        div.col
+          label(for='MediaDescription') Beschreibung:
+          input#Description.form-control(type='text', placeholder=varMediaDescription, name='varMediaDescription')
+
+  div.form-group
+    form(id='update_media_files', name='updMediaFiles', method='POST', action='/tags/tag/'+varTagId+'/mediafile')
+      div.row
+        div.col-4
+          label(for='MediaFileName') Audio Dateien:
+      div.row
+        div.col-1 Nr
+        div.col-5 Name
+        div.col-2 Groesse
+        div-col-1 Play
+      for mediaFile in varMediaFiles
+        div.row
           div.col-1
-            p #{itemM.part}
+            p #{mediaFile.part}
           div.col-5
-            p #{itemM.name}
+            p #{mediaFile.name}
           div.col-2
-            p #{itemM.size}
-    div.row
-      div.col
-        input#MediaFileName.form-control(type='file', name='MediaFileName', required)
-      div.col-1 Plus
-  div.form-group
-    div.row
-      div.col-4
-        label(for='MediaPicture') Bilder:
-    div.row
-      div.col-1 Nr
-      div.col-5 Name
-    each pictureFile in varMediaPictures
-      div.row
-        each itemP in pictureFile
+            p #{mediaFile.size}
           div.col-1
-            p #{itemP.part}
+            a(href='/player/play/'+varTagId)
+              img.className#IdName(src="/img/audio-32.png" alt="Play")
+      div.row
+        div.col
+          input#MediaFileName.form-control(type='file', name='MediaFileName')
+        div.col-1
+          input#CoverFile.form-controller(type='image', name='submit', src='/img/add-32.png' alt='Add Media File')
+
+  div.form-group
+    form(id='update_picture_files', name='updPictureFiles', method='POST', action='/tags/tag/'+varTagId+'/picture')
+      div.row
+        div.col-4
+          label(for='MediaPicture') Bilder:
+      div.row
+        div.col-1 Nr
+        div.col-5 Name
+        div.col-2 Bild
+      for pictureFile in varMediaPictures
+        div.row
+          div.col-1
+            p #{pictureFile.pic}
           div.col-5
-            p #{itemP.name}
-    div.row
-      div.col
-        input#CoverFile.form-control(type='file', name='CoverFile')
-      div.col-1 Plus
+            p #{pictureFile.name}
+          div.col-2
+            a(href='/Cover/normal/'+pictureFile.name, target='_blank')
+              img.className#IdName(src='/Cover/icon/'+pictureFile.name alt="Picture")
+      div.row
+        div.col
+          input#CoverFile.form-control(type='file', name='CoverFile')
+        div.col-1
+          input#CoverFile.form-controller(type='image', name='submit', src='/img/add-32.png' alt='Add Picture File')
 
   div.form-group
     div.row

@@ -1,7 +1,13 @@
 var rfidRouter = function(app) {
   // get global app variables
   var DEBUG = app.get('DEBUG');
-  var svrAddr = app.get('svrAddr');
+  var TRACE = app.get('TRACE');
+
+  var rfidReaderProto = app.get('rfidReaderProto');
+  var rfidReaderAddr = app.get('rfidReaderAddr');
+  var rfidReaderPort = app.get('rfidReaderPort');
+  var rfidReaderApi = app.get('rfidReaderApi');
+
   var dataDir = app.get('dataDir');
   var mediaDir = app.get('mediaDir');
 
@@ -31,7 +37,7 @@ var rfidRouter = function(app) {
         res.json({
           response: 'info endpoint to tags API',
           endpoints: [
-                      {endpoint: svrAddr + '/rfid', description: 'query (GET) the RFID reader'}
+                      {endpoint: rfidReaderProto + '://' + rfidReaderAddr + ':' + rfidReaderPort + rfidReaderApi + '/rfid', description: 'query (GET) the RFID reader'}
           ]
         });
       }

@@ -1,29 +1,37 @@
 var fs = require('fs');
 var path = require('path');
 var jsonfile = require('jsonfile');
+var http = require('http');
+
+var request = require('request');
 
 var getTagList = function(app, callback){
   // get global app variables
   var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+
+  var svrProto = app.get('svrProto');
   var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
+
   var rfidTagDir = app.get('rfidTagDir');
 
-  //var DEBUG = debug;
-  //var svrAddr = serveradr;
-  //var rfidTagDir = directory;
+  if (DEBUG) console.log('function getTagList called');
 
   var responseContent = '';
 
   try {
     fs.readdir(rfidTagDir, function(err, items) {
-      if (DEBUG) console.log('Arbeite Items in Verzeichnis ' + rfidTagDir + ' durch');
+      if (DEBUG) console.log('working on directory ' + rfidTagDir);
 
       if (err) {
+        console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
         // irgendein Fehler beim einlesen des Verzeichnisses
         callback('{\'response\': \'error\', \'message\': \'error getting files from directory '+rfidTagDir+'\', \'exception\': \''+err.toString()+'\'}');
       } else if (!items.length) {
         // directory appears to be empty
-        console.error("nothing to read in directory "+rfidTagDir);
+        console.error("error: nothing to read in directory "+rfidTagDir);
         callback('{\'response\': \'warning\', \'message\': \'nothing to read from directory '+rfidTagDir+'\'}');
       } else {
         // im Verzeichnis sind tatsaechlich Dateien
@@ -36,8 +44,8 @@ var getTagList = function(app, callback){
 
             // tag-id auslesen, da wir sie gleich brauchen
             var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
-
-            responseContent += "{\'tag\': \'" + tag + "\', \'title\': \'" + tagTitle + "\', \'endpoint\': \'"+svrAddr+"/tags/tag/" + tag + "\', \'file\': \'"+items[i]+"\'}"
+            //\'title\': \'" + tagTitle + "\',
+            responseContent += "{\'tag\': \'" + tag + "\', \'endpoint\': \'"+svrAddr+':'+svrPort+svrApi+"/tags/tag/" + tag + "\', \'file\': \'"+items[i]+"\'}"
             // we only need to add the , after an array element in the json
             // structure, if there are sukzessive elements.
             if (i<items.length-1) responseContent += ",";
@@ -47,7 +55,7 @@ var getTagList = function(app, callback){
         }
         responseContent += "]}"
       }
-      if (DEBUG) console.log(responseContent);
+      if (TRACE) console.log(responseContent);
       callback(null, responseContent);
     });
   } catch (err) {
@@ -56,34 +64,203 @@ var getTagList = function(app, callback){
   }
 }
 
-var getTagData = function(app, tagid, callback){
+var getTagData = function(app, tagId , callback){
   // get global app variables
   var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+
+  var svrProto = app.get('svrProto');
   var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
+
+  // this is the path to the file system where the rfid tags are stored
   var rfidTagDir = app.get('rfidTagDir');
   var obj = null;
 
-  var tagStorage = path.join(rfidTagDir, tagid.toUpperCase()+'.json');
+  if (DEBUG) console.log('function getTagData called');
+
+  var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
 
   try {
     jsonfile.readFile(tagStorage, function(err, obj) {
       if (err) {
-        callback('{\'response\': \'error\', \'message\': \'error getting data of tag '+rfidTagDir+'\', \'error\': \''+err.toString()+'\'}');
+        console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
+
+        callback('{\'response\': \'error\', \'message\': \'error getting data of tag '+tagId+' from '+rfidTagDir+'\', \'error\': \''+err.toString()+'\'}');
       } else {
         //var obj = JSON.parse(fs.readFileSync(tagStorage, 'utf8'));
-        if (DEBUG) console.log('getting data for tag ' + tagid + ' from file ' + tagStorage +':');
-        if (DEBUG) console.log(obj);
-        // auslesen des Titels, da das einfach eine gute informtion ist - packen
-        // wir gleich in den ResponseContent mit rein.
+        if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
+        if (TRACE) console.log(obj);
         callback(null, obj)
       }
     })
-  } catch (err) {
-    callback('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagid+' from '+tagStorage+'\', \'exception\': \' '+err.toString()+'\'}');
+  } catch (ex) {
+    console.error('error: reading json file for tag '+tagId+' from '+tagStorage+' failed \nerror message: ' +ex.toString());
+    callback('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId +' from '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}');
+  }
+}
+
+
+var getTagDataSync = function(app, tagId){
+  // get global app variables
+  var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+
+  // this is the path to the file system where the rfid tags are stored
+  var rfidTagDir = app.get('rfidTagDir');
+  var obj = null;
+
+  if (DEBUG) console.log('function getTagData called');
+
+  var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
+
+  try {
+    var obj = jsonfile.readFileSync(tagStorage, 'utf8')
+    //var obj = JSON.parse(fs.readFileSync(tagStorage, 'utf8'));
+    if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
+    if (TRACE) console.log(obj);
+    return(obj);
+  } catch (ex) {
+    console.error('error: reading json file for tag '+tagId+' from '+tagStorage+' failed \nerror message: ' +ex.toString());
+    return('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId +' from '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}');
+  }
+}
+
+var writeTagDataSync = function(app, tagId, content){
+  // get global app variables
+  var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+
+  var rfidTagDir = app.get('rfidTagDir');
+  var obj = JSON.parse(content);
+
+  if (DEBUG) console.log('function writeTagData called');
+  if (TRACE) console.log('tagId:   ' + tagId);
+  if (TRACE) console.log('content: ' + content);
+  if (TRACE) console.log('obj:     ' + obj);
+
+  var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
+
+  try {
+    jsonfile.writeFileSync(tagStorage, obj, {spaces: 2});
+  } catch (ex) {
+    console.error('error: could not write data for tag ' + tagId + ' to file ' + tagStorage + ' - exception: ' + ex.toString());
+    return('{\'response\': \'error\', \'message\': \'could not write data for tag '+tagId +' to '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}');
+  }
+  console.log('success: data for tag '+tagId+' written to file ' + tagStorage);
+  return('{\'response\': \'success\', \'message\': \'data for tag '+tagId +' written to file '+tagStorage+'\'}')
+}
+
+var addPictureData = function(app, tagId , picture, callback){
+  // get global app variables
+  var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+
+  var svrProto = app.get('svrProto');
+  var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
+
+  var rfidTagDir = app.get('rfidTagDir');
+  var obj = null;
+
+  if (DEBUG) console.log('function addPictureData called');
+
+  // set the picture number to 0 as an indicator if there are any pictures already
+  var picNumber = 0;
+  if (DEBUG) console.log('trying to get data for tag ' + tagId + ' to add new picture ('+picture+') to the meta data');
+  getTagData(app, tagId, function(err, result) {
+    if (err) {
+      console.error('error: could not read data for tag ' + tagId +' - ' + err.toString());
+      callback('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId + '\', \'exception\': \' '+err.toString()+'\'}');
+    } else {
+      var obj = result
+      var picObj = obj.MediaPicture
+      if (TRACE) console.log(picObj);
+
+      // this returns the next number for an array of oobjects (parts or pics)
+      function getNextNumber(arr, prop) {
+        var max;
+        for (var i=0 ; i<arr.length ; i++) {
+            if (!max || parseInt(arr[i][prop]) > parseInt(max[prop]))
+                max = arr[i][prop];
+        }
+        return Number(max)+1;
+      }
+      picNumber = getNextNumber(picObj, "pic");
+      if (DEBUG) console.log('new picture number is ' + picNumber);
+
+      var myObj = { 'pic':picNumber.toString(), 'name': picture};
+      var myJSON = JSON.stringify(myObj);
+
+      obj['MediaPicture'].push(myObj);
+
+      //jsonStr = JSON.stringify(obj);
+      jsonStr = JSON.stringify(obj);
+      if (TRACE) console.log('This is the created json:\n' + jsonStr);
+
+      // now we are exchanging the former jsonfile with the new content
+      if (DEBUG) console.log('calling writeTagData to write new json content to disk');
+      var response = writeTagDataSync(app, tagId, jsonStr);
+
+      callback(null, obj);
+    }
+  });
+}
+
+var uploadFile = function(app, picture, callback) {
+  // get global app variables
+  var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+  if (DEBUG) console.log('proxy function uploadFile called');
+  if (TRACE) console.log(picture.toString());
+
+  var svrProto = app.get('svrProto');
+  var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
+
+  // we need these to work with the second node.js service fileService, which
+  // does the actual file handling
+  var fileServiceProto = app.get('fileServiceProto')+':';
+  var fileServiceAddr = app.get('fileServiceAddr');
+  var fileServicePort = app.get('fileServicePort');
+  var fileServiceApi = app.get('fileServiceApi');
+  var fileServiceUrl = app.get('fileServiceUrl');
+
+
+  try {
+    var options = {
+      protocol: fileServiceProto,
+      host: fileServiceAddr,
+      port: Number(fileServicePort),
+      path: fileServiceApi+fileServiceUrl,
+      family: 4,
+      headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
+      method: 'POST'
+    };
+    if (DEBUG) console.log('sending http request to fileService REST api');
+    if (TRACE) console.log(options);
+
+    http.request(options, function(res) {
+      if (DEBUG) console.log('STATUS: ' + res.statusCode);
+      if (TRACE) console.log('HEADERS: ' + JSON.stringify(res.headers));
+      res.setEncoding('utf8');
+      res.on('data', function (chunk) {
+        if (TRACE) console.log('BODY: ' + chunk);
+      });
+    }).end();
+    callback(null, chunk);
+  } catch (ex) {
+    console.error('error: exception while uploading the file \''+picture+'\'\n   exception text: ' + ex.toString());
+    callback(ex);
   }
 }
 
 module.exports = {
   getTagList: getTagList,
-  getTagData: getTagData
+  getTagData: getTagData,
+  addPictureData: addPictureData,
+  uploadFile: uploadFile
 }

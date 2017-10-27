@@ -7,6 +7,17 @@
   "MediaType": "Hoerspiel",
   "MediaGenre": "Kindergeschichte",
   "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
-  "MediaFileName": [{"part": "1", "name": "Frederick.mp3", "size": "24M"}],
-  "MediaPicture": [{"pic": "1", "name": "Frederick.jpg"}]
+  "MediaFileName": [
+    {
+      "part": "1",
+      "name": "Frederick.mp3",
+      "size": "24M"
+    }
+  ],
+  "MediaPicture": [
+    {
+      "pic": "1",
+      "name": "Frederick.jpg"
+    }
+  ]
 }

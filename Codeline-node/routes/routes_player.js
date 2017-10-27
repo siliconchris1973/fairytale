@@ -4,7 +4,13 @@ var fs = require('fs');
 var playerRouter = function(app) {
   // get global app variables
   var DEBUG = app.get('DEBUG');
-  var svrAddr = app.get('svrAddr');
+  var TRACE = app.get('TRACE');
+
+  var playerProto = app.get('playerProto');
+  var playerAddr = app.get('playerAddr');
+  var playerPort = app.get('playerPort');
+  var playerApi = app.get('playerApi');
+
   var dataDir = app.get('dataDir');
   var mediaDir = app.get('mediaDir');
 
@@ -31,15 +37,15 @@ var playerRouter = function(app) {
       res.json({
           response: 'REST API for the mp3 Player',
           endpoints: [
-              {endpoint: svrAddr+'/player', description: 'the root entry of the mp3 player API'},
-              {endpoint: svrAddr+'/player/play', description: 'play a given mp3 file'},
-              {endpoint: svrAddr+'/player/stop', description: 'stop playing - only available in case a file is played'},
-              {endpoint: svrAddr+'/player/pause', description: 'pause playback - only available in case a file is played'},
-              {endpoint: svrAddr+'/player/skip', description: 'skip 10 seconds of played file - only available in case a file is played'},
-              {endpoint: svrAddr+'/player/forward', description: 'fast forward in current file'},
-              {endpoint: svrAddr+'/player/rewind', description: 'rewind in current file'},
-              {endpoint: svrAddr+'/player/next', description: 'jump to next file for currently played album'},
-              {endpoint: svrAddr+'/player/prev', description: 'jump to previous file of currently played album'}
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player', description: 'the root entry of the mp3 player API'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/play', description: 'play a given mp3 file'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/stop', description: 'stop playing - only available in case a file is played'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/pause', description: 'pause playback - only available in case a file is played'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/skip', description: 'skip 10 seconds of played file - only available in case a file is played'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/forward', description: 'fast forward in current file'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/rewind', description: 'rewind in current file'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/next', description: 'jump to next file for currently played album'},
+              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/prev', description: 'jump to previous file of currently played album'}
           ]
       });
     }
