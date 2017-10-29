@@ -1,8 +1,10 @@
 {
-  "TagChecksum": "0x5",
-  "TagId": "755B24",
-  "TagPreTag": "0xf00",
-  "TagRawData": "0F00755B2405",
+  "tagdata": {
+    "TagChecksum": "0x5",
+    "TagId": "755B24",
+    "TagPreTag": "0xf00",
+    "TagRawData": "0F00755B2405"
+  },
   "MediaTitle": "The 4th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",

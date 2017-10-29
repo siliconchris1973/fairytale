@@ -1,8 +1,11 @@
 {
-  "TagChecksum": "0x76",
-  "TagId": "780E0F",
-  "TagPreTag": "0xf00",
-  "TagRawData": "0F00780E0F76",
+  "tagdata":
+    {
+      "TagChecksum": "0x76",
+      "TagId": "780E0F",
+      "TagPreTag": "0xf00",
+      "TagRawData": "0F00780E0F76"    
+    },
   "MediaTitle": "The 7th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",

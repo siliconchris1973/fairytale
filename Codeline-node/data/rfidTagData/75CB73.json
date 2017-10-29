@@ -1,8 +1,11 @@
 {
-  "TagChecksum": "0xc2",
-  "TagId": "75CB73",
-  "TagPreTag": "0xf00",
-  "TagRawData": "0F0075CB73C2",
+  "tagdata":
+    {
+      "TagChecksum": "0xc2",
+      "TagId": "75CB73",
+      "TagPreTag": "0xf00",
+      "TagRawData": "0F0075CB73C2"
+    },
   "MediaTitle": "Die goldene Gans",
   "MediaType": "Audiobook",
   "MediaGenre": "Maerchen",
@@ -11,21 +14,15 @@
     {
       "part": "1",
       "name": "goldenegans.mp3",
+      "path": "Media/Disk_1/goldenegans.mp3",
       "size": "6M"
     }
   ],
   "MediaPicture": [
     {
       "pic": "1",
-      "name": "goldenegans.jpg"
-    },
-    {
-      "pic": "2",
-      "name": "Beleg - Tanken 10.10.17.jpg"
-    },
-    {
-      "pic": "2",
-      "name": "Beleg - Dev Journal Special Cloud 7.10.17.jpg"
+      "name": "goldenegans.jpg",
+      "path": "Cover/normal/goldenegans.jpg"
     }
   ]
 }

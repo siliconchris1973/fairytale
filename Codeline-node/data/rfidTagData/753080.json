@@ -1,8 +1,11 @@
 {
-  "TagChecksum": "0xca",
-  "TagId": "753080",
-  "TagPreTag": "0xf00",
-  "TagRawData": "0F00753080CA",
+  "tagdata":
+    {
+      "TagChecksum": "0xca",
+      "TagId": "753080",
+      "TagPreTag": "0xf00",
+      "TagRawData": "0F00753080CA"    
+    },
   "MediaTitle": "The 10th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",

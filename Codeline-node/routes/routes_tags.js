@@ -333,10 +333,8 @@ var tagRouter = function(app) {
     if (TRACE) console.log('request body: ');
     if (TRACE) console.log(req.body);
     if (DEBUG) console.log("response code " + res.statusCode);
-    if (TRACE) console.log('CoverFiles: ');
-    if (TRACE) console.log(CoverFile);
-    if (TRACE) console.log('back URL:');
-    if (TRACE) console.log(backURL);
+    if (TRACE) console.log('CoverFile: ' + CoverFile);
+    if (TRACE) console.log('back URL:' + backURL);
 
     if(!req.params.id) {
       console.error("error: no tag identifier provided")

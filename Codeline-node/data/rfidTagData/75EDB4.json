@@ -1,8 +1,11 @@
 {
-  "TagChecksum": "0x23",
-  "TagId": "75EDB4",
-  "TagPreTag": "0xf00",
-  "TagRawData": "0F0075EDB423",
+  "tagdata":
+    {
+      "TagChecksum": "0x23",
+      "TagId": "75EDB4",
+      "TagPreTag": "0xf00",
+      "TagRawData": "0F0075EDB423"
+    },
   "MediaTitle": "Frederick",
   "MediaType": "Hoerspiel",
   "MediaGenre": "Kindergeschichte",
@@ -11,13 +14,15 @@
     {
       "part": "1",
       "name": "Frederick.mp3",
+      "path": "Media/Disk_1/Frederick.mp3",
       "size": "24M"
     }
   ],
   "MediaPicture": [
     {
       "pic": "1",
-      "name": "Frederick.jpg"
+      "name": "Frederick.jpg",
+      "path": "Cover/normal/Frederick.jpg"
     }
   ]
 }

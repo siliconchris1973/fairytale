@@ -102,7 +102,7 @@ app.get(svrApi+'/file', function(req, res) {
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
-	res.render('fileform')
+	res.render('fileform', { message: 'choose a file' });
 })
 
 // post the new file from the upload form
@@ -115,83 +115,90 @@ app.post(svrApi+'/file', function(req, res) {
 
   var upload = multer({
         storage: multer.memoryStorage()
-    }).single('userFile')
-    upload(req, res, function(err) {
-        try {
-          var buffer = req.file.buffer
-          var magic = buffer.toString('hex', 0, 4)
-          //var filename = req.file.fieldname + '-' + Date.now() + path.extname(req.file.originalname)
-          var filename = req.file.originalname;
-        } catch (ex) {
-          console.warn('warning: no file provided, but upload button pressed - ignoring');
-        }
+  }).single('userFile')
 
-        if (checkMagicNumbers(magic)) {
-          try {
-            fs.writeFile(targetTmpDir + '/' + filename, buffer, 'binary', function(err) {
-              if (err) {
-                console.error('error: could not upload '+filename+' to '+targetTmpDir+'.' + err.toString());
-                if (acceptsHTML) {
-                  res.end('could not upload '+filename+' to '+targetTmpDir+'.' + err.toString());
-                } else {
-                  responseContent = '\'response\': \'error\', \'message\': \'could not upload file ' + filename + ' to directory ' + tmpTargetDir + '\', \'error\': ' + err.toString();
-                  return(responseContent);
-                  /*
-                  res.json({
-                    response: 'error',
-                    message: 'could not upload ' + filename + ' to directory ' + tmpTargetDir,
-                    error: err
-                  });
-                  */
-                }
-              } else {
-                if (DEBUG) console.log('provided file ' + filename + ' was uploaded to ' + targetTmpDir);
-                if (acceptsHTML) {
-                  res.end('File '+filename+' is uploaded to ' + targetTmpDir)
-                } else {
-                  responseContent = '\'response\': \'success\', \'message\': \'file ' + filename + ' uploaded to directory ' + tmpTargetDir + '\'';
-                  return(responseContent);
-                  /*
-                  res.json({
-                    response: 'success',
-                    message: 'file ' + filename + ' uploaded to directory ' + tmpTargetDir,
-                  })
-                  */
-                }
-              }
-            })
-          } catch (ex) {
-            console.error('error: could not upload '+filename+' to '+targetTmpDir+'.' + ex.toString());
+  upload(req, res, function(err) {
+    try {
+      var buffer = req.file.buffer
+      var magic = buffer.toString('hex', 0, 4)
+      //var filename = req.file.fieldname + '-' + Date.now() + path.extname(req.file.originalname)
+      var filename = req.file.originalname;
+    } catch (ex) {
+      var message = 'warning: no file provided, but upload button pressed - ignoring';
+      console.warn(message);
+      res.render('fileform', { message: message });
+    }
+
+    if (checkMagicNumbers(magic)) {
+      try {
+        fs.writeFile(targetTmpDir + '/' + filename, buffer, 'binary', function(err) {
+          if (err) {
+            console.error('error: could not upload '+filename+' to '+targetTmpDir+'.' + err.toString());
             if (acceptsHTML) {
-              res.end('There was an exception while uploading file '+filename+' to '+targetTmpDir+' - exception: ' + ex.toString());
+              var message = 'could not upload '+filename+' to '+targetTmpDir+'.' + err.toString()
+              res.render('fileform', { message: message });
             } else {
-              responseContent = '\'response\': \'error\', \'message\': \'exception while uploading file ' + filename + ' to directory ' + tmpTargetDir + '\', \'error\': ' + ex.toString();
+              responseContent = '\'response\': \'error\', \'message\': \'could not upload file ' + filename + ' to directory ' + tmpTargetDir + '\', \'error\': ' + err.toString();
               return(responseContent);
               /*
               res.json({
                 response: 'error',
-                message: 'exception while uploading ' + filename + ' to directory ' + tmpTargetDir,
-                error: ex.toString()
+                message: 'could not upload ' + filename + ' to directory ' + tmpTargetDir,
+                error: err
+              });
+              */
+            }
+          } else {
+            if (DEBUG) console.log('provided file ' + filename + ' was uploaded to ' + targetTmpDir);
+            if (acceptsHTML) {
+              var message = 'File '+filename+' is uploaded to ' + targetTmpDir;
+              res.render('fileform', { message: message });
+            } else {
+              responseContent = '\'response\': \'success\', \'message\': \'file ' + filename + ' uploaded to directory ' + tmpTargetDir + '\'';
+              return(responseContent);
+              /*
+              res.json({
+                response: 'success',
+                message: 'file ' + filename + ' uploaded to directory ' + tmpTargetDir,
               })
               */
             }
           }
+        })
+      } catch (ex) {
+        console.error('error: could not upload '+filename+' to '+targetTmpDir+'.' + ex.toString());
+        if (acceptsHTML) {
+          var message = 'There was an exception while uploading file '+filename+' to '+targetTmpDir+' - exception: ' + ex.toString();
+          res.render('fileform', { message: message });
         } else {
-          console.warn('provided file ' + filename + ' is not a valid image - not uploaded');
-          if (acceptsHTML) {
-            res.end('File is not valid - not uploaded')
-          } else {
-            responseContent = '\'response\': \'warning\', \'message\': \'file ' + filename + ' is not an image - not uploaded';
-            return(responseContent);
-            /*
-            res.json({
-              response: 'warning',
-              message: 'File is not a valid image file'
-            });
-            */
-          }
+          responseContent = '\'response\': \'error\', \'message\': \'exception while uploading file ' + filename + ' to directory ' + tmpTargetDir + '\', \'error\': ' + ex.toString();
+          return(responseContent);
+          /*
+          res.json({
+            response: 'error',
+            message: 'exception while uploading ' + filename + ' to directory ' + tmpTargetDir,
+            error: ex.toString()
+          })
+          */
         }
-    });
+      }
+    } else {
+      console.warn('provided file ' + filename + ' is not a valid image - not uploaded');
+      if (acceptsHTML) {
+        var message = 'File is not valid - not uploaded';
+        res.render('fileform', { message: message });
+      } else {
+        responseContent = '\'response\': \'warning\', \'message\': \'file ' + filename + ' is not an image - not uploaded';
+        return(responseContent);
+        /*
+        res.json({
+          response: 'warning',
+          message: 'File is not a valid image file'
+        });
+        */
+      }
+    }
+  });
 })
 
 // start the server

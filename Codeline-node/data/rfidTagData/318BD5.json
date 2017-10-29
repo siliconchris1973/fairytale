@@ -1,8 +1,11 @@
 {
-  "TagChecksum": "0x62",
-  "TagId": "318BD5",
-  "TagPreTag": "0xd00",
-  "TagRawData": "0D00318BD562",
+  "tagdata":
+    {
+      "TagChecksum": "0x62",
+      "TagId": "318BD5",
+      "TagPreTag": "0xd00",
+      "TagRawData": "0D00318BD562"
+    },
   "MediaTitle": "Der Froschkönig",
   "MediaType": "Audiobook",
   "MediaGenre": "Maerchen",
@@ -11,6 +14,7 @@
     {
       "part": "1",
       "name": "froschkoenig.mp3",
+      "path": "Media/Disk_1/froschkoenig.mp3",
       "size": "17M"
     }
   ],

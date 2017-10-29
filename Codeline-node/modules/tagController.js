@@ -5,6 +5,12 @@ var http = require('http');
 
 var request = require('request');
 
+var multer = require('multer');
+
+var upload = require('./fileUpload.js');
+
+var router = express.Router();
+
 var getTagList = function(app, callback){
   // get global app variables
   var DEBUG = app.get('DEBUG');
@@ -214,7 +220,7 @@ var uploadFile = function(app, picture, callback) {
   var DEBUG = app.get('DEBUG');
   var TRACE = app.get('TRACE');
   if (DEBUG) console.log('proxy function uploadFile called');
-  if (TRACE) console.log(picture.toString());
+  if (TRACE) console.log('   picture to post: '+picture.toString());
 
   var svrProto = app.get('svrProto');
   var svrAddr = app.get('svrAddr');
@@ -229,8 +235,15 @@ var uploadFile = function(app, picture, callback) {
   var fileServiceApi = app.get('fileServiceApi');
   var fileServiceUrl = app.get('fileServiceUrl');
 
+  var targetTmpDir = app.get('targetTmpDir');
+  var multerupload = multer({ dest: targetTmpDir });
 
   try {
+    var url = fileServiceProto+'//'+fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl;
+
+    router.post(targetTmpDir,multerupload.any(),fileUpload.fileupload);
+
+    /*
     var options = {
       protocol: fileServiceProto,
       host: fileServiceAddr,
@@ -238,6 +251,9 @@ var uploadFile = function(app, picture, callback) {
       path: fileServiceApi+fileServiceUrl,
       family: 4,
       headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
+      multipart: [{
+        body: '<FILE_DATA>'
+      }],
       method: 'POST'
     };
     if (DEBUG) console.log('sending http request to fileService REST api');
@@ -252,10 +268,13 @@ var uploadFile = function(app, picture, callback) {
       });
     }).end();
     callback(null, chunk);
+    */
+
   } catch (ex) {
     console.error('error: exception while uploading the file \''+picture+'\'\n   exception text: ' + ex.toString());
     callback(ex);
   }
+
 }
 
 module.exports = {
