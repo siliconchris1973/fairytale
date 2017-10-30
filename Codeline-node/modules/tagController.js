@@ -23,8 +23,6 @@ var getTagList = function(app, callback){
 
   if (DEBUG) console.log('function getTagList called');
 
-  var responseContent = '';
-
   try {
     fs.readdir(rfidTagDir, function(err, items) {
       if (DEBUG) console.log('working on directory ' + rfidTagDir);
@@ -51,7 +49,6 @@ var getTagList = function(app, callback){
       } else {
         // im Verzeichnis sind tatsaechlich Dateien
         if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
-        responseContent = "{\'tags\': ["
 
         var tagItemArray = [];
 
@@ -115,7 +112,6 @@ var getMediaList = function(app, callback){
       if (err) {
         // irgendein Fehler beim einlesen des Verzeichnisses
         console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
-        // '{\'response\': \'error\', \'message\': \'error getting files from directory '+rfidTagDir+'\', \'exception\': \''+err.toString()+'\'}'
         var errCallback = {
           response: 'error',
           message: 'error getting files from directory ' + rfidTagDir,
@@ -126,7 +122,6 @@ var getMediaList = function(app, callback){
       } else if (!items.length) {
         // directory appears to be empty
         console.warn("warning: nothing to read in directory "+rfidTagDir);
-        //'{\'response\': \'warning\', \'message\': \'nothing to read from directory '+rfidTagDir+'\'}'
         var errCallback = {
           response: 'warning',
           message: 'nothing to read from directory '+rfidTagDir
@@ -148,8 +143,6 @@ var getMediaList = function(app, callback){
 
             // tag-id auslesen, da wir sie gleich brauchen
             var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
-            //\'title\': \'" + tagTitle + "\',
-            responseContent += "{\'tag\': \'" + tag + "\', \'endpoint\': \'"+svrAddr+':'+svrPort+svrApi+"/tags/tag/" + tag + "\', \'file\': \'"+items[i]+"\'}";
 
             getTagData(app, tag, function(err, result){
               if (err) {
@@ -200,7 +193,6 @@ var getMediaList = function(app, callback){
     });
   } catch (ex) {
     console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + err.toString());
-    //'{\'response\': \'error\', \'message\': \'could not read directory '+rfidTagDir+'\', \'exception\': \' '+err.toString()+'\'}'
     var errCallback = {
       response: 'error',
       message: 'could not read tags from directory ' + rfidTagDir,
@@ -232,7 +224,6 @@ var getTagData = function(app, tagId , callback){
     jsonfile.readFile(tagStorage, function(err, result) {
       if (err) {
         console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
-        //'{\'response\': \'error\', \'message\': \'error getting data of tag '+tagId+' from '+rfidTagDir+'\', \'error\': \''+err.toString()+'\'}'
         var errCallback = {
           response: 'error',
           message: 'error getting data of tag '+tagId+' from '+rfidTagDir,
@@ -240,7 +231,6 @@ var getTagData = function(app, tagId , callback){
         };
         callback(errCallback);
       } else {
-        //var obj = JSON.parse(fs.readFileSync(tagStorage, 'utf8'));
         if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
         if (TRACE) console.log(result);
         callback(null, result)
@@ -248,7 +238,6 @@ var getTagData = function(app, tagId , callback){
     })
   } catch (ex) {
     console.error('error: reading json file for tag '+tagId+' from '+tagStorage+' failed \nerror message: ' +ex.toString());
-    //'{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId +' from '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}'
     var errCallback = {
       response: 'error',
       message: 'could not read data for tag '+tagId +' from '+tagStorage,
@@ -274,13 +263,17 @@ var getTagDataSync = function(app, tagId){
 
   try {
     var obj = jsonfile.readFileSync(tagStorage, 'utf8')
-    //var obj = JSON.parse(fs.readFileSync(tagStorage, 'utf8'));
     if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
     if (TRACE) console.log(obj);
     return(obj);
   } catch (ex) {
     console.error('error: reading json file for tag '+tagId+' from '+tagStorage+' failed \nerror message: ' +ex.toString());
-    return('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId +' from '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}');
+    var errCallback = {
+      response: 'error',
+      message: 'could not read data for tag '+tagId +' from '+tagStorage,
+      error: ex.toString()
+    };
+    return(errCallback);
   }
 }
 
@@ -303,10 +296,19 @@ var writeTagDataSync = function(app, tagId, content){
     jsonfile.writeFileSync(tagStorage, obj, {spaces: 2});
   } catch (ex) {
     console.error('error: could not write data for tag ' + tagId + ' to file ' + tagStorage + ' - exception: ' + ex.toString());
-    return('{\'response\': \'error\', \'message\': \'could not write data for tag '+tagId +' to '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}');
+    var errCallback = {
+      response: 'error',
+      message: 'could not write data for tag '+tagId +' to '+tagStorage,
+      error: ex.toString()
+    };
+    return(errCallback);
   }
   console.log('success: data for tag '+tagId+' written to file ' + tagStorage);
-  return('{\'response\': \'success\', \'message\': \'data for tag '+tagId +' written to file '+tagStorage+'\'}')
+  var respCallback = {
+    reponse: 'success',
+    message: 'data for tag ' + tagId + ' written to file ' + tagStorage
+  };
+  return(respCallback);
 }
 
 var addPictureData = function(app, tagId , picture, callback){
@@ -330,7 +332,12 @@ var addPictureData = function(app, tagId , picture, callback){
   getTagData(app, tagId, function(err, result) {
     if (err) {
       console.error('error: could not read data for tag ' + tagId +' - ' + err.toString());
-      callback('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId + '\', \'exception\': \' '+err.toString()+'\'}');
+      var errCallback = {
+        response: 'error',
+        message: 'could not read data for tag '+tagId +' from '+tagStorage,
+        error: err.toString()
+      };
+      callback(errCallback);
     } else {
       var obj = result
       var picObj = obj.MediaPicture
@@ -415,7 +422,12 @@ var uploadFile = function(app, file, callback) {
 
   } catch (ex) {
     console.error('error: exception while uploading the file \''+picture+'\'\n   exception text: ' + ex.toString());
-    callback(ex);
+    var errCallback = {
+      reponse: error,
+      message: 'exception while uploading file ' + picture,
+      error: ex.toString()
+    };
+    callback(errCallback);
   }
 
 }
