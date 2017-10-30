@@ -8,11 +8,14 @@ var rfidRouter = function(app) {
   var rfidReaderPort = app.get('rfidReaderPort');
   var rfidReaderApi = app.get('rfidReaderApi');
 
-  var dataDir = app.get('dataDir');
-  var mediaDir = app.get('mediaDir');
-
   // root entry for RFID tag data
   app.get("/rfid", function(req, res) {
+    res.redirect(rfidReaderApi+"/rfid");
+  });
+
+
+  // root entry for RFID tag data
+  app.get(rfidReaderApi+"/rfid", function(req, res) {
     if (DEBUG) console.log("rfid reader entry info requested");
 
     // the server checks whether the client accepts html (browser) or

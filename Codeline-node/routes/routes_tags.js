@@ -40,6 +40,16 @@ var tagRouter = function(app) {
   var rfidTagDir = app.get('rfidTagDir')
   var listOfTags = '';
 
+  app.get("/tags", function(req, res){
+    res.redirect(svrApi+"/tags");
+  });
+  app.get("/tags/tag/:id", function(req, res){
+    res.redirect(svrApi+"/tags/tag/:id");
+  });
+  app.get("/tags/tag/create", function(req, res){
+    res.redirect(svrApi+"/tags/tag/create");
+  });
+
   // get the listing of all stored rfid tags
   app.get(svrApi+"/tags", function(req, res) {
     if (DEBUG) console.log('get::/tags called');
