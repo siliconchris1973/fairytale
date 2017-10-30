@@ -10,7 +10,9 @@
   "MediaType": "Audiobook",
   "MediaGenre": "Maerchen",
   "MediaDescription": "Der jüngste dreier Söhne wird verachtet und heißt Dummling. Als der Älteste Holzhacken geht, gibt die Mutter ihm Wein und Eierkuchen mit. Unterwegs will ein graues Männchen mitessen, doch er lehnt ab. Bei der Arbeit haut er sich die Axt in den Arm. Genauso macht es der zweite Sohn, und haut sich ins Bein. Endlich darf auch der Jüngste, kriegt zwar nur Aschekuchen und sauer Bier, aber teilt gern mit dem Männchen. Dafür zeigt es ihm einen alten Baum, den er umhaut und eine goldene Gans findet. Beim Gastwirt wollen die drei Töchter eine Feder erhaschen, die erste bleibt mit der Hand daran hängen, die zweite an ihr, und die dritte an ihr. So nimmt der Dummling sie einfach mit. Unterwegs will der Pfarrer die Mädchen abhalten, ihm nachzulaufen, bleibt an der letzten hängen, an ihm der Küster, dann noch zwei Bauern. Beim Anblick dieser Kette lacht die Königstochter, die sonst so ernst ist, dass der König sie dem versprach, der sie zum Lachen brächte. Weil der Dummling aber arm ist, muss er noch einen Mann bringen, der einen Weinkeller austrinkt, dann einen, der einen Berg Brot auf isst, schließlich ein Schiff, das zu Wasser und zu Land fährt. Der Dummling sucht das Männchen, findet einen Durstigen und einen Hungrigen, die die Aufgabe erfüllen, erhält auch das Schiff, heiratet und erbt das Reich.",
-  "MediaFileName": [
+  "TrackCount": "1",
+  "DiskCount": "1",
+  "MediaFiles": [
     {
       "part": "1",
       "name": "goldenegans.mp3",

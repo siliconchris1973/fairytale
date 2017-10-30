@@ -4,12 +4,14 @@
       "TagChecksum": "0xb",
       "TagId": "756D1C",
       "TagPreTag": "0xf00",
-      "TagRawData": "0F00756D1C0B"  
+      "TagRawData": "0F00756D1C0B"
     },
   "MediaTitle": "The 5th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "",
-  "MediaFileName": [],
+  "TrackCount": "0",
+  "DiskCount": "0",
+  "MediaFiles": [],
   "MediaPicture": []
 }

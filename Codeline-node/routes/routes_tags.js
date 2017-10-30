@@ -37,78 +37,64 @@ var tagRouter = function(app) {
   var svrPort = app.get('svrPort');
   var svrApi = app.get('svrApi');
 
-  var mediaDir = app.get('mediaDir');
   var rfidTagDir = app.get('rfidTagDir')
   var listOfTags = '';
 
   // get the listing of all stored rfid tags
-  app.get("/tags", function(req, res) {
-      if (DEBUG) console.log('get::/tags called');
+  app.get(svrApi+"/tags", function(req, res) {
+    if (DEBUG) console.log('get::/tags called');
 
-      /* list all tags in rfid tag directory
-      listOfTags = tagController.getTagList(app, function(listOfTags){
-        console.log(listOfTags);
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
+      tagController.getTagList(app, function(err, result) {
+        if (err) {
+          console.error('error: getting the list of tags failed\nerror message: ' + err.toString());
+          res.render('tags_error', {
+            title: 'RFID Tag Fehlerseite',
+            headline: 'RFID Tag Liste Fehler',
+            errorname: 'Error',
+            errortext: 'Fehler beim abrufen der Liste an verf&uuml;gbarer Tags ',
+            exceptionname: 'Exception',
+            exceptiontext: err.toString()
+          });
+        } else {
+          var obj = result;
+          if (DEBUG) console.log("request to render tag list");
+          if (TRACE) console.log(obj.tags);
+          res.render('tags', {
+              title: 'RFID Tag Startseite',
+              headline: 'RFID Tag Startseite',
+              subheadline: 'Verf&uuml;gbare Tags',
+              messagetext: 'Bitte ein RFID Tag ausw&auml;hlen, um mehr Daten angezeigt zu bekommen',
+              varTags: obj.tags
+          });
+        }
       });
-      */
-      // get content of one stored rfid tag
-      //var tagData = require('../modules/rfidTag_fromFile.js')(app, '75CB73');
-      //console.log(tagData);
-
-      // the server checks whether the client accepts html (browser) or
-      // json machine to machine communication
-      var acceptsHTML = req.accepts('html');
-      var acceptsJSON = req.accepts('json');
-
-      /*
-      responseContent = taglist(app);
-      console.log('here comes the output: ');
-      console.log(responseContent);
-      */
-      if (acceptsHTML) {
-        tagController.getTagList(app, function(err, result) {
-          if (err) {
-              console.error('error: getting the list of tags failed\nerror message: ' + err.toString());
-              res.render('tags_error', {
-                title: 'RFID Tag Fehlerseite',
-                headline: 'RFID Tag Liste Fehler',
-                errorname: 'Error',
-                errortext: 'Fehler beim abrufen der Liste an verf&uuml;gbarer Tags ',
-                exceptionname: 'Exception',
-                exceptiontext: err.toString()
-              });
-          } else {
-              res.render('tags', {
-                  title: 'RFID Tag Startseite',
-                  headline: 'RFID Tag Startseite',
-                  subheadline: 'Verf&uuml;gbare Tags',
-                  messagetext: 'Bitte ein RFID Tag ausw&auml;hlen, um mehr Daten angezeigt zu bekommen',
-                  bodyContent: result
-              });
-          }
-        });
-      } else {
-        if (DEBUG) console.log("json request");
-        tagController.getTagList(app, function(err, result) {
-          if (err) {
-              console.log(err);
-              res.send(err.toString());
-          } else {
-            res.json({
-              result
-              /*
-                info: {
-                  response: 'info endpoint to tags API',
-                  endpoints: result
-                }
-                */
-            });
-          }
-        });
-      }
+    } else {
+      if (DEBUG) console.log("json request");
+      tagController.getTagList(app, function(err, result) {
+        if (err) {
+            console.log(err);
+            res.send(err.toString());
+        } else {
+          res.json({
+              info: {
+                response: 'info endpoint to tags API',
+                endpoints: result
+              }
+          });
+        }
+      });
+    }
   })
 
   // the root entry shall show what could be done
-  app.get("/tags/tag/create", function(req, res) {
+  app.get(svrApi+"/tags/tag/create", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/create called');
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -121,7 +107,6 @@ var tagRouter = function(app) {
           title: 'Neues RFID Tag registrieren',
           subheadline: 'Neues RFID Tag registrieren',
           messagetext: 'Bitte Daten f&uuml;r das neue Tag eintragen und Dateien ausw&auml;hlen',
-          controlheadline: 'Verf&uuml;gbare Kommandos'
       });
     } else {
       if (DEBUG) console.log("json request");
@@ -130,22 +115,37 @@ var tagRouter = function(app) {
   });
 
   // get the the content of one stored rfid tag
-  app.get("/tags/tag/:id", function(req, res) {
+  app.get(svrApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/:id called');
 
     /* This is how a typical rfid tag with data to an audiobook looks like
     {
-      "TagChecksum": "0x23",
-      "TagId": "75EDB4",
-      "TagPreTag": "0xf00",
-      "TagRawData": "0F0075EDB423",
-      "MediaTitle": "Frederick",
-      "MediaType": "UNDEFINED",
-      "MediaGenre": "UNDEFINED",
+      "tagdata":
+        {
+          "TagChecksum": "0x23",
+          "TagId": "75EDB4",
+          "TagPreTag": "0xf00",
+          "TagRawData": "0F0075EDB423",
+          "MediaTitle": "Frederick"
+        },
+      "MediaType": "Hoerspiel"
+      "MediaGenre": "Kindergeschichte",
       "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
-      "MediaFileName": [{"part": "1", "name": "Frederick.mp3", "size": "24M"}],
-      "MediaPicture": [{"pic": "1", "name": "Frederick.jpg"}],
-      "MediaType": "Audiobook"
+      "MediaFileName":[
+        {
+          "part": "1",
+          "name": "Frederick.mp3",
+          "path": "Media/Disk_1/Frederick.mp2",
+          "size": "24M"
+        }
+      ],
+      "MediaPicture": [
+        {
+          "pic": "1",
+          "name": "Frederick.jpg",
+          "path": "Cover/normal/Frederick.jpg"
+        }
+      ]
     }
     */
 
@@ -183,6 +183,12 @@ var tagRouter = function(app) {
       //    browser means we'll need to send html
       //    machine means we'll send a json structure
       if (acceptsHTML) {
+        // these two vars are needed for the form rendering engine pug to
+        // determine, whether or not to enter the each loop within the form for
+        // the number of elements - if there are files available, this variable
+        // is set to 1
+        var mediaFilesDefined=0;
+        var mediaPictureDefined=0;
         if (DEBUG) console.log("html request");
         tagController.getTagData(app, tag, function(err, result) {
           if (err) {
@@ -199,20 +205,24 @@ var tagRouter = function(app) {
             var obj = result;
             if (DEBUG) console.log('providing data to form');
             if (TRACE) console.log(obj);
+            if (obj.MediaFiles.length > 0) mediaFilesDefined=1;
+            if (obj.MediaPicture.length > 0) mediaPictureDefined=1;
             res.render('showtag', {
                 title: 'RFID Tag Datenseite',
                 headline: 'RFID Tag Daten',
-                subheadline: 'Tag ' + obj.TagId + ' - ' + obj.MediaTitle,
-                varTagId: obj.TagId,
-                varTagPreTag: obj.TagPreTag,
-                varTagChecksum: obj.TagChecksum,
-                varTagRawData: obj.TagRawData,
+                subheadline: 'Tag ' + obj.tagdata.TagId + ' - ' + obj.MediaTitle,
+                varTagId: obj.tagdata.TagId,
+                varTagPreTag: obj.tagdata.TagPreTag,
+                varTagChecksum: obj.tagdata.TagChecksum,
+                varTagRawData: obj.tagdata.TagRawData,
                 varMediaTitle: obj.MediaTitle,
                 varMediaType: obj.MediaType,
                 varMediaGenre: obj.MediaGenre,
                 varMediaDescription: obj.MediaDescription,
-                varMediaFiles: obj.MediaFileName,
-                varMediaPictures: obj.MediaPicture
+                varMediaFiles: obj.MediaFiles,
+                varMediaPictures: obj.MediaPicture,
+                varMediaPictureDefined: mediaPictureDefined,
+                varMediaFilesDefined: mediaFilesDefined
             });
           }
         });
@@ -233,7 +243,7 @@ var tagRouter = function(app) {
   })
 
   // target of the create a new rfid tag form
-  app.post("/tags/tag/:id", function(req, res) {
+  app.post(svrApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id  called');
 
     // the server checks whether the client accepts html (browser) or
@@ -276,10 +286,10 @@ var tagRouter = function(app) {
         });
       } else {
         res.json({
-            response: 'error',
-            status: res.statusCode,
-            errortype: errortype,
-            message: 'error creating new RFID Tag'
+          response: 'error',
+          status: res.statusCode,
+          errortype: errortype,
+          message: 'error creating new RFID Tag'
         });
       }
     } else {
@@ -294,8 +304,19 @@ var tagRouter = function(app) {
       var TagPreTag = '0X' + TagRawData.substr(1,3).toUpperCase();
       var TagId = TagRawData.substr(4,6).toUpperCase();
 
+      jsonContent = {
+        MediaTitle: MediaTitle,
+        MediaDescription: Description,
+        MediaFileName: MediaFile,
+        MediaPicture: CoverFile,
+        TagRawData: TagRawData,
+        TagChecksum: TagChecksum,
+        TagPreTag: TagPreTag,
+        TagId: TagId
+      };
+      /*
       jsonContent = '{\n  \'MediaTitle\': \'' + MediaTitle + '\',\n  \'MediaDescription\': \'' + Description + '\',\n  \'MediaFileName\': \'' + MediaFile + '\',\n  \'MediaPicture\': \'' + CoverFile + '\',\n  \'TagRawData\': \'' + TagRawData + '\',\n  \'TagChecksum\': \'' + TagChecksum + '\',\n  \'TagPreTag\': \'' + TagPreTag + '\',\n  \'TagId\': \'' + TagId + '\'\n}';
-
+      */
       if (TRACE) console.log('This is the created json:\n' + jsonContent);
 
       if (acceptsHTML) {
@@ -317,7 +338,7 @@ var tagRouter = function(app) {
   })
 
   // target of the create a new rfid tag form
-  app.post("/tags/tag/:id/picture", uploadCover.single('CoverFile'), function(req, res) {
+  app.post(svrApi+"/tags/tag/:id/picture", uploadCover.single('CoverFile'), function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id/picture  called');
 
     // the server checks whether the client accepts html (browser) or

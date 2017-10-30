@@ -5,10 +5,68 @@
     "TagPreTag": "0xf00",
     "TagRawData": "0F00755B2405"
   },
-  "MediaTitle": "The 4th book",
-  "MediaType": "UNDEFINED",
-  "MediaGenre": "UNDEFINED",
-  "MediaDescription": "",
-  "MediaFileName": [],
+  "MediaTitle": "Der kleine Rabe Socke - Suppenzauber und andere rabenstarke Geschichten",
+  "MediaType": "Hoerspiel",
+  "MediaGenre": "Kindergeschichte",
+  "MediaDescription": "Socke, Loeffel und Wolle sind schrecklich aufgeregt, weil sie ganz alleine Suppe kochen duerfen. Doch als Frau Dachs Hase Loeffel zum Chefkoch ernennt, ist der kleine Rabe empoert. Es ist doch wohl klar, dass er hier der Ueberallesoberkuechenchef sein muesste. Aber er darf nur die Zutaten zusammensuchen. Und so landen Limo, bergeweise Zucker und eine mysterioese Zauberblume im Suppentopf...",
+  "TrackCount": "9",
+  "DiskCount": "1",
+  "MediaFiles":
+    [
+      {
+        "part": "1",
+        "name": "Rabe Socke Track 1",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 01.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "2",
+        "name": "Rabe Socke Track 2",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 02.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "3",
+        "name": "Rabe Socke Track 3",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 03.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "4",
+        "name": "Rabe Socke Track 4",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 04.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "5",
+        "name": "Rabe Socke Track 5",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 05.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "6",
+        "name": "Rabe Socke Track 6",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 06.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "7",
+        "name": "Rabe Socke Track 7",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 07.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "8",
+        "name": "Rabe Socke Track 8",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 08.mp3",
+        "size": "8,5M"
+      },
+      {
+        "part": "9",
+        "name": "Rabe Socke Track 9",
+        "path": "Media/Disk_1/01 Der Kleine Rabe Socke. Suppenzauber. TV-Hörspiel 6. CD 1 Track 09.mp3",
+        "size": "8,5M"
+      }
+    ],
   "MediaPicture": []
 }

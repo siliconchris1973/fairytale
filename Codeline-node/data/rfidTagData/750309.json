@@ -4,12 +4,14 @@
       "TagChecksum": "0x70",
       "TagId": "750309",
       "TagPreTag": "0xf00",
-      "TagRawData": "0F0075030970"    
+      "TagRawData": "0F0075030970"
     },
   "MediaTitle": "The 9th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "description for the 9th book",
-  "MediaFileName": [],
+  "TrackCount": "0",
+  "DiskCount": "0",
+  "MediaFiles": [],
   "MediaPicture": []
 }

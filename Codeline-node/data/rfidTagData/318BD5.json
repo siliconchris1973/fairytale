@@ -10,7 +10,9 @@
   "MediaType": "Audiobook",
   "MediaGenre": "Maerchen",
   "MediaDescription": "Ein Märchen aus der alten Zeit, als aus Fröschen noch wirklich Prinzen wurden",
-  "MediaFileName": [
+  "TrackCount": "1",
+  "DiskCount": "1",
+  "MediaFiles": [
     {
       "part": "1",
       "name": "froschkoenig.mp3",

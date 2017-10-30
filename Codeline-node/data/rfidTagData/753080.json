@@ -4,12 +4,14 @@
       "TagChecksum": "0xca",
       "TagId": "753080",
       "TagPreTag": "0xf00",
-      "TagRawData": "0F00753080CA"    
+      "TagRawData": "0F00753080CA"
     },
   "MediaTitle": "The 10th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "",
-  "MediaFileName": [],
+  "TrackCount": "0",
+  "DiskCount": "0",
+  "MediaFiles": [],
   "MediaPicture": []
 }

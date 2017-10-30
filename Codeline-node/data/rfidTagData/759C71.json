@@ -10,7 +10,9 @@
   "MediaType": "Audiobook",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "Beschreibung",
-  "MediaFileName":
+  "TrackCount": "2",
+  "DiskCount": "1",
+  "MediaFiles":
     [
       {
         "part": "1",

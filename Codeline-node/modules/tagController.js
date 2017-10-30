@@ -9,8 +9,6 @@ var multer = require('multer');
 
 var upload = require('./fileUpload.js');
 
-var router = express.Router();
-
 var getTagList = function(app, callback){
   // get global app variables
   var DEBUG = app.get('DEBUG');
@@ -32,26 +30,158 @@ var getTagList = function(app, callback){
       if (DEBUG) console.log('working on directory ' + rfidTagDir);
 
       if (err) {
-        console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
         // irgendein Fehler beim einlesen des Verzeichnisses
-        callback('{\'response\': \'error\', \'message\': \'error getting files from directory '+rfidTagDir+'\', \'exception\': \''+err.toString()+'\'}');
+        console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
+        var errCallback = {
+          response: 'error',
+          message: 'error getting files from directory ' + rfidTagDir,
+          error: err.toString()
+        };
+
+        callback(errCallback);
       } else if (!items.length) {
         // directory appears to be empty
-        console.error("error: nothing to read in directory "+rfidTagDir);
-        callback('{\'response\': \'warning\', \'message\': \'nothing to read from directory '+rfidTagDir+'\'}');
+        console.warn("warning: nothing to read in directory "+rfidTagDir);
+        var errCallback = {
+          response: 'warning',
+          message: 'nothing to read from directory '+rfidTagDir
+        };
+
+        callback(errCallback);
       } else {
         // im Verzeichnis sind tatsaechlich Dateien
         if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
         responseContent = "{\'tags\': ["
 
+        var tagItemArray = [];
+
         for (i in items) {
           if (items[i].toString().substr(items[i].indexOf('.')) == '.json') {
             if (DEBUG) console.log('Arbeite auf item ' + items[i]);
+            var dirItem = '';
+
+            // tag-id auslesen, da wir sie gleich brauchen
+            var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
+            dirItem = {
+              tag: tag,
+              endpoint: svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/tags/tag/'+tag,
+              file: items[i]
+            };
+
+            tagItemArray.push(dirItem);
+          } else {
+            if (DEBUG) console.log('ignoring file ' + items[i] + ' as it is not a json file');
+          }
+        }
+      }
+      if (DEBUG) console.log('taglist ready, providing via callback');
+      var respCallback = {
+        tags: tagItemArray
+      };
+      if (TRACE) console.log(respCallback);
+      callback(null, respCallback);
+    });
+  } catch (ex) {
+    console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + err.toString());
+    var errCallback = {
+      response: 'error',
+      message: 'could not read tags from directory ' + rfidTagDir,
+      error: ex.toString()
+    };
+    callback(errCallback);
+  }
+}
+
+var getMediaList = function(app, callback){
+  // get global app variables
+  var DEBUG = app.get('DEBUG');
+  var TRACE = app.get('TRACE');
+
+  var svrProto = app.get('svrProto');
+  var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
+
+  var rfidTagDir = app.get('rfidTagDir');
+
+  if (DEBUG) console.log('function getTagList called');
+
+  var responseContent = '';
+
+  try {
+    fs.readdir(rfidTagDir, function(err, items) {
+      if (DEBUG) console.log('working on directory ' + rfidTagDir);
+
+      if (err) {
+        // irgendein Fehler beim einlesen des Verzeichnisses
+        console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
+        // '{\'response\': \'error\', \'message\': \'error getting files from directory '+rfidTagDir+'\', \'exception\': \''+err.toString()+'\'}'
+        var errCallback = {
+          response: 'error',
+          message: 'error getting files from directory ' + rfidTagDir,
+          error: err.toString()
+        };
+
+        callback(errCallback);
+      } else if (!items.length) {
+        // directory appears to be empty
+        console.warn("warning: nothing to read in directory "+rfidTagDir);
+        //'{\'response\': \'warning\', \'message\': \'nothing to read from directory '+rfidTagDir+'\'}'
+        var errCallback = {
+          response: 'warning',
+          message: 'nothing to read from directory '+rfidTagDir
+        };
+
+        callback(errCallback);
+      } else {
+        // im Verzeichnis sind tatsaechlich Dateien
+        if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
+        responseContent = "{\'tags\': ["
+
+        //var respCallback = { tags: []};
+        var tagItemArray = [];
+
+        for (i in items) {
+          if (items[i].toString().substr(items[i].indexOf('.')) == '.json') {
+            if (DEBUG) console.log('Arbeite auf item ' + items[i]);
+            var dirItem = '';
 
             // tag-id auslesen, da wir sie gleich brauchen
             var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
             //\'title\': \'" + tagTitle + "\',
-            responseContent += "{\'tag\': \'" + tag + "\', \'endpoint\': \'"+svrAddr+':'+svrPort+svrApi+"/tags/tag/" + tag + "\', \'file\': \'"+items[i]+"\'}"
+            responseContent += "{\'tag\': \'" + tag + "\', \'endpoint\': \'"+svrAddr+':'+svrPort+svrApi+"/tags/tag/" + tag + "\', \'file\': \'"+items[i]+"\'}";
+
+            getTagData(app, tag, function(err, result){
+              if (err) {
+                console.error('error: could not retrieve tag data for tag ' + tag);
+                /*
+                dirItem = {
+                  tag: tag,
+                  endpoint: svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/tags/tag/'+tag,
+                  title: 'no tag info - error: ' + err.toString()
+                };
+                */
+              } else {
+                if (DEBUG) console.log('data for tag ' + tag + ' retrieved')
+                if (TRACE) console.log(dirItem);
+
+                var obj = result;
+
+                dirItem = {
+                  tag: tag,
+                  endpoint: svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/tags/tag/'+tag,
+                  title: obj.MediaTitle,
+                  genre: obj.MediaGenre,
+                  type: obj.MediaType,
+                  disks: obj.DiskCount,
+                  tracks: obj.TrackCount
+                };
+                tagItemArray.push(dirItem);
+              }
+            });
+
+            //tagItemArray.push(dirItem);
+
             // we only need to add the , after an array element in the json
             // structure, if there are sukzessive elements.
             if (i<items.length-1) responseContent += ",";
@@ -61,12 +191,22 @@ var getTagList = function(app, callback){
         }
         responseContent += "]}"
       }
-      if (TRACE) console.log(responseContent);
-      callback(null, responseContent);
+      if (DEBUG) console.log('taglist ready, providing via callback');
+      var respCallback = {
+        tags: tagItemArray
+      };
+      if (TRACE) console.log(respCallback);
+      callback(null, respCallback);
     });
-  } catch (err) {
+  } catch (ex) {
     console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + err.toString());
-    callback('{\'response\': \'error\', \'message\': \'could not read directory '+rfidTagDir+'\', \'exception\': \' '+err.toString()+'\'}');
+    //'{\'response\': \'error\', \'message\': \'could not read directory '+rfidTagDir+'\', \'exception\': \' '+err.toString()+'\'}'
+    var errCallback = {
+      response: 'error',
+      message: 'could not read tags from directory ' + rfidTagDir,
+      error: ex.toString()
+    };
+    callback(errCallback);
   }
 }
 
@@ -89,21 +229,32 @@ var getTagData = function(app, tagId , callback){
   var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
 
   try {
-    jsonfile.readFile(tagStorage, function(err, obj) {
+    jsonfile.readFile(tagStorage, function(err, result) {
       if (err) {
         console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
-
-        callback('{\'response\': \'error\', \'message\': \'error getting data of tag '+tagId+' from '+rfidTagDir+'\', \'error\': \''+err.toString()+'\'}');
+        //'{\'response\': \'error\', \'message\': \'error getting data of tag '+tagId+' from '+rfidTagDir+'\', \'error\': \''+err.toString()+'\'}'
+        var errCallback = {
+          response: 'error',
+          message: 'error getting data of tag '+tagId+' from '+rfidTagDir,
+          error: err.toString()
+        };
+        callback(errCallback);
       } else {
         //var obj = JSON.parse(fs.readFileSync(tagStorage, 'utf8'));
         if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
-        if (TRACE) console.log(obj);
-        callback(null, obj)
+        if (TRACE) console.log(result);
+        callback(null, result)
       }
     })
   } catch (ex) {
     console.error('error: reading json file for tag '+tagId+' from '+tagStorage+' failed \nerror message: ' +ex.toString());
-    callback('{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId +' from '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}');
+    //'{\'response\': \'error\', \'message\': \'could not read data for tag '+tagId +' from '+tagStorage+'\', \'exception\': \' '+ex.toString()+'\'}'
+    var errCallback = {
+      response: 'error',
+      message: 'could not read data for tag '+tagId +' from '+tagStorage,
+      error: ex.toString()
+    };
+    callback(errCallback);
   }
 }
 
@@ -215,12 +366,12 @@ var addPictureData = function(app, tagId , picture, callback){
   });
 }
 
-var uploadFile = function(app, picture, callback) {
+var uploadFile = function(app, file, callback) {
   // get global app variables
   var DEBUG = app.get('DEBUG');
   var TRACE = app.get('TRACE');
   if (DEBUG) console.log('proxy function uploadFile called');
-  if (TRACE) console.log('   picture to post: '+picture.toString());
+  if (TRACE) console.log('   file to post: '+file.toString());
 
   var svrProto = app.get('svrProto');
   var svrAddr = app.get('svrAddr');
@@ -235,15 +386,8 @@ var uploadFile = function(app, picture, callback) {
   var fileServiceApi = app.get('fileServiceApi');
   var fileServiceUrl = app.get('fileServiceUrl');
 
-  var targetTmpDir = app.get('targetTmpDir');
-  var multerupload = multer({ dest: targetTmpDir });
-
   try {
     var url = fileServiceProto+'//'+fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl;
-
-    router.post(targetTmpDir,multerupload.any(),fileUpload.fileupload);
-
-    /*
     var options = {
       protocol: fileServiceProto,
       host: fileServiceAddr,
@@ -268,7 +412,6 @@ var uploadFile = function(app, picture, callback) {
       });
     }).end();
     callback(null, chunk);
-    */
 
   } catch (ex) {
     console.error('error: exception while uploading the file \''+picture+'\'\n   exception text: ' + ex.toString());
