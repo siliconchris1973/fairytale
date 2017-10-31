@@ -1,16 +1,19 @@
 {
   "tagdata":
     {
-      "TagChecksum": "0xb",
-      "TagId": "756D1C",
+      "TagChecksum": "0x76",
+      "TagId": "780E0F",
       "TagPreTag": "0xf00",
-      "TagRawData": "0F00756D1C0B"
+      "TagRawData": "0F00780E0F76"
     },
-  "MediaTitle": "The 5th book",
+  "MediaTitle": "The 7th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "",
-  "TrackCount": "0",
+  "TrackCount":
+    [
+      {"disk": "1", "tracks": "0"}
+    ],
   "DiskCount": "0",
   "MediaFiles": [],
   "MediaPicture": []

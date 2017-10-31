@@ -10,7 +10,10 @@
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "",
-  "TrackCount": "0",
+  "TrackCount":
+    [
+      {"disk": "1", "tracks": "0"}
+    ],
   "DiskCount": "0",
   "MediaFiles": [],
   "MediaPicture": []

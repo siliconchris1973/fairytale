@@ -52,11 +52,9 @@ app.set('DEBUG', true);
 app.set('TRACE', true);
 
 app.set('/img', express.static('Static/img'));
-app.set('/Media', express.static('data/Media'));
-app.set('/Cover', express.static('data/Cover'));
 
 // this is the path to the file system where the rfid tags are stored
-app.set('rfidTagDir', './data/rfidTagData');
+app.set('rfidTagDir', './data/TagDB');
 
 // settings for the template engine pug
 app.set('/views', express.static('/Views'));

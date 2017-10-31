@@ -1,16 +1,19 @@
 {
   "tagdata":
     {
-      "TagChecksum": "0xca",
-      "TagId": "753080",
+      "TagChecksum": "0xb",
+      "TagId": "756D1C",
       "TagPreTag": "0xf00",
-      "TagRawData": "0F00753080CA"
+      "TagRawData": "0F00756D1C0B"
     },
-  "MediaTitle": "The 10th book",
+  "MediaTitle": "The 5th book",
   "MediaType": "UNDEFINED",
   "MediaGenre": "UNDEFINED",
   "MediaDescription": "",
-  "TrackCount": "0",
+  "TrackCount":
+    [
+      {"disk": "1", "tracks": "0"}
+    ],
   "DiskCount": "0",
   "MediaFiles": [],
   "MediaPicture": []

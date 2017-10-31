@@ -1,113 +1,143 @@
-var path = require('path');
-var fs = require('fs');
-
-var playerRouter = function(app) {
+var playerRouter = function(router) {
   // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
+  var DEBUG = router.get('DEBUG');
+  var TRACE = router.get('TRACE');
 
-  var playerProto = app.get('playerProto');
-  var playerAddr = app.get('playerAddr');
-  var playerPort = app.get('playerPort');
-  var playerApi = app.get('playerApi');
+  var playerProto = router.get('playerProto');
+  var playerAddr = router.get('playerAddr');
+  var playerPort = router.get('playerPort');
+  var playerApi = router.get('playerApi');
+  var playerUrl = router.get('playerUrl');
 
-  var dataDir = app.get('dataDir');
-  var mediaDir = app.get('mediaDir');
+  // redirects
+  router.get("/player", function(req, res){
+    res.redirect(playerApi+"/player");
+  });
+  router.get(playerApi+"/player", function(req, res){
+    res.redirect(playerApi+"/player/info");
+  });
+  router.get("/player/info", function(req, res){
+    res.redirect(playerApi+"/player/info");
+  });
+
 
   // the player
-  app.get("/player", function(req, res) {
-    if (DEBUG) console.log("player entry requested");
+  router.get(playerApi+"/player/info", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/info");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
+    var respEndpoints = {
+        endpoints: [
+            {
+              shortcut: 'info',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/info',
+              description: 'the root entry of the mp3 player API'
+            },
+            {
+              shortcut: 'play',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/play',
+              description: 'play a given mp3 file'
+            },
+            {
+              shortcut: 'stop',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/stop',
+              description: 'stop playing - only available in case a file is played'
+            },
+            {
+              shortcut: 'pause',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/pause',
+              description: 'pause playback - only available in case a file is played'
+            },
+            {
+              shortcut: 'skip',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/skip',
+              description: 'skip 10 seconds of played file - only available in case a file is played'
+            },
+            {
+              shortcut: 'forward',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/forward',
+              description: 'fast forward in current file'
+            },
+            {
+              shortcut: 'rewind',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/rewind',
+              description: 'rewind in current file'
+            },
+            {
+              shortcut: 'next',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/next',
+              description: 'jump to next file for currently played album - only available in case of multiple files per album'
+            },
+            {
+              shortcut: 'previous',
+              endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/prev',
+              description: 'jump to previous file of currently played album - only available in case of multiple files per album'
+            }
+        ]
+    };
+    if (TRACE) console.log(respEndpoints);
+
     if (acceptsHTML) {
       if (DEBUG) console.log("html request");
-
       res.render('player', {
           title: 'MP3 Player Startseite',
           headline: 'MP3 Player Startseite',
           subheadline: 'Willkommen',
           messagetext: 'Bitte eine Option w&auml;hlen',
-          controlheadline: 'Verfügbare Kommandos'
+          Endpoints: respEndpoints
       });
     } else {
       if (DEBUG) console.log("json request");
-      res.json({
-          response: 'REST API for the mp3 Player',
-          endpoints: [
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player', description: 'the root entry of the mp3 player API'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/play', description: 'play a given mp3 file'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/stop', description: 'stop playing - only available in case a file is played'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/pause', description: 'pause playback - only available in case a file is played'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/skip', description: 'skip 10 seconds of played file - only available in case a file is played'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/forward', description: 'fast forward in current file'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/:id/rewind', description: 'rewind in current file'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/next', description: 'jump to next file for currently played album'},
-              {endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+'/player/prev', description: 'jump to previous file of currently played album'}
-          ]
-      });
+      res.json(respEndpoints);
     }
   })
 
   // play a song, takes a filename as argument in the form of:
   //  localhost:3000/player/play?file=filename.mp3
-  app.get("/player/play", function(req, res) {
-    if (DEBUG) console.log("player play requested");
+  router.get(playerApi+"/player/:id/play", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/play");
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    if(!req.query.file) {
-      console.error("player error: no file provided - provide with ?file=filename.mp3")
+    var fileToPlay = 'UNDEF';
+    if (TRACE) console.log(req);
+
+    if(!req.query.id) {
+      console.error("player warn: no file provided")
 
       if (acceptsHTML) {
         res.render('player_error', {
           title: 'Player Fehlerseite',
-          headline: 'Player Fehler',
+          headline: 'Player Warnung',
           errorname: 'Error',
           errortext: 'No file to play provided',
           exceptionname: 'Exception',
-          exceptiontext: 'No exception',
-          controlheadline: 'Verf&uuml;gbare Kommandos'
+          exceptiontext: 'No exception'
         });
       } else {
-          res.json({response: 'error', message: 'no file provided, provide with ?file=filename'});
+          res.json({response: 'warn', message: 'no file provided'});
       }
     } else {
-      var songToPlay=req.query.file;
-      // holds the file the player shall play :-)
-      var fileToPlay = path.join('data','AudioBooks',songToPlay);
-
-      // TODO: move this into a script in modules directory so that we only deal with the routes here.
-      var player = require('play-sound')(opts = {});
       try {
-        var audio = player.play(fileToPlay, function(err){
-          if (err && !err.killed) {
-            console.error("player error: playing file " + fileToPlay);
-            if (acceptsHTML) {
-                if (DEBUG) console.log("html request");
-
-                res.render('', {
-                  title: 'Player Fehlerseite',
-                  headline: 'Player Fehler',
-                  errorname: 'Error',
-                  errortext: 'Error playing file ' + fileToPlay,
-                  exceptionname: 'Exception',
-                  exceptiontext: err.toString(),
-                  controlheadline: 'Verf&uuml;gbare Kommandos'
-                });
-            } else {
-                if (DEBUG) console.log("json request");
-                res.json({response: 'error', message: 'error playing file '+fileToPlay, exception: err.toString});
-            }
-            //throw err
-          }
-        });
-      } catch (err) {
+        // TODO implement function to start playback
+        console.log("player: playing " + fileToPlay);
+        if (acceptsHTML) {
+          res.render('player', {
+              title: 'MP3 Player Playseite',
+              headline: 'MP3 Player Playseite',
+              subheadline: 'Playing...',
+              messagetext: 'Playing file ' + fileToPlay
+          });
+        } else {
+          res.json({response: 'info', message: 'playing file '+fileToPlay});
+        }
+      } catch (ex) {
         if (acceptsHTML) {
           res.render('player_error', {
             title: 'Player Fehlerseite',
@@ -115,187 +145,167 @@ var playerRouter = function(app) {
             errorname: 'Error',
             errortext: 'Error playing file ' + fileToPlay,
             exceptionname: 'Exception',
-            exceptiontext: err.toString(),
-            controlheadline: 'Verf&uuml;gbare Kommandos'
+            exceptiontext: ex.toString()
           });
         } else {
-          res.json({response: 'error', message: 'error playing file '+fileToPlay, exception: err.toString});
+          res.json({response: 'error', message: 'error playing file '+fileToPlay, exception: ex.toString});
         }
-      }
-
-      console.log("player: playing " + fileToPlay);
-      if (acceptsHTML) {
-        res.render('player', {
-            title: 'MP3 Player Playseite',
-            headline: 'MP3 Player Playseite',
-            subheadline: 'Playing...',
-            messagetext: 'Playing file ' + fileToPlay,
-            controlheadline: 'Verfügbare Kommandos'
-        });
-      } else {
-        res.json({response: 'info', message: 'playing file '+fileToPlay});
       }
     }
   })
 
   // stop the currently played file
-  app.get("/player/stop", function(req, res) {
-    if (DEBUG) console.log("player stop requested");
+  router.get(playerApi+"/player/:id/stop", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/stop");
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    try {
-      audio.kill();
+    var fileToPlay = 'UNDEF';
+
+    if(!req.query.id) {
+      console.error("player warn: no file provided provided")
+
       if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
-        res.render('player', {
-            title: 'MP3 Player Stopeite',
-            headline: 'MP3 Player Stopseite',
-            subheadline: 'Stopping...',
-            messagetext: 'Stopped playback of ' + fileToPlay,
-            controlheadline: 'Verfügbare Kommandos'
-        });
-      } else {
-          if (DEBUG) console.log("json request");
-          res.json({response: 'info', message: 'playback of file '+fileToPlay + ' stopped'});
-      }
-    } catch (err) {
-      if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
-          headline: 'Player Fehler',
+          headline: 'Player Warnung',
           errorname: 'Error',
-          errortext: 'Error stopping file ' + fileToPlay,
+          errortext: 'No file to play provided',
           exceptionname: 'Exception',
-          exceptiontext: err.toString(),
-          controlheadline: 'Verf&uuml;gbare Kommandos'
+          exceptiontext: 'No exception'
         });
       } else {
-        if (DEBUG) console.log("json request");
-        res.json({response: 'error', message: 'error stopping playback of file '+fileToPlay, exception: err.toString});
+          res.json({response: 'warn', message: 'no file provided'});
+      }
+    } else {
+        try {
+        // TODO implement function to stop playback
+        console.log("player: stopping " + fileToPlay);
+        if (acceptsHTML) {
+          res.render('player', {
+              title: 'MP3 Player Playseite',
+              headline: 'MP3 Player Playseite',
+              subheadline: 'Playing...',
+              messagetext: 'Playing file ' + fileToPlay
+          });
+        } else {
+          res.json({response: 'info', message: 'stopping playback of file '+fileToPlay});
+        }
+      } catch (ex) {
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player_error', {
+            title: 'Player Fehlerseite',
+            headline: 'Player Fehler',
+            errorname: 'Error',
+            errortext: 'Error stopping file ' + fileToPlay,
+            exceptionname: 'Exception',
+            exceptiontext: ex.toString()
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'error', message: 'error stopping playback of file '+fileToPlay, exception: ex.toString});
+        }
       }
     }
   })
 
   // skip n number of seconds of currently played file
-  app.get("/player/skip", function(req, res) {
-      if (DEBUG) console.log("player skip requested");
-
-      // the server checks whether the client accepts html (browser) or
-      // json machine to machine communication
-      var acceptsHTML = req.accepts('html');
-      var acceptsJSON = req.accepts('json');
-
-      if(!req.query.seconds) {
-        console.error("player error: you must provide number of seconds to skip - provide with ?seconds=number of seconds")
-
-        if (acceptsHTML) {
-          res.render('player_error', {
-            title: 'Player Fehlerseite',
-            headline: 'Player Fehler',
-            errorname: 'Error',
-            errortext: 'You must provide number of seconds to skip',
-            exceptionname: 'Exception',
-            exceptiontext: 'No Exceptoin',
-            controlheadline: 'Verf&uuml;gbare Kommandos'
-          });
-        } else {
-            res.json({response: 'error', message: 'you must provide number of seconds to skip - provide with ?seconds=number of seconds'});
-        }
-      } else {
-        var numberOfSeconds = req.query.seconds;
-        try {
-          // TODO implement function to skip n seconds;
-          if (acceptsHTML) {
-            if (DEBUG) console.log("html request");
-
-            res.render('player', {
-                title: 'MP3 Player Skipeite',
-                headline: 'MP3 Player Skipseite',
-                subheadline: 'Skipping...',
-                messagetext: 'Skipped ' + numberOfSeconds + ' number of seconds',
-                controlheadline: 'Verfügbare Kommandos'
-            });
-          } else {
-            if (DEBUG) console.log("json request");
-            res.json({response: 'info', message: 'skipped '+numberOfSeconds + ' seconds'});
-          }
-        } catch (err) {
-          if (acceptsHTML) {
-            if (DEBUG) console.log("html request");
-            res.render('player_error', {
-              title: 'Player Fehlerseite',
-              headline: 'Player Fehler',
-              errorname: 'Error',
-              errortext: 'Error skipping ' + numberOfSeconds + ' in file ' + fileToPlay,
-              exceptionname: 'Exception',
-              exceptiontext: err.toString(),
-              controlheadline: 'Verf&uuml;gbare Kommandos'
-            });
-          } else {
-            if (DEBUG) console.log("json request");
-            res.json({response: 'error', message: 'error skipping '+numberOfSeconds+' seconds of file '+fileToPlay, exception: err.toString});
-          }
-        }
-      }
-  })
-
-  // play next file of current album
-  app.get("/player/next", function(req, res) {
-    if (DEBUG) console.log("player next requested");
+  router.get(playerApi+"/player/:id/skip", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/skip");
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    try {
-      // TODO implement function to jump to next file
+    var numberOfSeconds = Number(10);
+
+    if(!req.query.seconds) {
+      console.warn("warning: did not receive number of seconds provide with ?seconds=number of seconds")
+    } else {
+      numberOfSeconds = req.query.seconds;
+      if (DEBUG) console.log('numberOfSeconds to skip set to ' + numberOfSeconds);
+    }
+
+    if(!req.query.id) {
+      console.error("player warn: no file provided provided")
+
       if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
-        res.render('player', {
-            title: 'MP3 Player Jumpeite',
-            headline: 'MP3 Player Jumpseite',
-            subheadline: 'Jumping...',
-            messagetext: 'Jumping to next file of file ' + fileToPlay,
-            controlheadline: 'Verfügbare Kommandos'
-        });
-      } else {
-          if (DEBUG) console.log("json request");
-          res.json({response: 'info', message: 'jumping to next file'});
-      }
-    } catch (err) {
-      if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
-          headline: 'Player Fehler',
+          headline: 'Player Warnung',
           errorname: 'Error',
-          errortext: 'Error jumping to next file of ' + fileToPlay,
+          errortext: 'No file to play provided',
           exceptionname: 'Exception',
-          exceptiontext: err.toString(),
-          controlheadline: 'Verf&uuml;gbare Kommandos'
+          exceptiontext: 'No exception'
         });
       } else {
-        if (DEBUG) console.log("json request");
-        res.json({response: 'error', message: 'jumping to next file failed', exception: err.toString});
+          res.json({response: 'warn', message: 'no file provided'});
+      }
+    } else {
+      try {
+        // TODO implement function to skip n seconds;
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+
+          res.render('player', {
+              title: 'MP3 Player Skipeite',
+              headline: 'MP3 Player Skipseite',
+              subheadline: 'Skipping...',
+              messagetext: 'Skipped ' + numberOfSeconds + ' number of seconds'
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'info', message: 'skipped '+numberOfSeconds + ' seconds'});
+        }
+      } catch (ex) {
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player_error', {
+            title: 'Player Fehlerseite',
+            headline: 'Player Fehler',
+            errorname: 'Error',
+            errortext: 'Error skipping ' + numberOfSeconds + ' in file ' + fileToPlay,
+            exceptionname: 'Exception',
+            exceptiontext: ex.toString()
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'error', message: 'error skipping '+numberOfSeconds+' seconds of file '+fileToPlay, error: ex.toString});
+        }
       }
     }
   })
 
   // play next file of current album
-  app.get("/player/prev", function(req, res) {
-      if (DEBUG) console.log("player prev requested");
+  router.get(playerApi+"/player/:id/next", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/next");
 
-      // the server checks whether the client accepts html (browser) or
-      // json machine to machine communication
-      var acceptsHTML = req.accepts('html');
-      var acceptsJSON = req.accepts('json');
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
 
+    if(!req.query.id) {
+      console.error("player warn: no file provided provided")
+
+      if (acceptsHTML) {
+        res.render('player_error', {
+          title: 'Player Fehlerseite',
+          headline: 'Player Warnung',
+          errorname: 'Error',
+          errortext: 'No file to play provided',
+          exceptionname: 'Exception',
+          exceptiontext: 'No exception'
+        });
+      } else {
+          res.json({response: 'warn', message: 'no file provided'});
+      }
+    } else {
       try {
         // TODO implement function to jump to next file
         if (acceptsHTML) {
@@ -304,14 +314,71 @@ var playerRouter = function(app) {
               title: 'MP3 Player Jumpeite',
               headline: 'MP3 Player Jumpseite',
               subheadline: 'Jumping...',
-              messagetext: 'Jumping to previous file of file ' + fileToPlay,
-              controlheadline: 'Verfügbare Kommandos'
+              messagetext: 'Jumping to next file of file ' + fileToPlay
+          });
+        } else {
+            if (DEBUG) console.log("json request");
+            res.json({response: 'info', message: 'jumping to next file'});
+        }
+      } catch (ex) {
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player_error', {
+            title: 'Player Fehlerseite',
+            headline: 'Player Fehler',
+            errorname: 'Error',
+            errortext: 'Error jumping to next file of ' + fileToPlay,
+            exceptionname: 'Exception',
+            exceptiontext: ex.toString()
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'error', message: 'jumping to next file failed', error: ex.toString});
+        }
+      }
+    }
+  })
+
+  // play next file of current album
+  router.get(playerApi+"/player/:id/prev", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/prev");
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.query.id) {
+      console.error("player warn: no file provided provided")
+
+      if (acceptsHTML) {
+        res.render('player_error', {
+          title: 'Player Fehlerseite',
+          headline: 'Player Warnung',
+          errorname: 'Error',
+          errortext: 'No file to play provided',
+          exceptionname: 'Exception',
+          exceptiontext: 'No exception'
+        });
+      } else {
+          res.json({response: 'warn', message: 'no file provided'});
+      }
+    } else {
+      try {
+        // TODO implement function to jump to next file
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player', {
+              title: 'MP3 Player Jumpeite',
+              headline: 'MP3 Player Jumpseite',
+              subheadline: 'Jumping...',
+              messagetext: 'Jumping to previous file of file ' + fileToPlay
           });
         } else {
             if (DEBUG) console.log("json request");
             res.json({response: 'info', message: 'jumping to previous file'});
         }
-      } catch (err) {
+      } catch (ex) {
         if (acceptsHTML) {
           if (DEBUG) console.log("html request");
           res.render('player_error', {
@@ -320,99 +387,129 @@ var playerRouter = function(app) {
             errorname: 'Error',
             errortext: 'Error jumping to previous file of ' + fileToPlay,
             exceptionname: 'Exception',
-            exceptiontext: err.toString(),
-            controlheadline: 'Verf&uuml;gbare Kommandos'
+            exceptiontext: ex.toString()
           });
         } else {
           if (DEBUG) console.log("json request");
-          res.json({response: 'error', message: 'jumping to previous file failed', exception: err.toString});
+          res.json({response: 'error', message: 'jumping to previous file failed', error: ex.toString});
         }
       }
+    }
   })
 
 
   // fast forward in current file
-  app.get("/player/forward", function(req, res) {
-    if (DEBUG) console.log("player forward requested");
+  router.get(playerApi+"/player/:id/forward", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/forward");
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    try {
-      // TODO implement function to jump to next file
+    if(!req.query.id) {
+      console.error("player warn: no file provided provided")
+
       if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
-        res.render('player', {
-            title: 'MP3 Player Jumpeite',
-            headline: 'MP3 Player Jumpseite',
-            subheadline: 'Jumping...',
-            messagetext: 'Forwarding in file ' + fileToPlay,
-            controlheadline: 'Verfügbare Kommandos'
-        });
-      } else {
-        if (DEBUG) console.log("json request");
-        res.json({response: 'info', message: 'forwarding in file ' + fileToPlay});
-      }
-    } catch (err) {
-      if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
-          headline: 'Player Fehler',
+          headline: 'Player Warnung',
           errorname: 'Error',
-          errortext: 'Error forwarding in file ' + fileToPlay + ' failed',
+          errortext: 'No file to play provided',
           exceptionname: 'Exception',
-          exceptiontext: err.toString(),
-          controlheadline: 'Verf&uuml;gbare Kommandos'
+          exceptiontext: 'No exception'
         });
       } else {
-        if (DEBUG) console.log("json request");
-        res.json({response: 'error', message: 'forwarding in file ' +fileToPlay+ ' failed', exception: err.toString});
+          res.json({response: 'warn', message: 'no file provided'});
+      }
+    } else {
+      try {
+        // TODO implement function to jump to next file
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player', {
+              title: 'MP3 Player Jumpeite',
+              headline: 'MP3 Player Jumpseite',
+              subheadline: 'Jumping...',
+              messagetext: 'Forwarding in file ' + fileToPlay
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'info', message: 'forwarding in file ' + fileToPlay});
+        }
+      } catch (ex) {
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player_error', {
+            title: 'Player Fehlerseite',
+            headline: 'Player Fehler',
+            errorname: 'Error',
+            errortext: 'Error forwarding in file ' + fileToPlay + ' failed',
+            exceptionname: 'Exception',
+            exceptiontext: ex.toString()
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'error', message: 'forwarding in file ' +fileToPlay+ ' failed', error: ex.toString});
+        }
       }
     }
   })
 
   // rewind in current file
-  app.get("/player/rewind", function(req, res) {
-    if (DEBUG) console.log("player rewind requested");
+  router.get(playerApi+"/player/:id/rewind", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/rewind");
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    try {
-      // TODO implement function to jump to next file
+    if(!req.query.id) {
+      console.error("player warn: no file provided provided")
+
       if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
-        res.render('player', {
-            title: 'MP3 Player Jumpeite',
-            headline: 'MP3 Player Jumpseite',
-            subheadline: 'Jumping...',
-            messagetext: 'Rewinding in file ' + fileToPlay,
-            controlheadline: 'Verfügbare Kommandos'
-        });
-      } else {
-        if (DEBUG) console.log("json request");
-        res.json({response: 'info', message: 'rewinding in file ' + fileToPlay});
-      }
-    } catch (err) {
-      if (acceptsHTML) {
-        if (DEBUG) console.log("html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
-          headline: 'Player Fehler',
+          headline: 'Player Warnung',
           errorname: 'Error',
-          errortext: 'Error rewinding in file ' + fileToPlay + ' failed',
+          errortext: 'No file to play provided',
           exceptionname: 'Exception',
-          exceptiontext: err.toString(),
-          controlheadline: 'Verf&uuml;gbare Kommandos'
+          exceptiontext: 'No exception'
         });
       } else {
-        if (DEBUG) console.log("json request");
-        res.json({response: 'error', message: 'rewinding in file ' +fileToPlay+ ' failed', exception: err.toString});
+          res.json({response: 'warn', message: 'no file provided'});
+      }
+    } else {
+      try {
+        // TODO implement function to jump to next file
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player', {
+              title: 'MP3 Player Jumpeite',
+              headline: 'MP3 Player Jumpseite',
+              subheadline: 'Jumping...',
+              messagetext: 'Rewinding in file ' + fileToPlay
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'info', message: 'rewinding in file ' + fileToPlay});
+        }
+      } catch (ex) {
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
+          res.render('player_error', {
+            title: 'Player Fehlerseite',
+            headline: 'Player Fehler',
+            errorname: 'Error',
+            errortext: 'Error rewinding in file ' + fileToPlay + ' failed',
+            exceptionname: 'Exception',
+            exceptiontext: ex.toString()
+          });
+        } else {
+          if (DEBUG) console.log("json request");
+          res.json({response: 'error', message: 'rewinding in file ' +fileToPlay+ ' failed', error: ex.toString});
+        }
       }
     }
   })

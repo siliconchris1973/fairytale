@@ -59,7 +59,7 @@ form(id='create_tag_form', name='addTag', method='POST', action='/api/v1/tags/ta
           div.col-1 Nr
           div.col-2 Name
           div.col-5 Pfad
-          div.col-2 Groesse
+          div.col-2 id
           div-col-1 Play
         for mediaFile in varMediaFiles
           div.row
@@ -70,9 +70,9 @@ form(id='create_tag_form', name='addTag', method='POST', action='/api/v1/tags/ta
             div.col-5
               p #{mediaFile.path}
             div.col-2
-              p #{mediaFile.size}
+              p #{mediaFile.id}
             div.col-1
-              a(href='/api/v1/player/play/'+varTagId)
+              a(href=`${playerUrl}/${mediaFile.id}/play`)
                 img.className#IdName(src="/img/audio-32.png" alt="Play")
       - }
       div.row

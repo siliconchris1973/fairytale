@@ -3,30 +3,6 @@ var fs = require('fs');
 var http = require('http');
 var tagController = require('../modules/tagController.js');
 
-var rfidTagFile = 'NOTAG';
-var rfidTagFileSuffix = 'json';
-
-//multer object creation
-var multer  = require('multer')
-var audioStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, '/Media/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname)
-  }
-})
-var coverStorage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, '/Cover/')
-    },
-    filename: function (req, file, cb) {
-        cb(null, file.originalname)
-  }
-})
-var uploadAudio = multer({ storage: audioStorage });
-var uploadCover = multer({ storage: coverStorage });
-
 var tagRouter = function(app) {
   // get global app variables
   var DEBUG = app.get('DEBUG');
@@ -37,8 +13,14 @@ var tagRouter = function(app) {
   var svrPort = app.get('svrPort');
   var svrApi = app.get('svrApi');
 
+  var playerProto = app.get('playerProto');
+  var playerAddr = app.get('playerAddr');
+  var playerPort = app.get('playerPort');
+  var playerApi = app.get('playerApi');
+  var playerUrl = app.get('playerUrl');
+  var genPlayerUrl = playerProto + '://' + playerAddr + ':' + playerPort + playerApi + playerUrl;
+
   var rfidTagDir = app.get('rfidTagDir')
-  var listOfTags = '';
 
   app.get("/tags", function(req, res){
     res.redirect(svrApi+"/tags");
@@ -113,7 +95,7 @@ var tagRouter = function(app) {
 
     if (acceptsHTML) {
       if (DEBUG) console.log("html request");
-      res.render('tag_form', {
+      res.render('create_tag', {
           title: 'Neues RFID Tag registrieren',
           subheadline: 'Neues RFID Tag registrieren',
           messagetext: 'Bitte Daten f&uuml;r das neue Tag eintragen und Dateien ausw&auml;hlen',
@@ -128,6 +110,9 @@ var tagRouter = function(app) {
   app.get(svrApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/:id called');
 
+    var rfidTagFile = 'NOTAG';
+    var rfidTagFileSuffix = 'json';
+
     /* This is how a typical rfid tag with data to an audiobook looks like
     {
       "tagdata":
@@ -141,9 +126,18 @@ var tagRouter = function(app) {
       "MediaType": "Hoerspiel"
       "MediaGenre": "Kindergeschichte",
       "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
+      "TrackCount":
+        [
+          {
+            "disk": "1", "tracks": "1"
+          }
+        ],
+      "DiskCount": "1",
       "MediaFileName":[
         {
+          "disk": "1",
           "part": "1",
+          "id": "75EDB4-d1:p1",
           "name": "Frederick.mp3",
           "path": "Media/Disk_1/Frederick.mp2",
           "size": "24M"
@@ -231,6 +225,8 @@ var tagRouter = function(app) {
                 varMediaDescription: obj.MediaDescription,
                 varMediaFiles: obj.MediaFiles,
                 varMediaPictures: obj.MediaPicture,
+                varDiskCount: obj.DiskCount,
+                playerUrl: genPlayerUrl,
                 varMediaPictureDefined: mediaPictureDefined,
                 varMediaFilesDefined: mediaFilesDefined
             });
@@ -324,9 +320,7 @@ var tagRouter = function(app) {
         TagPreTag: TagPreTag,
         TagId: TagId
       };
-      /*
-      jsonContent = '{\n  \'MediaTitle\': \'' + MediaTitle + '\',\n  \'MediaDescription\': \'' + Description + '\',\n  \'MediaFileName\': \'' + MediaFile + '\',\n  \'MediaPicture\': \'' + CoverFile + '\',\n  \'TagRawData\': \'' + TagRawData + '\',\n  \'TagChecksum\': \'' + TagChecksum + '\',\n  \'TagPreTag\': \'' + TagPreTag + '\',\n  \'TagId\': \'' + TagId + '\'\n}';
-      */
+
       if (TRACE) console.log('This is the created json:\n' + jsonContent);
 
       if (acceptsHTML) {
@@ -348,7 +342,7 @@ var tagRouter = function(app) {
   })
 
   // target of the create a new rfid tag form
-  app.post(svrApi+"/tags/tag/:id/picture", uploadCover.single('CoverFile'), function(req, res) {
+  app.post(svrApi+"/tags/tag/:id/picture", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id/picture  called');
 
     // the server checks whether the client accepts html (browser) or
