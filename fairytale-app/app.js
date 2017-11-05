@@ -59,7 +59,7 @@ app.set('rfidTagDir', '/data/TagDB');
 app.set('MediaDir', '/data/Media');
 
 // settings for the template engine pug
-app.set('views', express.static('/views'));
+app.set('/views', express.static('/views'));
 app.set('view engine', 'pug');
 
 
