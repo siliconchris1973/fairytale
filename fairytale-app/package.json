@@ -31,6 +31,7 @@
     "pug": "latest",
     "multer": "latest",
     "jsonfile": "latest",
+    "node-cmd": "latest",
     "request": "latest"
   },
   "bugs": {
