@@ -11,9 +11,9 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // these set static exposures for media files and pictures and such
 app.use(express.static('static'));
-app.use(express.static('/data'));
 app.use(express.static('modules'));
 app.use(express.static('views'));
+app.use(express.static('/data'));
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
@@ -52,14 +52,14 @@ app.set('DEBUG', true);
 // plus another also very ugly TRACE switch
 app.set('TRACE', true);
 
-app.set('/img', express.static('Static/img'));
+app.set('/img', express.static('static/img'));
 
 // this is the path to the file system where the rfid tags are stored
 app.set('rfidTagDir', '/data/TagDB');
 app.set('MediaDir', '/data/Media');
 
 // settings for the template engine pug
-app.set('/views', express.static('/Views'));
+app.set('views', express.static('/views'));
 app.set('view engine', 'pug');
 
 
