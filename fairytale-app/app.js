@@ -11,7 +11,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 
 // these set static exposures for media files and pictures and such
 app.use(express.static('Static'));
-app.use(express.static('../data'));
+app.use(express.static('/data'));
 app.use(express.static('modules'));
 
 // these settings are made available via app.get('variable name')
@@ -54,7 +54,8 @@ app.set('TRACE', true);
 app.set('/img', express.static('Static/img'));
 
 // this is the path to the file system where the rfid tags are stored
-app.set('rfidTagDir', '../data/TagDB');
+app.set('rfidTagDir', '/data/TagDB');
+app.set('MediaDir', '/data/Media');
 
 // settings for the template engine pug
 app.set('/views', express.static('/Views'));
