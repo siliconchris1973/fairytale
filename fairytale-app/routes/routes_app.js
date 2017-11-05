@@ -50,8 +50,21 @@ var appRouter = function(app) {
       });
     } else {
       if (DEBUG) console.log("json request");
-      res.redirect(svrApi+'/endpoints');
-      //res.json({respEndpoints});
+      var respEndpoints = {
+        response: 'REST API Endpoints available',
+        endpoints: [
+          {endpoint: svrAddr+':'+svrPort+svrApi+'/', description: 'info'},
+          {endpoint: svrAddr+':'+svrPort+svrApi+'/status', description: 'status'},
+          {endpoint: svrAddr+':'+svrPort+svrApi+'/health', description: 'main app health port'},
+          {endpoint: svrAddr+':'+svrPort+svrApi+'/tags', description: 'rfid/nfc tags db'},
+          {endpoint: playerAddr+':'+playerPort+playerApi+playerUrl, description: 'mp3 player interface'},
+          {endpoint: playerAddr+':'+playerPort+playerApi+'/health', description: 'mp3 player health port'},
+          {endpoint: rfidReaderAddr+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, description: 'rfid reader interface'},
+          {endpoint: rfidReaderAddr+':'+rfidReaderPort+rfidReaderApi+'/health', description: 'rfid reader health port'},
+          {endpoint: fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl, description: 'file upload form'},
+          {endpoint: fileServiceAddr+':'+fileServicePort+fileServiceApi+'/health', description: 'fileService health port'},
+        ]};
+      res.json(respEndpoints);
     }
   });
 
@@ -111,14 +124,15 @@ var appRouter = function(app) {
       });
     } else {
       if (DEBUG) console.log("json request");
-      res.json({response: 'status information requested',
-                  endpoints: [
-                      {endpoint: svrAddr+':'+svrPort+svrApi+'/tags', status: 'ok'},
-                      {endpoint: rfidReaderAddr+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, status: 'ok'},
-                      {endpoint: fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl, status: 'ok'},
-                      {endpoint: playerAddr+':'+playerPort+playerApi+playerUrl, status: 'ok'}
-                  ]
-      });
+      var respEndpoint ={
+        response: 'status information requested',
+        endpoints: [
+          {endpoint: svrAddr+':'+svrPort+svrApi+'/tags', status: 'ok'},
+          {endpoint: rfidReaderAddr+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, status: 'ok'},
+          {endpoint: fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl, status: 'ok'},
+          {endpoint: playerAddr+':'+playerPort+playerApi+playerUrl, status: 'ok'}
+      ]};
+      res.json(respEndpoint);
     }
   });
 }

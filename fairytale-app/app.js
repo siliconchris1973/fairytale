@@ -13,6 +13,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('Static'));
 app.use(express.static('/data'));
 app.use(express.static('modules'));
+app.use(express.static('Views'));
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
