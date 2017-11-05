@@ -31,7 +31,7 @@
     "pug": "latest",
     "multer": "latest",
     "jsonfile": "latest",
-    "requst": "latest"
+    "request": "latest"
   },
   "bugs": {
     "url": "https://github.com/siliconchris1973/fairytale/issues"
