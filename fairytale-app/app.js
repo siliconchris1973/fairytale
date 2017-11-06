@@ -54,8 +54,9 @@ app.set('TRACE', true);
 
 app.set('/img', express.static('/static/img'));
 app.set('/Media', express.static('/data/Media'));
+app.set('/TagDB', express.static('/data/TagDB'));
 
-// this is the path to the file system where the rfid tags are stored
+// this is the path to the file system where the rfid tags and Media Files are stored
 app.set('rfidTagDir', '/data/TagDB');
 app.set('MediaDir', '/data/Media');
 
