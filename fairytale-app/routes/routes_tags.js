@@ -202,7 +202,7 @@ var tagRouter = function(app) {
               errorname: 'Error',
               errortext: 'Fehler beim abrufen der Daten f&uuml;r ' + tag,
               exceptionname: 'Exception',
-              exceptiontext: errObj.toString()
+              exceptiontext: errObj.Error.toString()
             });
           } else {
             var obj = result;
