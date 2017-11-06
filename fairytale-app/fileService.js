@@ -6,7 +6,7 @@ var express = require('express'),
 var path = require('path');
 var fs = require('fs');
 var multer = require('multer');
-
+var os = require('os');
 
 // using ejs for the view engine
 var ejs = require('ejs')
@@ -18,7 +18,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // these set static exposures for media files and pictures and such
-app.use(express.static('Static'));
+app.use(express.static('static'));
 app.use(express.static('../data'));
 app.use(express.static('modules'));
 
@@ -27,7 +27,7 @@ app.use(express.static('modules'));
 
 // set server address
 app.set('svrProto', 'http');
-app.set('svrAddr', 'DeepThought');
+app.set('svrAddr', os.hostname());
 app.set('svrPort', Number(3001));
 app.set('svrApi', '/api/v1');
 
@@ -36,9 +36,9 @@ app.set('DEBUG', true);
 // plus another also very ugly TRACE switch
 app.set('TRACE', true);
 
-app.set('/img', express.static('Static/img'));
-app.set('/Media', express.static('data/Media'));
-app.set('/Cover', express.static('data/Cover'));
+app.set('/img', express.static('static/img'));
+app.set('/Media', express.static('../data/Media'));
+app.set('/Cover', express.static('../data/Cover'));
 
 
 // get global app variables

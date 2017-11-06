@@ -2,11 +2,6 @@ extends index.pug
 
 block content
   div.container
-    div.content
-      div.page-body
-        h5!= subheadline
-        p!= messagetext
-        
-    div.content
-      div.page-body
-        include tag_form.pug
+    h5!= subheadline
+    p!= messagetext
+    include tag_form.pug
