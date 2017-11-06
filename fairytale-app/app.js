@@ -52,7 +52,7 @@ app.set('DEBUG', true);
 // plus another also very ugly TRACE switch
 app.set('TRACE', true);
 
-app.set('/img', express.static('static/img'));
+app.set('/img', express.static('/static/img'));
 
 // this is the path to the file system where the rfid tags are stored
 app.set('rfidTagDir', '/data/TagDB');
