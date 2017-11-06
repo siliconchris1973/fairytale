@@ -101,8 +101,8 @@ form(id='create_tag_form', name='addTag', method='POST', action='/api/v1/tags/ta
             div.col-5
               p #{pictureFile.path}
             div.col-2
-              a(href='/Cover/normal/'+pictureFile.name, target='_blank')
-                img.className#IdName(src='/Cover/icon/'+pictureFile.name alt="Picture")
+              a(href=`/Media/${varTagId}/Cover/normal/${pictureFile.name}`, target='_blank')
+                img.className#IdName(src=`/Media/${varTagId}/Cover/icon/${pictureFile.name}` alt="Picture")
       - }
       div.row
         div.col

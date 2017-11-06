@@ -12,6 +12,7 @@ var tagRouter = function(app) {
   var svrAddr = app.get('svrAddr');
   var svrPort = app.get('svrPort');
   var svrApi = app.get('svrApi');
+  var genServerUrl = svrProto + '://' + svrAddr + ':' + svrPort + svrApi;
 
   var playerProto = app.get('playerProto');
   var playerAddr = app.get('playerAddr');
@@ -226,6 +227,7 @@ var tagRouter = function(app) {
                 varMediaFiles: obj.MediaFiles,
                 varMediaPictures: obj.MediaPicture,
                 varDiskCount: obj.DiskCount,
+                serverUrl: genServerUrl,
                 playerUrl: genPlayerUrl,
                 varMediaPictureDefined: mediaPictureDefined,
                 varMediaFilesDefined: mediaFilesDefined
