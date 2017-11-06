@@ -28,6 +28,7 @@
     "body-parser": "latest",
     "stylus": "latest",
     "nib": "latest",
+    "ejs": "latest",
     "mongoose": "latest",
     "pug": "latest",
     "multer": "latest",

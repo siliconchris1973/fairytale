@@ -81,8 +81,16 @@ app.get('/', function(req, res) {
   // json (machine to machine) communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
-
-	res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
+  if (acceptsHTML) {
+    res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
+  } else {
+    if (DEBUG) console.log("json request");
+    res.json({
+      response: 'unavailable',
+      status: 415,
+      message: 'this endpoint is not available for json requests'
+    });
+  }
 })
 
 // redirect to upload form
@@ -92,8 +100,16 @@ app.get(svrApi+'/', function(req, res) {
   // json (machine to machine) communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
-
-	res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
+  if (acceptsHTML) {
+    res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
+  } else {
+    if (DEBUG) console.log("json request");
+    res.json({
+      response: 'unavailable',
+      status: 415,
+      message: 'this endpoint is not available for json requests'
+    });
+  }
 })
 
 // get the file upload form
@@ -103,8 +119,16 @@ app.get(svrApi+'/file', function(req, res) {
   // json (machine to machine) communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
-
-	res.render('fileform', { message: 'choose a file' });
+  if (acceptsHTML) {
+    res.render('fileform', { message: 'choose a file' });
+  } else {
+    if (DEBUG) console.log("json request");
+    res.json({
+      response: 'unavailable',
+      status: 415,
+      message: 'this endpoint is not available for json requests'
+    });
+  }
 })
 
 // post the new file from the upload form
@@ -140,7 +164,11 @@ app.post(svrApi+'/file', function(req, res) {
               var message = 'could not upload '+filename+' to '+targetTmpDir+'.' + err.toString()
               res.render('fileform', { message: message });
             } else {
-              responseContent = '\'response\': \'error\', \'message\': \'could not upload file ' + filename + ' to directory ' + tmpTargetDir + '\', \'error\': ' + err.toString();
+              responseContent = {
+                response: 'error',
+                message: 'could not upload file ' + filename + ' to directory ' + tmpTargetDir,
+                error: err.toString()
+              };
               return(responseContent);
               /*
               res.json({
@@ -156,7 +184,10 @@ app.post(svrApi+'/file', function(req, res) {
               var message = 'File '+filename+' is uploaded to ' + targetTmpDir;
               res.render('fileform', { message: message });
             } else {
-              responseContent = '\'response\': \'success\', \'message\': \'file ' + filename + ' uploaded to directory ' + tmpTargetDir + '\'';
+              responseContent = {
+                response: 'success',
+                message: 'file ' + filename + ' uploaded to directory ' + tmpTargetDir
+              };
               return(responseContent);
               /*
               res.json({
@@ -173,7 +204,11 @@ app.post(svrApi+'/file', function(req, res) {
           var message = 'There was an exception while uploading file '+filename+' to '+targetTmpDir+' - exception: ' + ex.toString();
           res.render('fileform', { message: message });
         } else {
-          responseContent = '\'response\': \'error\', \'message\': \'exception while uploading file ' + filename + ' to directory ' + tmpTargetDir + '\', \'error\': ' + ex.toString();
+          responseContent = {
+            response: 'error',
+            message: 'exception while uploading file ' + filename + ' to directory ' + tmpTargetDir,
+            error: ex.toString()
+          };
           return(responseContent);
           /*
           res.json({
@@ -190,7 +225,10 @@ app.post(svrApi+'/file', function(req, res) {
         var message = 'File is not valid - not uploaded';
         res.render('fileform', { message: message });
       } else {
-        responseContent = '\'response\': \'warning\', \'message\': \'file ' + filename + ' is not an image - not uploaded';
+        responseContent = {
+          response: 'warning',
+          message: 'file ' + filename + ' is not an image - not uploaded'
+        };
         return(responseContent);
         /*
         res.json({
@@ -205,5 +243,5 @@ app.post(svrApi+'/file', function(req, res) {
 
 // start the server
 var server = app.listen(port, function () {
-  console.log("fileService listening on %s://%s:%s...", svrProto, svrAddr, svrPort);
+  console.log("fileService listening on %s://%s:%s with API on %s...", svrProto, svrAddr, svrPort, svrApi);
 });
