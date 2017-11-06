@@ -194,6 +194,7 @@ var tagRouter = function(app) {
         if (DEBUG) console.log("html request");
         tagController.getTagData(app, tag, function(err, result) {
           if (err) {
+            var errObj = err;
             console.log(err);
             res.render('tags_error', {
               title: 'RFID Tag Fehlerseite',
@@ -201,7 +202,7 @@ var tagRouter = function(app) {
               errorname: 'Error',
               errortext: 'Fehler beim abrufen der Daten f&uuml;r ' + tag,
               exceptionname: 'Exception',
-              exceptiontext: err.toString()
+              exceptiontext: errObj.toString()
             });
           } else {
             var obj = result;
