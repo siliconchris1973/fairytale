@@ -4,6 +4,7 @@ var express = require('express'),
   stylus = require('stylus'),
   nib = require('nib');
 
+// get the hostname of the server we run on
 var os = require('os');
 // how do we handle requests and parse the request body
 var bodyParser = require("body-parser");
@@ -14,7 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('static'));
 app.use(express.static('modules'));
 app.use(express.static('views'));
-app.use(express.static('/data'));
+app.use(express.static('../data'));
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
@@ -54,8 +55,8 @@ app.set('DEBUG', true);
 app.set('TRACE', true);
 
 app.set('/img', express.static('/static/img'));
-app.set('/Media', express.static('/data/Media'));
-app.set('/TagDB', express.static('/data/TagDB'));
+app.set('/Media', express.static('../data/Media'));
+app.set('/TagDB', express.static('../data/TagDB'));
 
 // this is the path to the file system where the rfid tags and Media Files are stored
 app.set('rfidTagDir', '/data/TagDB');
