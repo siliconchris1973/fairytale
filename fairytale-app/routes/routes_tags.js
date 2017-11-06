@@ -24,14 +24,60 @@ var tagRouter = function(app) {
   var rfidTagDir = app.get('rfidTagDir')
 
   app.get("/tags", function(req, res){
-    res.redirect(svrApi+"/tags");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if (acceptsHTML) {
+      res.redirect(svrApi+"/tags");
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json(
+        {
+          response: 'unavailable',
+          status: 415,
+          message: 'this endpoint is not available for json requests'
+        });
+    }
   });
   app.get("/tags/tag/:id", function(req, res){
-    res.redirect(svrApi+"/tags/tag/:id");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if (acceptsHTML) {
+      res.redirect(svrApi+"/tags/tag/:id");
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json(
+        {
+          response: 'unavailable',
+          status: 415,
+          message: 'this endpoint is not available for json requests'
+        });
+    }
   });
   app.get("/tags/tag/create", function(req, res){
-    res.redirect(svrApi+"/tags/tag/create");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if (acceptsHTML) {
+      res.redirect(svrApi+"/tags/tag/create");
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json(
+        {
+          response: 'unavailable',
+          status: 415,
+          message: 'this endpoint is not available for json requests'
+        });
+    }
   });
+
 
   // get the listing of all stored rfid tags
   app.get(svrApi+"/tags", function(req, res) {
@@ -77,7 +123,9 @@ var tagRouter = function(app) {
         } else {
           res.json({
               info: {
-                response: 'info endpoint to tags API',
+                response: 'info',
+                status: 200,
+                message: 'endpoint to tags API',
                 endpoints: result
               }
           });
@@ -103,7 +151,12 @@ var tagRouter = function(app) {
       });
     } else {
       if (DEBUG) console.log("json request");
-      res.json({response: 'unavailable', message: 'this endpoint is not available for json requests'});
+      res.json(
+        {
+          response: 'unavailable',
+          status: 415,
+          message: 'this endpoint is not available for json requests'
+        });
     }
   });
 
@@ -175,6 +228,7 @@ var tagRouter = function(app) {
       } else {
         res.json({
             response: 'error',
+            status: 400,
             message: 'no tag identifier provided'
         });
       }
@@ -195,14 +249,14 @@ var tagRouter = function(app) {
         tagController.getTagData(app, tag, function(err, result) {
           if (err) {
             var errObj = err;
-            console.log(err);
+            console.error(errObj);
             res.render('tags_error', {
               title: 'RFID Tag Fehlerseite',
               headline: 'RFID Tag Fehler',
               errorname: 'Error',
               errortext: 'Fehler beim abrufen der Daten f&uuml;r ' + tag,
               exceptionname: 'Exception',
-              exceptiontext: errObj.Error.toString()
+              exceptiontext: errObj.error
             });
           } else {
             var obj = result;
@@ -241,10 +295,12 @@ var tagRouter = function(app) {
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
         tagController.getTagData(app, tag, function(err, result) {
           if (err) {
-            console.log(err);
-            res.send(err.toString());
+            var errObj = err;
+            console.error(errObj);
+            res.json(errObj);
           } else {
             var obj = result;
+            if (TRACE) console.log(obj);
             res.json(obj);
           }
         });
