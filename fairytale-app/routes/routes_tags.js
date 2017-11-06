@@ -188,12 +188,9 @@ var tagRouter = function(app) {
       //    browser means we'll need to send html
       //    machine means we'll send a json structure
       if (acceptsHTML) {
-        // these two vars are needed for the form rendering engine pug to
-        // determine, whether or not to enter the each loop within the form for
-        // the number of elements - if there are files available, this variable
-        // is set to 1
-        var mediaFilesDefined=0;
-        var mediaPictureDefined=0;
+        var pictureCount=0;
+        var trackCount=0;
+
         if (DEBUG) console.log("html request");
         tagController.getTagData(app, tag, function(err, result) {
           if (err) {
@@ -210,8 +207,12 @@ var tagRouter = function(app) {
             var obj = result;
             if (DEBUG) console.log('providing data to form');
             if (TRACE) console.log(obj);
-            if (obj.MediaFiles.length > 0) mediaFilesDefined=1;
-            if (obj.MediaPicture.length > 0) mediaPictureDefined=1;
+            if (obj.MediaFiles.length > 0) {
+              trackCount = obj.MediaFiles.length;
+            }
+            if (obj.MediaPicture.length > 0) {
+              pictureCount = obj.MediaPicture.length;
+            }
             res.render('showtag', {
                 title: 'RFID Tag Datenseite',
                 headline: 'RFID Tag Daten',
@@ -225,12 +226,12 @@ var tagRouter = function(app) {
                 varMediaGenre: obj.MediaGenre,
                 varMediaDescription: obj.MediaDescription,
                 varMediaFiles: obj.MediaFiles,
-                varMediaPictures: obj.MediaPicture,
                 varDiskCount: obj.DiskCount,
+                varTrackCount: trackCount,
+                varMediaPictures: obj.MediaPicture,
+                varPictureCount: pictureCount,
                 serverUrl: genServerUrl,
-                playerUrl: genPlayerUrl,
-                varMediaPictureDefined: mediaPictureDefined,
-                varMediaFilesDefined: mediaFilesDefined
+                playerUrl: genPlayerUrl
             });
           }
         });

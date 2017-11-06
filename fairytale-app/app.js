@@ -4,6 +4,7 @@ var express = require('express'),
   stylus = require('stylus'),
   nib = require('nib');
 
+var os = require('os');
 // how do we handle requests and parse the request body
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
@@ -20,28 +21,28 @@ app.use(express.static('/data'));
 
 // set server address
 app.set('svrProto', 'http');
-app.set('svrAddr', 'DeepThought');
+app.set('svrAddr', os.hostname());
 app.set('svrPort', Number(3000));
 app.set('svrApi', '/api/v1');
 app.set('svrUrl', '/tags');
 
 // this is for the second node.js app, that does the actual file uploading
 app.set('fileServiceProto', 'http');
-app.set('fileServiceAddr', 'DeepThought');
+app.set('fileServiceAddr', os.hostname());
 app.set('fileServicePort', Number(3001));
 app.set('fileServiceApi', '/api/v1');
 app.set('fileServiceUrl', '/file');
 
 // this is for the thrid node.js app, that does the actual audio playback
 app.set('playerProto', 'http');
-app.set('playerAddr', 'DeepThought');
+app.set('playerAddr', os.hostname());
 app.set('playerPort', Number(3002));
 app.set('playerApi', '/api/v1');
 app.set('playerUrl', '/player');
 
 // this is for the 4th node.js app, that does the actual audio playback
 app.set('rfidReaderProto', 'http');
-app.set('rfidReaderAddr', 'DeepThought');
+app.set('rfidReaderAddr', os.hostname());
 app.set('rfidReaderPort', Number(3003));
 app.set('rfidReaderApi', '/api/v1');
 app.set('rfidReaderUrl', '/rfid');

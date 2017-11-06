@@ -53,21 +53,25 @@ form(id='create_tag_form', name='addTag', method='POST', action='/api/v1/tags/ta
     form(id='update_media_files', name='updMediaFiles', method='POST', action='/api/v1/tags/tag/'+varTagId+'/mediafile')
       div.row
         div.col-4
-          label(for='MediaFileName') Audio Dateien:
-      - if (mediaFilesDefined = 1) {
+          - if (varTrackCount == 0) {
+            label(for='MediaFileName') keine Audio Dateien
+          - } else {
+            label(for='MediaFileName') #{varTrackCount} Audio Datei(en)
+          - }
+      - if (varTrackCount > 0) {
         div.row
           div.col-1 Nr
-          div.col-2 Name
-          div.col-5 Pfad
+          div.col-3 Name
+          div.col-4 Pfad
           div.col-2 id
           div-col-1 Play
         for mediaFile in varMediaFiles
           div.row
             div.col-1
               p #{mediaFile.part}
-            div.col-2
+            div.col-3
               p #{mediaFile.name}
-            div.col-5
+            div.col-4
               p #{mediaFile.path}
             div.col-2
               p #{mediaFile.id}
@@ -85,20 +89,24 @@ form(id='create_tag_form', name='addTag', method='POST', action='/api/v1/tags/ta
     form(id='update_picture_files', name='updPictureFiles', method='POST', action='/tags/tag/'+varTagId+'/picture')
       div.row
         div.col-4
-          label(for='MediaPicture') Bilder:
-      - if (varMediaPictureDefined = 1) {
+          - if (varPictureCount == 0) {
+            label(for='MediaPicture') keine Bilder
+          - } else {
+            label(for='MediaPicture') #{varPictureCount} Bild(er)
+          - }
+      - if (varPictureCount > 0) {
         div.row
           div.col-1 Nr
-          div.col-5 Name
-          div.col-5 Pfad
+          div.col-3 Name
+          div.col-4 Pfad
           div.col-2 Bild
         for pictureFile in varMediaPictures
           div.row
             div.col-1
               p #{pictureFile.pic}
-            div.col-5
+            div.col-3
               p #{pictureFile.name}
-            div.col-5
+            div.col-4
               p #{pictureFile.path}
             div.col-2
               a(href=`/Media/${varTagId}/Cover/normal/${pictureFile.name}`, target='_blank')
