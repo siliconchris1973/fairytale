@@ -1,7 +1,7 @@
 {
   "name": "fairytale",
-  "version": "0.0.9",
-  "description": "An audiobook player with node.js, RFID reader and Raspberry Pi",
+  "version": "0.1.0",
+  "description": "An audiobook player with node.js and RFID interface for the Raspberry Pi",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -34,7 +34,9 @@
     "multer": "latest",
     "jsonfile": "latest",
     "node-cmd": "latest",
-    "request": "latest"
+    "request": "latest",
+    "mplayer": "latest",
+    "music-metadata": "latest"
   },
   "bugs": {
     "url": "https://github.com/siliconchris1973/fairytale/issues"

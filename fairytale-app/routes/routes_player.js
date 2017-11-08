@@ -9,6 +9,14 @@ var playerRouter = function(plr) {
   const playerApi = plr.get('playerApi');
   const playerUrl = plr.get('playerUrl');
 
+  const soundDir = plr.get('SoundDir');
+  const mediaDir = plr.get('MediaDir');
+  const tagDB = plr.get('TagDB');
+
+  var tagController = require('../modules/tagController.js');
+  var thePlayer = require('../modules/thePlayer.js');
+  myPlr = new thePlayer();
+
   const playerEndpoints = {
     endpoints: [
       {
@@ -60,7 +68,6 @@ var playerRouter = function(plr) {
     ]
   };
 
-  var tagController = require('../modules/tagController.js');
 
   // redirects
   plr.get("/", function(req, res){
@@ -75,7 +82,47 @@ var playerRouter = function(plr) {
   plr.get("/player/info", function(req, res){
     res.redirect(playerApi+"/player/info");
   });
+  plr.get("/player/demo", function(req, res){
+    res.redirect(playerApi+"/player/demo");
+  });
 
+  // startup sounds of player
+  plr.get(playerApi+"/player/demo", function(req, res){
+    if (DEBUG) console.log("GET::"+playerApi+"/player/demo");
+
+    // play a gong as a demo
+    var f = soundDir + '/schulglocke-3-mal.mp3';
+    myPlr.state.filename = f;
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    var responseJson = {
+      headline: 'MP3 Player API Demoseite',
+      subheadline: 'Spiele Demo Sound ' + f,
+      messagetext: 'Du solltest nun was h&ouml;ren'
+    };
+
+    res.setHeader('X-Powered-By', 'bacon');
+
+    if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
+      if (DEBUG) console.log('playing demo sound ' + f + ' with the player');
+      myPlr.playTrack();
+
+      var endObj = responseJson;
+      res.render('player_view', endObj);
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json({
+        response: 'unavailable',
+        status: 415,
+        message: 'this endpoint is not available for json requests'
+      });
+    }
+  });
 
   // the player
   plr.get(playerApi+"/player/info", function(req, res) {
@@ -103,10 +150,9 @@ var playerRouter = function(plr) {
       if (DEBUG) console.log("json request");
       res.json(playerEndpoints);
     }
-  })
+  });
 
-  // play a song, takes a filename as argument in the form of:
-  //  localhost:3000/player/play?file=filename.mp3
+
   plr.get(playerApi+"/player/:id/play", function(req, res) {
     if (DEBUG) console.log("GET::"+playerApi+"/player/:id/play");
 
@@ -147,6 +193,7 @@ var playerRouter = function(plr) {
 
       var tagFile = plr.get('rfidTagDir') + '/' + tagId + '.json';
       // check if there is a dataset available for the provided tagId
+      /*
       if (!tagController.checkTagExist(tagFile)) {
         console.error('file ' + tagFile + ' does not exist');
         var responseJson = {
@@ -162,7 +209,7 @@ var playerRouter = function(plr) {
           res.json(responseJson);
         }
       }
-
+      */
       tagController.getTagData(plr, tagId, function(err, result) {
         if (err) {
           var errObj = err;
@@ -185,15 +232,15 @@ var playerRouter = function(plr) {
           if (DEBUG) console.log('providing data to player play site');
           if (TRACE) console.log(obj);
 
-          var mediaFilesDefined=0;
-          var mediaPictureDefined=0;
-          if (obj.MediaFiles.length > 0) mediaFilesDefined=1;
-          if (obj.MediaPicture.length > 0) mediaPictureDefined=1;
-
           var trackname = 'UNDEF';
           var trackpath = 'UNDEF';
           var lastposition = 'UNDEF';
           var playcount = 'UNDEF';
+          var trackCount = 0;
+          var pictureCount = 0;
+
+          if (obj.MediaFiles.length > 0) trackCount = obj.MediaFiles.length;
+          if (obj.MediaPicture.length > 0) pictureCount = obj.MediaPicture.length;
 
           for (i in obj.MediaFiles) {
             if (obj.MediaFiles[i].id == trackId) {
@@ -206,7 +253,13 @@ var playerRouter = function(plr) {
 
           try {
             // TODO implement function to start playback
-            console.log("player: playing " + fileToPlay);
+            console.log("player: playing " + trackpath);
+
+            // play the requested file
+            var f = mediaDir + '/' + tagId + '/' + trackpath;
+            myPlr.state.filename = f;
+            myPlr.playTrack();
+
             var responseJson = {
               response: 'info',
               message: 'Spiele '+trackname+' - Track '+trackNo+' von Disk '+diskNo,
@@ -221,19 +274,20 @@ var playerRouter = function(plr) {
                 MediaFiles: obj.MediaFiles,
                 MediaPictures: obj.MediaPicture,
                 DiskCount: obj.DiskCount,
+                TrackCount: trackCount,
+                PictureCount: pictureCount,
                 TrackId: trackId,
                 TrackName: trackname,
                 TrackPath: trackpath,
                 LastPosition: lastposition,
                 PlayCount: playcount,
                 TrackNo: trackNo,
-                DiskNo: diskNo,
-                MediaPictureDefined: mediaPictureDefined,
-                MediaFilesDefined: mediaFilesDefined
+                DiskNo: diskNo
               }
             }
             if (acceptsHTML) {
-              res.render('player', responseJson);
+              var respObj = responseJson;
+              res.render('player_view', respObj);
             } else {
               res.json(responseJson);
             }
@@ -254,30 +308,44 @@ var playerRouter = function(plr) {
         }
       });
     }
-  })
+  });
 
-  // TODO stop the currently played file
-  // plr.get(playerApi+"/player/:id/stop", function(req, res) {
+  plr.get(playerApi+"/player/:id/stop", function(req, res) {
+    myPlr.stop();
+  });
+
+  plr.get(playerApi+"/player/:id/pause", function(req, res) {
+    myPlr.togglePause();
+  });
 
 
-  // TODO skip n number of seconds of currently played file
-  //plr.get(playerApi+"/player/:id/skip", function(req, res) {}
+
 
 
   // TODO play next file of current album
-  //plr.get(playerApi+"/player/:id/next", function(req, res) {}
+  //plr.get(playerApi+"/player/:id/next", function(req, res) {});
 
 
-  // TODO play next file of current album
-  //plr.get(playerApi+"/player/:id/prev", function(req, res) {}
+  // TODO play prev file of current album
+  //plr.get(playerApi+"/player/:id/prev", function(req, res) {});
 
 
-  // TODO fast forward in current file
-  //plr.get(playerApi+"/player/:id/forward", function(req, res) {}
-
-
-  // TODO rewind in current file
-  //plr.get(playerApi+"/player/:id/rewind", function(req, res) {}
+  // TODO All these do not work currently, as the player is not updating it's position
+  plr.get(playerApi+"/player/:id/skip", function(req, res) {
+    myPlr.updatePosition();
+  });
+  plr.get(playerApi+"/player/:id/forward", function(req, res) {
+    myPlr.fastForward();
+  });
+  plr.get(playerApi+"/player/:id/ff", function(req, res) {
+    myPlr.fastForward();
+  });
+  plr.get(playerApi+"/player/:id/rewind", function(req, res) {
+    myPlr.rewind();
+  });
+  plr.get(playerApi+"/player/:id/rew", function(req, res) {
+    myPlr.rewind();
+  });
 }
 
 module.exports = playerRouter;

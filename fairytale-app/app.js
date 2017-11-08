@@ -6,10 +6,12 @@ var express = require('express'),
 
 // get the hostname of the server we run on
 var os = require('os');
+
 // how do we handle requests and parse the request body
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
 
 // these set static exposures for media files and pictures and such
 app.use(express.static('static'));
@@ -19,6 +21,24 @@ app.use(express.static('../data'));
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
+// a rather ugly global DEBUG switch
+app.set('DEBUG', true);
+// plus another also very ugly TRACE switch
+app.set('TRACE', true);
+
+// access to static content, the media and tag files
+app.set('/img', express.static('/static/img'));
+app.set('/Media', express.static('../data/Media'));
+app.set('/TagDB', express.static('../data/TagDB'));
+
+// this is the path to the file system where the rfid tags and Media Files are stored
+app.set('rfidTagDir', '../data/TagDB');
+app.set('MediaDir', '../data/Media');
+
+// settings for the template engine pug
+app.set('/views', express.static('/views'));
+app.set('view engine', 'pug');
+
 
 // set server address
 app.set('svrProto', 'http');
@@ -47,24 +67,6 @@ app.set('rfidReaderAddr', os.hostname());
 app.set('rfidReaderPort', Number(3003));
 app.set('rfidReaderApi', '/api/v1');
 app.set('rfidReaderUrl', '/rfid');
-
-
-// and a rather ugly global DEBUG switch
-app.set('DEBUG', true);
-// plus another also very ugly TRACE switch
-app.set('TRACE', true);
-
-app.set('/img', express.static('/static/img'));
-app.set('/Media', express.static('../data/Media'));
-app.set('/TagDB', express.static('../data/TagDB'));
-
-// this is the path to the file system where the rfid tags and Media Files are stored
-app.set('rfidTagDir', '../data/TagDB');
-app.set('MediaDir', '../data/Media');
-
-// settings for the template engine pug
-app.set('/views', express.static('/views'));
-app.set('view engine', 'pug');
 
 
 // set the routes for different part of the application

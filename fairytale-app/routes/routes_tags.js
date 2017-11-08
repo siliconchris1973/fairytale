@@ -33,12 +33,11 @@ var tagRouter = function(app) {
       res.redirect(svrApi+"/tags");
     } else {
       if (DEBUG) console.log("json request");
-      res.json(
-        {
-          response: 'unavailable',
-          status: 415,
-          message: 'this endpoint is not available for json requests'
-        });
+      res.json({
+        response: 'unavailable',
+        status: 415,
+        message: 'this endpoint is not available for json requests'
+      });
     }
   });
   app.get("/tags/tag/:id", function(req, res){

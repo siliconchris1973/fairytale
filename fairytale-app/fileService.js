@@ -30,6 +30,7 @@ app.set('svrProto', 'http');
 app.set('svrAddr', os.hostname());
 app.set('svrPort', Number(3001));
 app.set('svrApi', '/api/v1');
+app.set('svrUrl', '/file');
 
 // and a rather ugly global DEBUG switch
 app.set('DEBUG', true);
@@ -49,16 +50,18 @@ var svrProto = app.get('svrProto');
 var svrAddr = app.get('svrAddr');
 var svrPort = app.get('svrPort');
 var svrApi = app.get('svrApi');
+var svrUrl = app.get('svrUrl');
 
 
-// this is where we store the uploaded files, prior resizing and moving to final directory
-// final directory is /data/Cover/icon .../small .../normal
-var dataDir  = '../data';
-var coverDir = '/Cover';
-var targetTmpDir  = dataDir + coverDir + '/tmp';
-var targetIconDir  = dataDir + coverDir + '/icon';
+// targetTmpDir is where we store the uploaded files,
+// prior resizing and moving to the final directories
+// final directories are /data/Cover/icon .../small .../normal
+var dataDir         = '../data';
+var coverDir        = '/Cover';
+var targetTmpDir    = dataDir + coverDir + '/tmp';
+var targetIconDir   = dataDir + coverDir + '/icon';
 var targetSmallDir  = dataDir + coverDir + '/small';
-var targetNormalDir  = dataDir + coverDir + '/normal';
+var targetNormalDir = dataDir + coverDir + '/normal';
 
 
 var MAGIC_NUMBERS = {
@@ -82,7 +85,7 @@ app.get('/', function(req, res) {
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
   if (acceptsHTML) {
-    res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
+    res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+svrUrl);
   } else {
     if (DEBUG) console.log("json request");
     res.json({
@@ -166,33 +169,33 @@ app.post(svrApi+'/file', function(req, res) {
             } else {
               responseContent = {
                 response: 'error',
-                message: 'could not upload file ' + filename + ' to directory ' + tmpTargetDir,
+                message: 'could not upload file ' + filename + ' to directory ' + targetTmpDir,
                 error: err.toString()
               };
               return(responseContent);
               /*
               res.json({
                 response: 'error',
-                message: 'could not upload ' + filename + ' to directory ' + tmpTargetDir,
+                message: 'could not upload ' + filename + ' to directory ' + targetTmpDir,
                 error: err
               });
               */
             }
           } else {
-            if (DEBUG) console.log('provided file ' + filename + ' was uploaded to ' + targetTmpDir);
+            if (DEBUG) console.log('File \'' + filename + '\' uploaded to ' + targetTmpDir);
             if (acceptsHTML) {
-              var message = 'File '+filename+' is uploaded to ' + targetTmpDir;
+              var message = 'File '+filename+' uploaded to ' + targetTmpDir;
               res.render('fileform', { message: message });
             } else {
               responseContent = {
                 response: 'success',
-                message: 'file ' + filename + ' uploaded to directory ' + tmpTargetDir
+                message: 'file ' + filename + ' uploaded to directory ' + targetTmpDir
               };
               return(responseContent);
               /*
               res.json({
                 response: 'success',
-                message: 'file ' + filename + ' uploaded to directory ' + tmpTargetDir,
+                message: 'file ' + filename + ' uploaded to directory ' + targetTmpDir,
               })
               */
             }
@@ -206,14 +209,14 @@ app.post(svrApi+'/file', function(req, res) {
         } else {
           responseContent = {
             response: 'error',
-            message: 'exception while uploading file ' + filename + ' to directory ' + tmpTargetDir,
+            message: 'exception while uploading file ' + filename + ' to directory ' + targetTmpDir,
             error: ex.toString()
           };
           return(responseContent);
           /*
           res.json({
             response: 'error',
-            message: 'exception while uploading ' + filename + ' to directory ' + tmpTargetDir,
+            message: 'exception while uploading ' + filename + ' to directory ' + targetTmpDir,
             error: ex.toString()
           })
           */
@@ -243,5 +246,5 @@ app.post(svrApi+'/file', function(req, res) {
 
 // start the server
 var server = app.listen(port, function () {
-  console.log("fileService listening on %s://%s:%s with API on %s...", svrProto, svrAddr, svrPort, svrApi);
+  console.log("fileService listening on %s://%s:%s with API on %s%s...", svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });
