@@ -1,4 +1,7 @@
 var playerRouter = function(plr) {
+  var http = require('http');
+  var path = require('path');
+
   // get global app variables
   var DEBUG = plr.get('DEBUG');
   var TRACE = plr.get('TRACE');
@@ -8,6 +11,14 @@ var playerRouter = function(plr) {
   const playerPort = plr.get('playerPort');
   const playerApi = plr.get('playerApi');
   const playerUrl = plr.get('playerUrl');
+
+  // get the REST API for the tags db - this is where we get
+  // information on tags (usually by issueing a GET to the API tags/tag/:ID) from
+  const tagDbServiceProto = plr.get('tagDbServiceProto');
+  const tagDbServiceAddr = plr.get('tagDbServiceAddr');
+  const tagDbServicePort = plr.get('tagDbServicePort');
+  const tagDbServiceApi = plr.get('tagDbServiceApi');
+  const tagDbServiceUrl = plr.get('tagDbServiceUrl');
 
   const soundDir = plr.get('SoundDir');
   const mediaDir = plr.get('MediaDir');
@@ -191,28 +202,93 @@ var playerRouter = function(plr) {
 
       if (TRACE) console.log('IDs: \n   trackId: ' + trackId + '\n   tagId: ' + tagId + '\n   subStrDiskTrack: ' +  subStrDiskTrack + '\n   diskNo: ' + diskNo + '\n   trackNo: ' + trackNo);
 
-      var tagFile = plr.get('rfidTagDir') + '/' + tagId + '.json';
-      // check if there is a dataset available for the provided tagId
-      /*
-      if (!tagController.checkTagExist(tagFile)) {
-        console.error('file ' + tagFile + ' does not exist');
-        var responseJson = {
-          response: 'Error',
-          message: 'Could not retrieve data for track with id ' + trackId,
-          status: '404 - Ressource not found',
-          error: 'File '+tagFile+' not found'
+        var options = {
+          protocol: tagDbServiceProto + ':',
+          host: tagDbServiceAddr,
+          port: Number(tagDbServicePort),
+          path: tagDbServiceApi+tagDbServiceUrl+'/tag/' + tagId,
+          family: 4,
+          headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
+          method: 'GET'
         };
-        res.statusCode = 404;
-        if (acceptsHTML) {
-          res.render('tags_error', responseJson);
-        } else {
-          res.json(responseJson);
-        }
-      }
-      */
-      tagController.getTagData(plr, tagId, function(err, result) {
-        if (err) {
-          var errObj = err;
+        if (DEBUG) console.log('sending http request to tagDbService REST api');
+        if (TRACE) console.log(options);
+
+        http.request(options, function(innerres) {
+          if (DEBUG) console.log('STATUS: ' + innerres.statusCode);
+          if (TRACE) console.log('HEADERS: ' + JSON.stringify(innerres.headers));
+          var body = '';
+
+          innerres.on('data', function(chunk){
+              body += chunk;
+          });
+
+          innerres.on('end', function(){
+            var fbResponse = JSON.parse(body);
+            if (TRACE) console.log("Got a response: ", fbResponse);
+            var obj = fbResponse;
+            if (DEBUG) console.log('providing data to player play site');
+
+            var trackname = 'UNDEF';
+            var trackpath = 'UNDEF';
+            var lastposition = 'UNDEF';
+            var playcount = 'UNDEF';
+            var trackCount = 0;
+            var pictureCount = 0;
+
+            if (obj.MediaFiles.length > 0) trackCount = obj.MediaFiles.length;
+            if (obj.MediaPicture.length > 0) pictureCount = obj.MediaPicture.length;
+
+            for (i in obj.MediaFiles) {
+              if (obj.MediaFiles[i].id == trackId) {
+                trackname = obj.MediaFiles[i].name;
+                trackpath = obj.MediaFiles[i].path;
+                lastposition = obj.MediaFiles[i].lastposition;
+                playcount = obj.MediaFiles[i].playcount;
+              }
+            }
+
+              console.log("player: playing " + trackpath);
+
+              // play the requested file
+              var f = path.join(mediaDir,tagId,trackpath);
+              if (TRACE) console.log(' file to play: ' + f);
+              myPlr.state.filename = f;
+              myPlr.playTrack();
+
+              var responseJson = {
+                response: 'info',
+                message: 'Spiele '+trackname,
+                tagdata: { tagId: obj.tagdata.TagId },
+                mediadata: {
+                  MediaTitle: obj.MediaTitle,
+                  MediaType: obj.MediaType,
+                  MediaGenre: obj.MediaGenre,
+                  MediaDescription: obj.MediaDescription,
+                  MediaFiles: obj.MediaFiles,
+                  MediaPictures: obj.MediaPicture,
+                  DiskCount: obj.DiskCount,
+                  TrackCount: trackCount,
+                  PictureCount: pictureCount,
+                  TrackId: trackId,
+                  TrackName: trackname,
+                  TrackPath: trackpath,
+                  LastPosition: lastposition,
+                  PlayCount: playcount,
+                  TrackNo: trackNo,
+                  DiskNo: diskNo
+                }
+              }
+              if (acceptsHTML) {
+                var respObj = responseJson;
+                res.render('player_view', respObj);
+              } else {
+                res.json(responseJson);
+              }
+          });
+        }).on('error', function(e){
+          res.statusCode = 500;
+          var errObj = e;
           var responseJson = {
             response: 'Error',
             message: 'Could not retrieve data for track with id ' + trackId,
@@ -227,86 +303,7 @@ var playerRouter = function(plr) {
           } else {
             res.json(responseJson);
           }
-        } else {
-          var obj = result;
-          if (DEBUG) console.log('providing data to player play site');
-          if (TRACE) console.log(obj);
-
-          var trackname = 'UNDEF';
-          var trackpath = 'UNDEF';
-          var lastposition = 'UNDEF';
-          var playcount = 'UNDEF';
-          var trackCount = 0;
-          var pictureCount = 0;
-
-          if (obj.MediaFiles.length > 0) trackCount = obj.MediaFiles.length;
-          if (obj.MediaPicture.length > 0) pictureCount = obj.MediaPicture.length;
-
-          for (i in obj.MediaFiles) {
-            if (obj.MediaFiles[i].id == trackId) {
-              trackname = obj.MediaFiles[i].name;
-              trackpath = obj.MediaFiles[i].path;
-              lastposition = obj.MediaFiles[i].lastposition;
-              playcount = obj.MediaFiles[i].playcount;
-            }
-          }
-
-          try {
-            // TODO implement function to start playback
-            console.log("player: playing " + trackpath);
-
-            // play the requested file
-            var f = mediaDir + '/' + tagId + '/' + trackpath;
-            myPlr.state.filename = f;
-            myPlr.playTrack();
-
-            var responseJson = {
-              response: 'info',
-              message: 'Spiele '+trackname+' - Track '+trackNo+' von Disk '+diskNo,
-              tagdata: {
-                tagId: obj.tagdata.TagId
-              },
-              mediadata: {
-                MediaTitle: obj.MediaTitle,
-                MediaType: obj.MediaType,
-                MediaGenre: obj.MediaGenre,
-                MediaDescription: obj.MediaDescription,
-                MediaFiles: obj.MediaFiles,
-                MediaPictures: obj.MediaPicture,
-                DiskCount: obj.DiskCount,
-                TrackCount: trackCount,
-                PictureCount: pictureCount,
-                TrackId: trackId,
-                TrackName: trackname,
-                TrackPath: trackpath,
-                LastPosition: lastposition,
-                PlayCount: playcount,
-                TrackNo: trackNo,
-                DiskNo: diskNo
-              }
-            }
-            if (acceptsHTML) {
-              var respObj = responseJson;
-              res.render('player_view', respObj);
-            } else {
-              res.json(responseJson);
-            }
-          } catch (ex) {
-            var responseJson = {
-              response: 'Error',
-              message: 'Could not play file '+fileToPlay,
-              status: '500 - internal server error',
-              error: ex.toString
-            }
-            res.statusCode = 500;
-            if (acceptsHTML) {
-              res.render('player_error', responseJson);
-            } else {
-              res.json(responseJson);
-            }
-          }
-        }
-      });
+        }).end();
     }
   });
 

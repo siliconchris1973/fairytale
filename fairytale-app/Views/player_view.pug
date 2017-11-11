@@ -3,4 +3,76 @@ extends index.pug
 block content
   div.container
     h5!= subheadline
-    p!= messagetext
+    p!= message
+    div.row
+      div.col-2 Titel
+      div.col-8  #{mediadata.MediaTitle}
+    div.row
+      div.col-2 Track Name
+      div.col-3 #{mediadata.TrackName}
+    div.row
+      div.col-2 Track Nr
+      div.col-1 #{mediadata.TrackNo}
+      div.col-2 Disk Nr
+      div.col-1 #{mediadata.DiskNo}
+    div.row
+      div.col-2 Typ
+      div.col-2 #{mediadata.MediaType}
+      div.col-1 Genre
+      div.col-2 #{mediadata.MediaGenre}
+    div.row
+      div.col-2 Beschreibung
+      div.col-8 #{mediadata.MediaDescription}
+    div.row
+      div.col-2 Anzahl Disks
+      div.col-1 #{mediadata.DiskCount}
+    - if (mediadata.TrackCount >0)
+      div.row
+        div.col-2 Anzahl Tracks
+        div.col-1 #{mediadata.TrackCount}
+
+      div.row
+        div.col-2
+        div.col-1 Teil
+        div.col-6 Name
+      for mediaFile in mediadata.MediaFiles
+        div.row
+          div.col-2
+            p
+          div.col-1
+            p #{mediaFile.part}
+          div.col-6
+            p #{mediaFile.name}
+    - else
+      div.row
+        div.col Keine Audiodateien
+    - if (mediadata.PictureCount >0)
+      div.row
+        div.col-2 Anzahl Bilder
+        div.col-1 #{mediadata.PictureCount}
+
+      div.row
+        div.col-2
+        div.col-1 Nr
+        div.col-3 Bildname
+      for pictureFile in mediadata.MediaPictures
+        div.row
+          div.col-2
+          div.col-1
+            p #{pictureFile.pic}
+          div.col-3
+            p #{pictureFile.name}
+    - else
+      div.row
+        div.col Keine Bilder
+    div.row
+      div.col-2 TrackID
+      div.col-3 #{mediadata.TrackId}
+    div.row
+      div.col-2 Dateipfad
+      div.col-8 #{mediadata.TrackPath}
+    div.row
+      div.col-2 Letzte Position
+      div.col-1 #{mediadata.LastPosition}
+      div.col-2 Abgespielt
+      div.col-1 #{mediadata.PlayCount}

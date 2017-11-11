@@ -52,6 +52,11 @@ plr.set('playerPort', Number(3002));
 plr.set('playerApi', '/api/v1');
 plr.set('playerUrl', '/player');
 
+plr.set('tagDbServiceProto', 'http');
+plr.set('tagDbServiceAddr', os.hostname());
+plr.set('tagDbServicePort', Number(3000));
+plr.set('tagDbServiceApi', '/api/v1');
+plr.set('tagDbServiceUrl', '/tags');
 
 // set the routes for different part of the application
 var playerRoutes = require('./routes/routes_player.js')(plr);
