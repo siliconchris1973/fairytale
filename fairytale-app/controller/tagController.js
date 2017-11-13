@@ -2,12 +2,9 @@ var fs = require('fs');
 var path = require('path');
 var jsonfile = require('jsonfile');
 var http = require('http');
-
 var request = require('request');
-
 var multer = require('multer');
-
-var upload = require('./fileUpload.js');
+var upload = require('../modules/fileUpload.js');
 
 var getTagList = function(app, callback){
   // get global app variables
@@ -267,11 +264,15 @@ var getTagData = function(app, tagId , callback){
   }
 }
 
-
-var getTagDataSync = function(app, tagId){
+var getTagToPlay = function(app, tagId , callback){
   // get global app variables
   var DEBUG = app.get('DEBUG');
   var TRACE = app.get('TRACE');
+
+  var svrProto = app.get('svrProto');
+  var svrAddr = app.get('svrAddr');
+  var svrPort = app.get('svrPort');
+  var svrApi = app.get('svrApi');
 
   // this is the path to the file system where the rfid tags are stored
   var rfidTagDir = app.get('rfidTagDir');
@@ -282,10 +283,73 @@ var getTagDataSync = function(app, tagId){
   var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
 
   try {
-    var obj = jsonfile.readFileSync(tagStorage, 'utf8')
-    if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
-    if (TRACE) console.log(obj);
-    return(obj);
+    jsonfile.readFile(tagStorage, function(err, result) {
+      if (err) {
+        console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
+        var errCallback = {
+          response: 'error',
+          message: 'error getting data of tag '+tagId+' from '+rfidTagDir,
+          error: err.toString()
+        };
+        callback(errCallback);
+      } else {
+        if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
+        if (TRACE) console.log(result);
+        var obj = result;
+
+        var trackId = 'UNDEF';
+        var trackName = 'UNDEF';
+        var trackPath = 'UNDEF';
+        var lastPosition = 'UNDEF';
+        var playCount = 'UNDEF';
+        var lastTrack = obj.lastTrack;
+        var subStrDiskTrack = lastTrack.substring(lastTrack.indexOf(':')+1);
+        var diskNo = subStrDiskTrack.substring(1,subStrDiskTrack.indexOf(':'));
+        var trackNo = subStrDiskTrack.substring(subStrDiskTrack.indexOf(':')+2);
+        var nextTrackId = 'NONE';
+        var prevTrackId = 'NONE';
+        if (trackId === 'UNDEF') trackId = lastTrack;
+
+        if (TRACE) console.log('Getting data for track ' + trackId);
+        // these vars will hold the next and the previos track to play, if any
+        var counter = 0;
+        for (i in obj.MediaFiles) {
+          counter++;
+          if (obj.MediaFiles[i].id == trackId) {
+            if (TRACE) console.log('currently / last played track as ' + trackId);
+            trackName = obj.MediaFiles[i].name;
+            trackPath = obj.MediaFiles[i].path;
+            lastPosition = obj.MediaFiles[i].lastposition;
+            playCount = obj.MediaFiles[i].playcount;
+          }
+        }
+        // check if there is a next file to play
+        if (nextTrackId == 'NONE' && trackNo < obj.MediaFiles.length) {
+          if (TRACE) console.log('putting next track into var');
+          nextTrackId = tagId+':d'+diskNo+':t'+(Number(trackNo)+1)
+        }
+        // check if there is a next file to play
+        if (prevTrackId == 'NONE' && trackNo > 1) {
+          if (TRACE) console.log('putting previous track into var');
+          prevTrackId = tagId+':d'+diskNo+':t'+(Number(trackNo)-1)
+        }
+        var response = {
+          tagId: tagId,
+          trackId: trackId,
+          trackNo: trackNo,
+          diskNo: diskNo,
+          mediaTitle: obj.MediaTitle,
+          trackName: trackName,
+          trackPath: trackPath,
+          lastPosition: lastPosition,
+          playCount: playCount,
+          prevTrackId: prevTrackId,
+          nextTrackId: nextTrackId
+        };
+        var respObj = response;
+        callback(null, respObj)
+      }
+    })
   } catch (ex) {
     console.error('error: reading json file for tag '+tagId+' from '+tagStorage+' failed \nerror message: ' +ex.toString());
     var errCallback = {
@@ -293,7 +357,7 @@ var getTagDataSync = function(app, tagId){
       message: 'could not read data for tag '+tagId +' from '+tagStorage,
       error: ex.toString()
     };
-    return(errCallback);
+    callback(errCallback);
   }
 }
 
@@ -305,30 +369,44 @@ var writeTagDataSync = function(app, tagId, content){
   var rfidTagDir = app.get('rfidTagDir');
   var obj = JSON.parse(content);
 
-  if (DEBUG) console.log('function writeTagData called');
+  if (DEBUG) console.log('function writeTagDataSync called');
   if (TRACE) console.log('tagId:   ' + tagId);
   if (TRACE) console.log('content: ' + content);
   if (TRACE) console.log('obj:     ' + obj);
 
   var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
 
-  try {
-    jsonfile.writeFileSync(tagStorage, obj, {spaces: 2});
-  } catch (ex) {
-    console.error('error: could not write data for tag ' + tagId + ' to file ' + tagStorage + ' - exception: ' + ex.toString());
-    var errCallback = {
-      response: 'error',
-      message: 'could not write data for tag '+tagId +' to '+tagStorage,
-      error: ex.toString()
-    };
-    return(errCallback);
-  }
-  console.log('success: data for tag '+tagId+' written to file ' + tagStorage);
-  var respCallback = {
-    reponse: 'success',
-    message: 'data for tag ' + tagId + ' written to file ' + tagStorage
-  };
-  return(respCallback);
+  jsonfile.readFile(tagStorage, function(err, result) {
+    if (err) {
+      console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
+    } else {
+      if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
+
+      var diskObj = result;
+      if (obj.hasOwnProperty('lastTrack')) {
+        if (DEBUG) console.log('got a lastTrack information ' + obj.lastTrack)
+        diskObj.lastTrack = obj.lastTrack;
+      }
+      if (obj.hasOwnProperty('position')) {
+        if (DEBUG) console.log('got a position information ' + obj.position)
+        for (i in diskObj.MediaFiles) {
+          if (diskObj.MediaFiles[i].id == lastTrack) {
+            diskObj.MediaFiles[i].lastposition = obj.position;
+          }
+        }
+      }
+      if (TRACE) console.log('this is the new json that is gonna written to disk:');
+      if (TRACE) console.log(diskObj);
+      /*
+      try {
+        jsonfile.writeFileSync(tagStorage, diskObj, {spaces: 2});
+      } catch (ex) {
+        console.error('error: could not write data for tag ' + tagId + ' to file ' + tagStorage + ' - exception: ' + ex.toString());
+      }
+      */
+      console.log('success: data for tag '+tagId+' written to file ' + tagStorage);
+    }
+  });
 }
 
 var addPictureData = function(app, tagId , picture, callback){
@@ -455,6 +533,7 @@ var uploadFile = function(app, file, callback) {
 module.exports = {
   getTagList: getTagList,
   getTagData: getTagData,
+  getTagToPlay: getTagToPlay,
   addPictureData: addPictureData,
   uploadFile: uploadFile
 }

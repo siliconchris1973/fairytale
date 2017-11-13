@@ -1,7 +1,7 @@
 var path = require('path');
 var fs = require('fs');
 var http = require('http');
-var tagController = require('../modules/tagController.js');
+var tagController = require('../controller/tagController.js');
 
 var tagRouter = function(app) {
   // get global app variables
@@ -307,6 +307,130 @@ var tagRouter = function(app) {
     }
   })
 
+  // get the the content of one stored rfid tag
+  app.get(svrApi+"/tags/playdata/:id", function(req, res) {
+    if (DEBUG) console.log('get::/tags/playdata/:id called');
+
+    var rfidTagFile = 'NOTAG';
+    var rfidTagFileSuffix = 'json';
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      console.error("rfid tag error: no tag identifier provided")
+
+      if (acceptsJSON) {
+        res.json({
+            response: 'error',
+            status: 400,
+            message: 'no tag identifier provided'
+        });
+      } else {
+        res.render('player_error', {
+          title: 'Player Fehlerseite',
+          headline: 'Interface Fehler',
+          errorname: 'Error',
+          errortext: 'Dieser Endpoint unterstützt keinen HTML-Client',
+          exceptionname: 'Exception',
+          exceptiontext: 'keine Exception aufgetreten',
+        });
+      }
+    } else {
+      var tag = req.params.id.toString().toUpperCase();
+      rfidTagFile = tag + "." + rfidTagFileSuffix;
+      if (DEBUG) console.log('data for tag ' + tag + ' requested');
+
+      if (acceptsJSON) {
+        if (DEBUG) console.log("json request");
+        // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
+        tagController.getTagToPlay(app, tag, function(err, result) {
+          if (err) {
+            var errObj = err;
+            console.error(errObj);
+            res.json(errObj);
+          } else {
+            var obj = result;
+            if (TRACE) console.log(obj);
+            res.json(obj);
+          }
+        });
+      } else {
+        res.render('player_error', {
+          title: 'Player Fehlerseite',
+          headline: 'Interface Fehler',
+          errorname: 'Error',
+          errortext: 'Dieser Endpoint unterstützt keinen HTML-Client',
+          exceptionname: 'Exception',
+          exceptiontext: 'keine Exception aufgetreten',
+        });
+      }
+    }
+  })
+  // store the current played position of the last track for the rfid tag
+  app.post(svrApi+"/tags/playdata/:id", function(req, res) {
+    if (DEBUG) console.log('post::/tags/playdata/:id called');
+
+    var rfidTagFile = 'NOTAG';
+    var rfidTagFileSuffix = 'json';
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      console.error("rfid tag error: no tag identifier provided")
+
+      if (acceptsJSON) {
+        res.json({
+            response: 'error',
+            status: 400,
+            message: 'no tag identifier provided'
+        });
+      } else {
+        res.render('player_error', {
+          title: 'Player Fehlerseite',
+          headline: 'Interface Fehler',
+          errorname: 'Error',
+          errortext: 'Dieser Endpoint unterstützt keinen HTML-Client',
+          exceptionname: 'Exception',
+          exceptiontext: 'keine Exception aufgetreten',
+        });
+      }
+    } else {
+      var tag = req.params.id.toString().toUpperCase();
+      rfidTagFile = tag + "." + rfidTagFileSuffix;
+      if (DEBUG) console.log('data for tag ' + tag + ' requested');
+
+      if (acceptsJSON) {
+        if (DEBUG) console.log("json request");
+        // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
+        tagController.writeTagDataSync(app, tag, content, function(err, result) {
+          if (err) {
+            var errObj = err;
+            console.error(errObj);
+            res.json(errObj);
+          } else {
+            var obj = result;
+            if (TRACE) console.log(obj);
+            res.json(obj);
+          }
+        });
+      } else {
+        res.render('player_error', {
+          title: 'Player Fehlerseite',
+          headline: 'Interface Fehler',
+          errorname: 'Error',
+          errortext: 'Dieser Endpoint unterstützt keinen HTML-Client',
+          exceptionname: 'Exception',
+          exceptiontext: 'keine Exception aufgetreten',
+        });
+      }
+    }
+  })
   // target of the create a new rfid tag form
   app.post(svrApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id  called');

@@ -2,14 +2,11 @@
 var MPlayer = require('mplayer');
 var _musicMetadata = require('music-metadata');
 
-var DEBUG = true;
-var TRACE = true;
-
+// This is the wrapper class that wraps the original MPlayer
+// it is controlled via the playerController.js which handles
+// playlists etc.
 class thePlayer {
   constructor(name, position) {
-    if (DEBUG) console.log('thePlayer constructor called');
-    if (TRACE) console.log('   file to play ' + name + ' / position ' + position);
-
     this.state = {
       paused: false,
       volume: 50,
@@ -21,34 +18,24 @@ class thePlayer {
 
     this.player = new MPlayer()
     this.player.on('stop', this.clear)
-    if (TRACE) console.log(this.state);
   }
 
   playTrack() {
-    if (DEBUG) console.log('thePlayer playTrack called ');
-
     //const { format, common } = await _musicMetadata.parseFile(p, { duration: true })
     this.player.openFile(this.state.filename);
-    if (TRACE) console.log('openFile called on ' + this.state.filename);
-
     this.player.volume(this.state.volume);
-    if (TRACE) console.log('volume set to ' + this.state.volume);
-
     this.player.play();
   }
 
   rewind() {
-    if (DEBUG) console.log('thePlayer rewind called ');
     this.player.seekPercent(parseFloat(this.state.progress - 5))
   }
 
   fastForward() {
-    if (DEBUG) console.log('thePlayer fastForward called ');
     this.player.seekPercent(parseFloat(this.state.progress + 5))
   }
 
   clear() {
-    if (DEBUG) console.log('thePlayer clear called ');
     this.state = {
       paused: false,
       //volume: 50,
@@ -60,33 +47,33 @@ class thePlayer {
   }
 
   updatePosition() {
-    if (DEBUG) console.log('thePlayer updatePosition called ');
-
     const p = this.player.status && this.player.status.position
     if (p) {
       this.state = {
         position: p,
-        progress: getPercent(this.state.duration, parseFloat(p))
+        //progress: getPercent(this.state.duration, parseFloat(p))
       }
     }
   }
 
+  getPosition() {
+    return(this.player.status.position);
+  }
+
   quit() {
-    if (DEBUG) console.log('thePlayer quit called ');
     exit()
   }
 
   stop() {
-    if (DEBUG) console.log('thePlayer stop called ');
+    this.updatePosition();
     this.player.stop()
   }
 
   togglePause() {
-    if (DEBUG) console.log('thePlayer togglePause called ');
-
     if (this.state.paused) {
       this.player.play()
     } else {
+      this.updatePosition();
       this.player.pause()
     }
     this.state = {
@@ -95,21 +82,18 @@ class thePlayer {
   }
 
   volumeDown() {
-    if (DEBUG) console.log('thePlayer volumeDown called ');
     const newVol = this.state.volume - 5
     this.player.volume(newVol)
     this.setState({ volume: newVol })
   }
 
   volumeUp() {
-    if (DEBUG) console.log('thePlayer volumeUp called ');
     const newVol = this.state.volume + 5
     this.player.volume(newVol)
     this.setState({ volume: newVol })
   }
 
   onSelect() {
-    if (DEBUG) console.log('thePlayer onSelect called ');
     const path = node.getPath(node) || '/';
     if (isFile(path) && isAudio(path)) {
       this.play(path)

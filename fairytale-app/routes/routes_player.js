@@ -12,21 +12,8 @@ var playerRouter = function(plr) {
   const playerApi = plr.get('playerApi');
   const playerUrl = plr.get('playerUrl');
 
-  // get the REST API for the tags db - this is where we get
-  // information on tags (usually by issueing a GET to the API tags/tag/:ID) from
-  const tagDbServiceProto = plr.get('tagDbServiceProto');
-  const tagDbServiceAddr = plr.get('tagDbServiceAddr');
-  const tagDbServicePort = plr.get('tagDbServicePort');
-  const tagDbServiceApi = plr.get('tagDbServiceApi');
-  const tagDbServiceUrl = plr.get('tagDbServiceUrl');
-
-  const soundDir = plr.get('SoundDir');
-  const mediaDir = plr.get('MediaDir');
-  const tagDB = plr.get('TagDB');
-
-  var tagController = require('../modules/tagController.js');
-  var thePlayer = require('../modules/thePlayer.js');
-  myPlr = new thePlayer();
+  //var tagController = require('../controller/tagController.js');
+  var thePlayer = require('../controller/playerController.js');
 
   const playerEndpoints = {
     endpoints: [
@@ -72,7 +59,7 @@ var playerRouter = function(plr) {
         description: 'jump to next file for currently played album'
       },
       {
-        shortcut: 'previous',
+        shortcut: 'prev',
         endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/prev',
         description: 'jump to previous file of currently played album'
       }
@@ -95,44 +82,6 @@ var playerRouter = function(plr) {
   });
   plr.get("/player/demo", function(req, res){
     res.redirect(playerApi+"/player/demo");
-  });
-
-  // startup sounds of player
-  plr.get(playerApi+"/player/demo", function(req, res){
-    if (DEBUG) console.log("GET::"+playerApi+"/player/demo");
-
-    // play a gong as a demo
-    var f = soundDir + '/schulglocke-3-mal.mp3';
-    myPlr.state.filename = f;
-
-    // the server checks whether the client accepts html (browser) or
-    // json machine to machine communication
-    var acceptsHTML = req.accepts('html');
-    var acceptsJSON = req.accepts('json');
-
-    var responseJson = {
-      headline: 'MP3 Player API Demoseite',
-      subheadline: 'Spiele Demo Sound ' + f,
-      messagetext: 'Du solltest nun was h&ouml;ren'
-    };
-
-    res.setHeader('X-Powered-By', 'bacon');
-
-    if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
-      if (DEBUG) console.log('playing demo sound ' + f + ' with the player');
-      myPlr.playTrack();
-
-      var endObj = responseJson;
-      res.render('player_view', endObj);
-    } else {
-      if (DEBUG) console.log("json request");
-      res.json({
-        response: 'unavailable',
-        status: 415,
-        message: 'this endpoint is not available for json requests'
-      });
-    }
   });
 
   // the player
@@ -172,9 +121,6 @@ var playerRouter = function(plr) {
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    var fileToPlay = 'UNDEF';
-    if (TRACE) console.log(req);
-
     if(!req.params.id) {
       var responseJson = {
         response: 'Warning',
@@ -192,156 +138,294 @@ var playerRouter = function(plr) {
         res.json(responseJson);
       }
     } else {
-      var trackId = req.params.id;
-
       // get all the necesary information on the album and the track to be played
-      var tagId = trackId.substring(0,trackId.indexOf(':'));
-      var subStrDiskTrack = trackId.substring(trackId.indexOf(':')+1);
-      var diskNo = subStrDiskTrack.substring(1,subStrDiskTrack.indexOf(':'));
-      var trackNo = subStrDiskTrack.substring(subStrDiskTrack.indexOf(':')+2);
+      var tagId = req.params.id;
 
-      if (TRACE) console.log('IDs: \n   trackId: ' + trackId + '\n   tagId: ' + tagId + '\n   subStrDiskTrack: ' +  subStrDiskTrack + '\n   diskNo: ' + diskNo + '\n   trackNo: ' + trackNo);
+      // TODO add call to playerController
+      thePlayer.play(plr, tagId);
 
-        var options = {
-          protocol: tagDbServiceProto + ':',
-          host: tagDbServiceAddr,
-          port: Number(tagDbServicePort),
-          path: tagDbServiceApi+tagDbServiceUrl+'/tag/' + tagId,
-          family: 4,
-          headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
-          method: 'GET'
-        };
-        if (DEBUG) console.log('sending http request to tagDbService REST api');
-        if (TRACE) console.log(options);
-
-        http.request(options, function(innerres) {
-          if (DEBUG) console.log('STATUS: ' + innerres.statusCode);
-          if (TRACE) console.log('HEADERS: ' + JSON.stringify(innerres.headers));
-          var body = '';
-
-          innerres.on('data', function(chunk){
-              body += chunk;
-          });
-
-          innerres.on('end', function(){
-            var fbResponse = JSON.parse(body);
-            if (TRACE) console.log("Got a response: ", fbResponse);
-            var obj = fbResponse;
-            if (DEBUG) console.log('providing data to player play site');
-
-            var trackname = 'UNDEF';
-            var trackpath = 'UNDEF';
-            var lastposition = 'UNDEF';
-            var playcount = 'UNDEF';
-            var trackCount = 0;
-            var pictureCount = 0;
-
-            if (obj.MediaFiles.length > 0) trackCount = obj.MediaFiles.length;
-            if (obj.MediaPicture.length > 0) pictureCount = obj.MediaPicture.length;
-
-            for (i in obj.MediaFiles) {
-              if (obj.MediaFiles[i].id == trackId) {
-                trackname = obj.MediaFiles[i].name;
-                trackpath = obj.MediaFiles[i].path;
-                lastposition = obj.MediaFiles[i].lastposition;
-                playcount = obj.MediaFiles[i].playcount;
-              }
-            }
-
-              console.log("player: playing " + trackpath);
-
-              // play the requested file
-              var f = path.join(mediaDir,tagId,trackpath);
-              if (TRACE) console.log(' file to play: ' + f);
-              myPlr.state.filename = f;
-              myPlr.playTrack();
-
-              var responseJson = {
-                response: 'info',
-                message: 'Spiele '+trackname,
-                tagdata: { tagId: obj.tagdata.TagId },
-                mediadata: {
-                  MediaTitle: obj.MediaTitle,
-                  MediaType: obj.MediaType,
-                  MediaGenre: obj.MediaGenre,
-                  MediaDescription: obj.MediaDescription,
-                  MediaFiles: obj.MediaFiles,
-                  MediaPictures: obj.MediaPicture,
-                  DiskCount: obj.DiskCount,
-                  TrackCount: trackCount,
-                  PictureCount: pictureCount,
-                  TrackId: trackId,
-                  TrackName: trackname,
-                  TrackPath: trackpath,
-                  LastPosition: lastposition,
-                  PlayCount: playcount,
-                  TrackNo: trackNo,
-                  DiskNo: diskNo
-                }
-              }
-              if (acceptsHTML) {
-                var respObj = responseJson;
-                res.render('player_view', respObj);
-              } else {
-                res.json(responseJson);
-              }
-          });
-        }).on('error', function(e){
-          res.statusCode = 500;
-          var errObj = e;
-          var responseJson = {
-            response: 'Error',
-            message: 'Could not retrieve data for track with id ' + trackId,
-            status: '500 - internal server error',
-            error: errObj
-          };
-          console.error(responseJson);
-
-          res.statusCode = 500;
-          if (acceptsHTML) {
-            res.render('tags_error', responseJson);
-          } else {
-            res.json(responseJson);
-          }
-        }).end();
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
     }
   });
 
   plr.get(playerApi+"/player/:id/stop", function(req, res) {
-    myPlr.stop();
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/stop");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, so nothing to stop',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to stop playback
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
   });
 
+
+  // TODO player PAUSE
   plr.get(playerApi+"/player/:id/pause", function(req, res) {
-    myPlr.togglePause();
-  });
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/pause");
 
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, so nothing to pause',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to pause playback
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
+  });
 
 
 
 
   // TODO play next file of current album
-  //plr.get(playerApi+"/player/:id/next", function(req, res) {});
+  plr.get(playerApi+"/player/:id/next", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/next");
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, can\'t play next file',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to play next
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
+  });
 
 
   // TODO play prev file of current album
-  //plr.get(playerApi+"/player/:id/prev", function(req, res) {});
+  plr.get(playerApi+"/player/:id/prev", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/prev");
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, can\'t play previos file',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to play previos file
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
+  });
 
 
   // TODO All these do not work currently, as the player is not updating it's position
   plr.get(playerApi+"/player/:id/skip", function(req, res) {
-    myPlr.updatePosition();
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/skip");
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, can\'t skip in unknown file',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to skip in file
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
   });
+
   plr.get(playerApi+"/player/:id/forward", function(req, res) {
-    myPlr.fastForward();
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/forward");
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, can\'t fast forward in unknown file',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to fast forward
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
   });
-  plr.get(playerApi+"/player/:id/ff", function(req, res) {
-    myPlr.fastForward();
-  });
+
   plr.get(playerApi+"/player/:id/rewind", function(req, res) {
-    myPlr.rewind();
-  });
-  plr.get(playerApi+"/player/:id/rew", function(req, res) {
-    myPlr.rewind();
+    if (DEBUG) console.log("GET::"+playerApi+"/player/:id/rewind");
+
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+
+    if(!req.params.id) {
+      var responseJson = {
+        response: 'Warning',
+        message: 'No ID provided, can\'t play rewind in unknown file',
+        status: '400 - Bad Request',
+        error: 'Missing ID'
+      };
+
+      console.warn(responseJson)
+
+      res.statusCode = 400;
+      if (acceptsHTML) {
+        res.render('player_error', responseJson);
+      } else {
+        res.json(responseJson);
+      }
+    } else {
+      var tagId = req.params.id;
+
+      // TODO call playerController to rewind
+
+      if (acceptsHTML) {
+        var respObj = responseJson;
+        res.render('player_view', respObj);
+      } else {
+        res.json(responseJson);
+      }
+    }
   });
 }
 
