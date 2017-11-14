@@ -8,11 +8,12 @@ var tagRouter = function(app) {
   var DEBUG = app.get('DEBUG');
   var TRACE = app.get('TRACE');
 
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-  var genServerUrl = svrProto + '://' + svrAddr + ':' + svrPort + svrApi;
+  var tagDbProtocol = app.get('tagDbProtocol');
+  var tagDbHost = app.get('tagDbHost');
+  var tagDbPort = app.get('tagDbPort');
+  var tagDbApi = app.get('tagDbApi');
+  var tagDbUrl = app.get('tagDbUrl');
+  var genServerUrl = tagDbProtocol + '://' + tagDbHost + ':' + tagDbPort + tagDbApi;
 
   var playerProto = app.get('playerProto');
   var playerAddr = app.get('playerAddr');
@@ -30,7 +31,7 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.redirect(svrApi+"/tags");
+      res.redirect(tagDbApi+"/tags");
     } else {
       if (DEBUG) console.log("json request");
       res.json({
@@ -47,7 +48,7 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.redirect(svrApi+"/tags/tag/:id");
+      res.redirect(tagDbApi+"/tags/tag/:id");
     } else {
       if (DEBUG) console.log("json request");
       res.json(
@@ -65,7 +66,7 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.redirect(svrApi+"/tags/tag/create");
+      res.redirect(tagDbApi+"/tags/tag/create");
     } else {
       if (DEBUG) console.log("json request");
       res.json(
@@ -79,7 +80,7 @@ var tagRouter = function(app) {
 
 
   // get the listing of all stored rfid tags
-  app.get(svrApi+"/tags", function(req, res) {
+  app.get(tagDbApi+"/tags", function(req, res) {
     if (DEBUG) console.log('get::/tags called');
 
     // the server checks whether the client accepts html (browser) or
@@ -134,7 +135,7 @@ var tagRouter = function(app) {
   })
 
   // the root entry shall show what could be done
-  app.get(svrApi+"/tags/tag/create", function(req, res) {
+  app.get(tagDbApi+"/tags/tag/create", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/create called');
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -160,7 +161,7 @@ var tagRouter = function(app) {
   });
 
   // get the the content of one stored rfid tag
-  app.get(svrApi+"/tags/tag/:id", function(req, res) {
+  app.get(tagDbApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/:id called');
 
     var rfidTagFile = 'NOTAG';
@@ -308,7 +309,7 @@ var tagRouter = function(app) {
   })
 
   // get the the content of one stored rfid tag
-  app.get(svrApi+"/tags/playdata/:id", function(req, res) {
+  app.get(tagDbApi+"/tags/playdata/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/playdata/:id called');
 
     var rfidTagFile = 'NOTAG';
@@ -370,7 +371,7 @@ var tagRouter = function(app) {
     }
   })
   // store the current played position of the last track for the rfid tag
-  app.post(svrApi+"/tags/playdata/:id", function(req, res) {
+  app.post(tagDbApi+"/tags/playdata/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/playdata/:id called');
 
     var rfidTagFile = 'NOTAG';
@@ -432,7 +433,7 @@ var tagRouter = function(app) {
     }
   })
   // target of the create a new rfid tag form
-  app.post(svrApi+"/tags/tag/:id", function(req, res) {
+  app.post(tagDbApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id  called');
 
     // the server checks whether the client accepts html (browser) or
@@ -525,7 +526,7 @@ var tagRouter = function(app) {
   })
 
   // target of the create a new rfid tag form
-  app.post(svrApi+"/tags/tag/:id/picture", function(req, res) {
+  app.post(tagDbApi+"/tags/tag/:id/picture", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id/picture  called');
 
     // the server checks whether the client accepts html (browser) or

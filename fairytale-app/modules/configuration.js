@@ -8,33 +8,27 @@ var path = require('path');
 
   // set server  Hostname for the main application
   var appEndpoint = {
+    AppName: 'App',
     Protocol: 'http',
     Hostname: os.hostname(),
     Port: Number(3000),
     Api: '/api/v1',
-    Url: '/tags'
+    Url: '/'
   };
 
   // http and rest api endpoint for the tag db interface
   var tagDbEndpoint = {
-    Protocol: 'http',
-    Hostname: os.hostname(),
-    Port: Number(3000),
-    Api: '/api/v1',
-    Url: '/tags'
-  };
-
-  // this is for the second node.js app, that does the actual file uploading
-  var fileServiceEndpoint = {
+    AppName: 'TagDb Service',
     Protocol: 'http',
     Hostname: os.hostname(),
     Port: Number(3001),
     Api: '/api/v1',
-    Url: '/file'
+    Url: '/tags'
   };
 
   // this is for the thrid node.js app, that does the actual audio playback
   var playerEndpoint = {
+    AppName: 'Player',
     Protocol: 'http',
     Hostname: os.hostname(),
     Port: Number(3002),
@@ -44,11 +38,22 @@ var path = require('path');
 
   // this is for the 4th node.js app, that controls the rfid reader
   var rfidReaderEndpoint = {
+    AppName: 'RFID Reader',
     Protocol: 'http',
     Hostname: os.hostname(),
     Port: Number(3003),
     Api: '/api/v1',
     Url: '/rfid'
+  };
+
+  // this is for the node.js app, that does the actual file uploading
+  var fileServiceEndpoint = {
+    AppName: 'FileService',
+    Protocol: 'http',
+    Hostname: os.hostname(),
+    Port: Number(3004),
+    Api: '/api/v1',
+    Url: '/file'
   };
 
   var directories = {

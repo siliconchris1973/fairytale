@@ -9,7 +9,7 @@ var config = require('../modules/configuration.js');
 
 // the REST API for the tags db - this is where we get
 // information on tags (usually by issueing a GET to the API tags/tag/:ID) from
-const tagDbServiceProto = config.tagDbEndpoint.Protool;
+const tagDbServiceProto = config.tagDbEndpoint.Protocol;
 const tagDbServiceAddr = config.tagDbEndpoint.Hostname;
 const tagDbServicePort = Number(config.tagDbEndpoint.Port);
 const tagDbServiceApi = config.tagDbEndpoint.Api;
@@ -21,6 +21,68 @@ const TRACE = config.debugging.TRACE;
 const soundDir = config.directories.SoundDir;
 const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
+
+
+// the http call to the tagDb rest aüi wrapped in a promise
+function httpRequest(params, postData) {
+  return new Promise(function(resolve, reject) {
+    if (DEBUG) console.log('httpRequest called against tagDbService API');
+    if (TRACE) console.log(params);
+
+    var req = http.request(params, function(innerres) {
+      // reject on bad status
+      if (innerres.statusCode < 200 || innerres.statusCode >= 300) {
+        console.error('Status Code ' +innerres.statusCode+ ' received')
+        return reject(new Error('statusCode=' + innerres.statusCode));
+
+      }
+      if (DEBUG) console.log('STATUS: ' + innerres.statusCode);
+      if (TRACE) console.log('HEADERS: ' + JSON.stringify(innerres.headers));
+      var body = [];
+
+      innerres.on('data', function(chunk){
+          body.push(chunk);
+      });
+
+      innerres.on('end', function(){
+        try {
+          body = JSON.parse(Buffer.concat(body).toString());
+        } catch (ex) {
+          var errObj = ex;
+          var responseJson = {
+            response: 'Error',
+            message: 'Could not retrieve data for tag ' + tagId,
+            status: '500 - internal server error',
+            http_code: '500',
+            error: errObj
+          };
+          console.error(responseJson);
+          reject(responseJson);
+        }
+      });
+    });
+
+    req.on('error', function(err){
+      var errObj = err;
+      var responseJson = {
+        response: 'Error',
+        message: 'Could not retrieve data for tag ' + tagId,
+        status: '500 - internal server error',
+        http_code: '500',
+        error: errObj
+      };
+      console.error(responseJson);
+      reject(responseJson);
+    });
+
+    if (postData) {
+      req.write(postData);
+    }
+
+    req.end();
+  })
+}
+
 
 // a wrapper class around the class thePlayer from file thePlayer.js
 class theOuterPlayer {
@@ -68,103 +130,71 @@ var instantiatePlayer = function(plr) {
 
 var playTrack = function(plr, tagId) {
   if (DEBUG) console.log('thePlayer playTrack called ');
-
-  // define the promise that we'll return when everything works out
-  return new Promise(function(resolve, reject){
-    // what to when called without a tagId
-    if (!tagId) {
-      var errObj = e;
-      var responseJson = {
-        response: 'Error',
-        message: 'No Tag Id provided',
-        status: '400 - client error',
-        http_code: '400',
-        error: errObj
-      };
-      console.error(responseJson);
-      return reject(responseJson);
-    }
-
-    // if ok, we'll return the resolve
-    if (DEBUG) console.log('sending http request to tagDbService REST api for tag ' + tagId);
-    // define the service endpoint to get track data for a tag
-    var options = {
-      protocol: tagDbServiceProto + ':',
-      host: tagDbServiceAddr,
-      port: Number(tagDbServicePort),
-      path: tagDbServiceApi+tagDbServiceUrl+'/playdata/' + tagId,
-      family: 4,
-      headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
-      method: 'GET'
+  /*
+  // what to when called without a tagId
+  if (!tagId) {
+    var errObj = e;
+    var responseJson = {
+      response: 'Error',
+      message: 'No Tag Id provided',
+      status: '400 - client error',
+      http_code: '400',
+      error: errObj
     };
-    if (TRACE) console.log(options);
+    console.error(responseJson);
+    return reject(responseJson);
+  }
+  */
+  var httpParams = {
+    protocol: tagDbServiceProto + ':',
+    host: tagDbServiceAddr,
+    port: Number(tagDbServicePort),
+    path: tagDbServiceApi+tagDbServiceUrl+'/playdata/' + tagId,
+    family: 4,
+    headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
+    method: 'GET'
+  };
 
+  if (DEBUG) console.log('sending http request to tagDbService REST api for tag ' + tagId);
+  httpRequest(httpParams).then(function(body) {
+    if (TRACE) console.log(body);
+    // and so on
+    var fbResponse = JSON.parse(body);
+    var obj = fbResponse;
+    if (DEBUG) console.log('providing data to player play site');
+  }).then(function(body) {
+    console.log(body);
+    // play the requested file
+    var f = path.join(mediaDir,obj.tagId,obj.trackPath);
+    if (TRACE) console.log(' file to play: ' + f);
+    myPlrStatus.setState(obj);
+    myPlr.state.filename = f;
+    myPlr.state.position = obj.lastPosition;
+    myPlr.playTrack();
+  });
 
-    http.request(options, function(innerres) {
-      if (DEBUG) console.log('STATUS: ' + innerres.statusCode);
-      if (TRACE) console.log('HEADERS: ' + JSON.stringify(innerres.headers));
-      var body = '';
-
-      innerres.on('data', function(chunk){
-          body += chunk;
-      });
-
-      innerres.on('end', function(){
-        var fbResponse = JSON.parse(body);
-        if (TRACE) console.log("Got a response: ", fbResponse);
-        var obj = fbResponse;
-        if (DEBUG) console.log('providing data to player play site');
-
-        // play the requested file
-        var f = path.join(mediaDir,obj.tagId,obj.trackPath);
-        if (TRACE) console.log(' file to play: ' + f);
-        // first set the state of our wrapper status-class
-        myPlrStatus.setState(obj);
-        // now we may set the file to play
-        myPlr.state.filename = f;
-        // and the last position within the file
-        myPlr.state.position = obj.lastPosition;
-        // and of course start the playback
-        myPlr.playTrack();
-
-        // from here on we provide the data for the response object
-        var responseJson = {
-          response: 'info',
-          message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
-          status: '200 - ok',
-          http_code: '200',
-          playerdata: {
-            tagId: obj.tagId,
-            trackId: obj.trackId,
-            mediaTitle: obj.mediaTitle,
-            trackName: obj.trackName,
-            trackPath: obj.trackPath,
-            lastPosition: obj.lastPosition,
-            playCount: obj.playCount,
-            trackNo: obj.trackNo,
-            diskNo: obj.diskNo,
-            nextTrackId: obj.nextTrackId,
-            prevTrackId: obj.prevTrackId
-          }
-        };
-      });
-    }).on('error', function(e){
-      var errObj = e;
+      /*
+      // from here on we provide the data for the response object
       var responseJson = {
-        response: 'Error',
-        message: 'Could not retrieve data for tag ' + tagId,
-        status: '500 - internal server error',
-        http_code: '500',
-        error: errObj
+        response: 'info',
+        message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
+        status: '200 - ok',
+        http_code: '200',
+        playerdata: {
+          tagId: obj.tagId,
+          trackId: obj.trackId,
+          mediaTitle: obj.mediaTitle,
+          trackName: obj.trackName,
+          trackPath: obj.trackPath,
+          lastPosition: obj.lastPosition,
+          playCount: obj.playCount,
+          trackNo: obj.trackNo,
+          diskNo: obj.diskNo,
+          nextTrackId: obj.nextTrackId,
+          prevTrackId: obj.prevTrackId
+        }
       };
-      console.error(responseJson);
-      return reject(responseJson);
-    }).end();
-
-    // in case of error or some other impediment preventing us from resolving,
-    // return the reject
-    if (err) return reject(err);
-  })
+      */
 }
 
 var rewind = function(plr, seconds) {

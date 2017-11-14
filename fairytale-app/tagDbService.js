@@ -1,6 +1,6 @@
 var express = require('express'),
   app = express(),
-  port = process.env.PORT || 3000,
+  port = process.env.PORT || 3001,
   stylus = require('stylus'),
   nib = require('nib');
 
@@ -42,17 +42,16 @@ app.set('view engine', 'pug');
 
 
 // set server address
-app.set('AppName', config.appEndpoint.AppName);
-app.set('svrProtocol', config.appEndpoint.Protocol);
-app.set('svrHost', config.appEndpoint.Hostname;
-app.set('svrPort', Number(config.appEndpoint.Port));
-app.set('svrApi', config.appEndpoint.Api);
-app.set('svrUrl', config.appEndpoint.Url);
-
+app.set('AppName', config.tagDbEndpoint.AppName);
+app.set('tagDbServiceProto', config.tagDbEndpoint.Protocol);
+app.set('tagDbServiceAddr', config.tagDbEndpoint.Hostname;
+app.set('tagDbServicePort', Number(config.tagDbEndpoint.Port));
+app.set('tagDbServiceApi', config.tagDbEndpoint.Api);
+app.set('tagDbServiceUrl', config.tagDbEndpoint.Url);
 
 
 // set the routes for different part of the application
-var appRoutes = require("./routes/routes_app.js")(app);
+var appRoutes = require("./routes/routes_tagDb.js")(app);
 
 var AppName = app.get('AppName');
 var svrProto = app.get('svrProtocol');
