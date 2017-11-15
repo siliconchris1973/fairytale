@@ -113,6 +113,7 @@ var getEndpoints = function(app) {
   return tagDbServiceEndpoints;
 };
 
+/*
 // asynchronous promised function to get a list of tags, together with
 // media title and meta data like number of disks, tracks etc.
 var getTagList = new Promise(
@@ -186,8 +187,8 @@ var getTagList = new Promise(
     }
   }
 );
+*/
 
-/*
 var getTagList = function(app, callback){
   if (DEBUG) console.log('function getTagList called');
 
@@ -257,7 +258,7 @@ var getTagList = function(app, callback){
     callback(errCallback);
   }
 }
-*/
+
 
 var checkTagExist = function(app, tagFile, callback){
   if (DEBUG) console.log('function checkTagExist called for tag ' + tagFile);

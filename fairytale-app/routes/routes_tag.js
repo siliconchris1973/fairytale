@@ -178,7 +178,7 @@ var tagRouter = function(app) {
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-
+    /* promise call
     var result = function(app) {
       tagController.getTagList
       .then(function (result){
@@ -222,6 +222,7 @@ var tagRouter = function(app) {
         };
       });
     };
+  */
   });
 
   // the root entry shall show what could be done
