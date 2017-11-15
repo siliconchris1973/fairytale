@@ -6,22 +6,72 @@ var request = require('request');
 var multer = require('multer');
 var upload = require('../modules/fileUpload.js');
 
+
+var config = require('../modules/configuration.js');
+
+// CONFIG data on the app
+const svrAppName = config.appEndpoint.AppName;
+const svrProtocol = config.appEndpoint.Protocol;
+const svrHost = config.appEndpoint.Host;
+const svrPort = Number(config.appEndpoint.Port);
+const svrApi = config.appEndpoint.Api;
+const svrUrl = config.appEndpoint.Url;
+const svrHealthUri = config.appEndpoint.HealthUri;
+const svrDescription = config.appEndpoint.Description;
+
+// CONFIG data on the file Upload Service
+const fileServiceAppName = config.fileServiceEndpoint.AppName;
+const fileServiceProtocol = config.fileServiceEndpoint.Protocol;
+const fileServiceHost = config.fileServiceEndpoint.Host;
+const fileServicePort = Number(config.fileServiceEndpoint.Port);
+const fileServiceApi = config.fileServiceEndpoint.Api;
+const fileServiceUrl = config.fileServiceEndpoint.Url;
+const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
+const fileServiceDescription = config.fileServiceEndpoint.Description;
+
+// CONFIG data on the RFID/NFC Reader Service
+const rfidReaderAppName = config.rfidReaderEndpoint.AppName;
+const rfidReaderProtocol = config.rfidReaderEndpoint.Protocol;
+const rfidReaderHost = config.rfidReaderEndpoint.Host;
+const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
+const rfidReaderApi = config.rfidReaderEndpoint.Api;
+const rfidReaderUrl = config.rfidReaderEndpoint.Url;
+const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
+const rfidReaderDescription = config.rfidReaderEndpoint.Description;
+
+// CONFIG data on the RFID/NFC Tag DB Service
+const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
+const tagDbServiceProtocol = config.tagDbServiceEndpoint.Protocol;
+const tagDbServiceHost = config.tagDbServiceEndpoint.Host;
+const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
+const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
+const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
+const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
+
+// CONFIG data on the MP3 Player
+const playerAppName = config.playerEndpoint.AppName;
+const playerProtocol = config.playerEndpoint.Protocol;
+const playerHost = config.playerEndpoint.Host;
+const playerPort = Number(config.playerEndpoint.Port);
+const playerApi = config.playerEndpoint.Api;
+const playerUrl = config.playerEndpoint.Url;
+const playerHealthUri = config.playerEndpoint.HealthUri;
+const playerDescription = config.playerEndpoint.Description;
+
+const DEBUG = config.debugging.DEBUG;
+const TRACE = config.debugging.TRACE;
+
+const soundDir = config.directories.SoundDir;
+const mediaDir = config.directories.MediaDir;
+const tagDB = config.directories.TagDB;
+var rfidTagDir = tagDB;
+
 var getTagList = function(app, callback){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-
-  var rfidTagDir = app.get('rfidTagDir');
-
   if (DEBUG) console.log('function getTagList called');
 
   try {
-    fs.readdir(rfidTagDir, function(err, items) {
+    fs.readdir(tagDB, function(err, items) {
       if (DEBUG) console.log('working on directory ' + rfidTagDir);
 
       if (err) {
@@ -58,8 +108,9 @@ var getTagList = function(app, callback){
             var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
             dirItem = {
               tag: tag,
-              endpoint: svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/tags/tag/'+tag,
-              file: items[i]
+              endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/'+tag,
+              file: items[i],
+              play: playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl+'/'+tag+'/play'
             };
 
             tagItemArray.push(dirItem);
@@ -76,7 +127,7 @@ var getTagList = function(app, callback){
       callback(null, respCallback);
     });
   } catch (ex) {
-    console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + err.toString());
+    console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + ex.toString());
     var errCallback = {
       response: 'error',
       message: 'could not read tags from directory ' + rfidTagDir,
@@ -87,10 +138,6 @@ var getTagList = function(app, callback){
 }
 
 var checkTagExist = function(app, tagFile, callback){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
   if (DEBUG) console.log('function checkTagExist called for tag ' + tagFile);
 
   try {
@@ -107,17 +154,6 @@ var checkTagExist = function(app, tagFile, callback){
 }
 
 var getMediaList = function(app, callback){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-
-  var rfidTagDir = app.get('rfidTagDir');
-
   if (DEBUG) console.log('function getTagList called');
 
   var responseContent = '';
@@ -167,7 +203,7 @@ var getMediaList = function(app, callback){
                 /*
                 dirItem = {
                   tag: tag,
-                  endpoint: svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/tags/tag/'+tag,
+                  endpoint: tagDbProtocol+'://'+tagDbHost+':'+tagDbPort+tagDbApi+'/tags/tag/'+tag,
                   title: 'no tag info - error: ' + err.toString()
                 };
                 */
@@ -179,7 +215,7 @@ var getMediaList = function(app, callback){
 
                 dirItem = {
                   tag: tag,
-                  endpoint: svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/tags/tag/'+tag,
+                  endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/'+tag,
                   title: obj.MediaTitle,
                   genre: obj.MediaGenre,
                   type: obj.MediaType,
@@ -220,21 +256,9 @@ var getMediaList = function(app, callback){
 }
 
 var getTagData = function(app, tagId , callback){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-
-  // this is the path to the file system where the rfid tags are stored
-  var rfidTagDir = app.get('rfidTagDir');
-  var obj = null;
-
   if (DEBUG) console.log('function getTagData called');
 
+  var obj = null;
   var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
 
   try {
@@ -265,21 +289,9 @@ var getTagData = function(app, tagId , callback){
 }
 
 var getTagToPlay = function(app, tagId , callback){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-
-  // this is the path to the file system where the rfid tags are stored
-  var rfidTagDir = app.get('rfidTagDir');
-  var obj = null;
-
   if (DEBUG) console.log('function getTagData called');
 
+  var obj = null;
   var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
 
   try {
@@ -362,11 +374,6 @@ var getTagToPlay = function(app, tagId , callback){
 }
 
 var writeTagDataSync = function(app, tagId, content){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
-  var rfidTagDir = app.get('rfidTagDir');
   var obj = JSON.parse(content);
 
   if (DEBUG) console.log('function writeTagDataSync called');
@@ -410,19 +417,9 @@ var writeTagDataSync = function(app, tagId, content){
 }
 
 var addPictureData = function(app, tagId , picture, callback){
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
-
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-
-  var rfidTagDir = app.get('rfidTagDir');
-  var obj = null;
-
   if (DEBUG) console.log('function addPictureData called');
+
+  var obj = null;
 
   // set the picture number to 0 as an indicator if there are any pictures already
   var picNumber = 0;
@@ -472,30 +469,14 @@ var addPictureData = function(app, tagId , picture, callback){
 }
 
 var uploadFile = function(app, file, callback) {
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
   if (DEBUG) console.log('proxy function uploadFile called');
   if (TRACE) console.log('   file to post: '+file.toString());
 
-  var svrProto = app.get('svrProto');
-  var svrAddr = app.get('svrAddr');
-  var svrPort = app.get('svrPort');
-  var svrApi = app.get('svrApi');
-
-  // we need these to work with the second node.js service fileService, which
-  // does the actual file handling
-  var fileServiceProto = app.get('fileServiceProto')+':';
-  var fileServiceAddr = app.get('fileServiceAddr');
-  var fileServicePort = app.get('fileServicePort');
-  var fileServiceApi = app.get('fileServiceApi');
-  var fileServiceUrl = app.get('fileServiceUrl');
-
   try {
-    var url = fileServiceProto+'//'+fileServiceAddr+':'+fileServicePort+fileServiceApi+fileServiceUrl;
+    var url = fileServiceProtocol+'//'+fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceUrl;
     var options = {
-      protocol: fileServiceProto,
-      host: fileServiceAddr,
+      protocol: fileServiceProtocol,
+      host: fileServiceHost,
       port: Number(fileServicePort),
       path: fileServiceApi+fileServiceUrl,
       family: 4,

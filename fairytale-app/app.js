@@ -6,49 +6,51 @@ var express = require('express'),
 
 // get the hostname of the server we run on
 var os = require('os');
+var path = require('path');
 
 // how do we handle requests and parse the request body
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
+// settings for the template engine pug
+app.set('/views', express.static('/views'));
+app.set('view engine', 'pug');
 
 // these set static exposures for media files and pictures and such
-app.use(express.static('static'));
-app.use(express.static('modules'));
-app.use(express.static('views'));
-app.use(express.static('../data'));
+app.use(express.static(path.resolve('./static')));
+app.use(express.static(path.resolve('./modules')));
+app.use(express.static(path.resolve('./views')));
+app.use(express.static(path.resolve('./data')));
+// access to static content, the media and tag files
+app.set('/img', express.static(path.resolve('./static/img')));
+app.set('/sounds', express.static(path.resolve('./static/sounds')));
+app.set('/Media', express.static(path.resolve('../data/Media')));
+app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
+
+
+// get the global configuration
+var config = require('./modules/configuration.js');
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
 // a rather ugly global DEBUG switch
-app.set('DEBUG', true);
+app.set('DEBUG', config.debugging.DEBUG);
 // plus another also very ugly TRACE switch
-app.set('TRACE', true);
-
-// access to static content, the media and tag files
-app.set('/img', express.static('/static/img'));
-app.set('/Media', express.static('../data/Media'));
-app.set('/TagDB', express.static('../data/TagDB'));
+app.set('TRACE', config.debugging.TRACE);
 
 // the path to the file system where the rfid tags and Media Files are stored
 app.set('rfidTagDir', config.directories.rfidTagDir);
 app.set('MediaDir', config.directories.MediaDir);
 app.set('SoundDir', config.directories.SoundDir);
 
-// settings for the template engine pug
-app.set('/views', express.static('/views'));
-app.set('view engine', 'pug');
-
-
 // set server address
 app.set('AppName', config.appEndpoint.AppName);
 app.set('svrProtocol', config.appEndpoint.Protocol);
-app.set('svrHost', config.appEndpoint.Hostname;
+app.set('svrHost', config.appEndpoint.Hostname);
 app.set('svrPort', Number(config.appEndpoint.Port));
 app.set('svrApi', config.appEndpoint.Api);
 app.set('svrUrl', config.appEndpoint.Url);
-
 
 
 // set the routes for different part of the application

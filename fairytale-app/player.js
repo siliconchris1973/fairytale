@@ -4,6 +4,7 @@ var express = require('express'),
   stylus = require('stylus'),
   nib = require('nib');
 
+// get the hostname of the server we run on
 var os = require('os');
 var path = require('path');
 
@@ -31,7 +32,6 @@ app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
 // get the global configuration
 var config = require('./modules/configuration.js');
 
-
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
 // a rather ugly global DEBUG switch
@@ -46,23 +46,15 @@ app.set('SoundDir', config.directories.SoundDir);
 
 // http and rest api endpoint for the player
 app.set('AppName', config.playerEndpoint.AppName);
-app.set('playerProto', config.playerEndpoint.Protocol);
-app.set('playerAddr', config.playerEndpoint.Hostname);
+app.set('playerProtocol', config.playerEndpoint.Protocol);
+app.set('playerHost', config.playerEndpoint.Hostname);
 app.set('playerPort', Number(config.playerEndpoint.Port));
 app.set('playerApi', config.playerEndpoint.Api);
 app.set('playerUrl', config.playerEndpoint.Url);
 
-// http and rest api endpoint for the tag db interface
-app.set('tagDbServiceProto', config.tagDbEndpoint.Protocol);
-app.set('tagDbServiceAddr', config.tagDbEndpoint.Hostname);
-app.set('tagDbServicePort', Number(config.tagDbEndpoint.Port));
-app.set('tagDbServiceApi', config.tagDbEndpoint.Api);
-app.set('tagDbServiceUrl', config.tagDbEndpoint.Url);
 
-
-// set the routes and the controller for the mp3 player
-var playerRoutes = require('./routes/routes_player.js')(plr);
-var thePlayer = require('./controller/playerController.js');
+// set the routes for different part of the application
+var playerRoutes = require("./routes/routes_player.js")(app);
 
 var AppName = app.get('AppName');
 var svrProto = app.get('playerProtocol');

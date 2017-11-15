@@ -1,28 +1,112 @@
 var path = require('path');
 var fs = require('fs');
 var http = require('http');
+
+var config = require('../modules/configuration.js');
+
+// CONFIG data on the app
+const svrAppName = config.appEndpoint.AppName;
+const svrProtocol = config.appEndpoint.Protocol;
+const svrHost = config.appEndpoint.Host;
+const svrPort = Number(config.appEndpoint.Port);
+const svrApi = config.appEndpoint.Api;
+const svrUrl = config.appEndpoint.Url;
+const svrHealthUri = config.appEndpoint.HealthUri;
+const svrDescription = config.appEndpoint.Description;
+
+// CONFIG data on the file Upload Service
+const fileServiceAppName = config.fileServiceEndpoint.AppName;
+const fileServiceProtocol = config.fileServiceEndpoint.Protocol;
+const fileServiceHost = config.fileServiceEndpoint.Host;
+const fileServicePort = Number(config.fileServiceEndpoint.Port);
+const fileServiceApi = config.fileServiceEndpoint.Api;
+const fileServiceUrl = config.fileServiceEndpoint.Url;
+const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
+const fileServiceDescription = config.fileServiceEndpoint.Description;
+
+// CONFIG data on the RFID/NFC Reader Service
+const rfidReaderAppName = config.rfidReaderEndpoint.AppName;
+const rfidReaderProtocol = config.rfidReaderEndpoint.Protocol;
+const rfidReaderHost = config.rfidReaderEndpoint.Host;
+const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
+const rfidReaderApi = config.rfidReaderEndpoint.Api;
+const rfidReaderUrl = config.rfidReaderEndpoint.Url;
+const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
+const rfidReaderDescription = config.rfidReaderEndpoint.Description;
+
+// CONFIG data on the RFID/NFC Tag DB Service
+const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
+const tagDbServiceProtocol = config.tagDbServiceEndpoint.Protocol;
+const tagDbServiceHost = config.tagDbServiceEndpoint.Host;
+const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
+const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
+const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
+const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
+
+// CONFIG data on the MP3 Player
+const playerAppName = config.playerEndpoint.AppName;
+const playerProtocol = config.playerEndpoint.Protocol;
+const playerHost = config.playerEndpoint.Host;
+const playerPort = Number(config.playerEndpoint.Port);
+const playerApi = config.playerEndpoint.Api;
+const playerUrl = config.playerEndpoint.Url;
+const playerHealthUri = config.playerEndpoint.HealthUri;
+const playerDescription = config.playerEndpoint.Description;
+
+const DEBUG = config.debugging.DEBUG;
+const TRACE = config.debugging.TRACE;
+
+const soundDir = config.directories.SoundDir;
+const mediaDir = config.directories.MediaDir;
+const tagDB = config.directories.TagDB;
+var rfidTagDir = tagDB;
+
 var tagController = require('../controller/tagController.js');
 
 var tagRouter = function(app) {
-  // get global app variables
-  var DEBUG = app.get('DEBUG');
-  var TRACE = app.get('TRACE');
+  var genServerUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;
+  var genPlayerUrl = playerProtocol + '://' + playerHost + ':' + playerPort + playerApi + playerUrl;
 
-  var tagDbProtocol = app.get('tagDbProtocol');
-  var tagDbHost = app.get('tagDbHost');
-  var tagDbPort = app.get('tagDbPort');
-  var tagDbApi = app.get('tagDbApi');
-  var tagDbUrl = app.get('tagDbUrl');
-  var genServerUrl = tagDbProtocol + '://' + tagDbHost + ':' + tagDbPort + tagDbApi;
-
-  var playerProto = app.get('playerProto');
-  var playerAddr = app.get('playerAddr');
-  var playerPort = app.get('playerPort');
-  var playerApi = app.get('playerApi');
-  var playerUrl = app.get('playerUrl');
-  var genPlayerUrl = playerProto + '://' + playerAddr + ':' + playerPort + playerApi + playerUrl;
-
-  var rfidTagDir = app.get('rfidTagDir')
+  const tagDbServiceEndpoints = {
+    endpoints: [
+      {
+        shortcut: 'info',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/info',
+        method: 'GET',
+        description: 'the info entry of the tagDbService API - this site',
+        alive: 'true'
+      },
+      {
+        shortcut: 'tags',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl,
+        method: 'GET',
+        description: 'returns a list of available tags',
+        alive: 'true'
+      },
+      {
+        shortcut: 'tag',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
+        method: 'GET',
+        description: 'a specific tag referenced via ID',
+        alive: 'true'
+      },
+      {
+        shortcut: 'tag',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
+        method: 'POST',
+        description: 'create a new tag referenced via ID - called via create form',
+        alive: 'true'
+      },
+      {
+        shortcut: 'create',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/create',
+        method: 'GET',
+        description: 'a form to register a new tag in the system',
+        alive: 'true'
+      }
+    ]
+  };
 
   app.get("/tags", function(req, res){
     // the server checks whether the client accepts html (browser) or
@@ -31,13 +115,14 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.redirect(tagDbApi+"/tags");
+      res.redirect(tagDbServiceApi+"/tags");
     } else {
       if (DEBUG) console.log("json request");
       res.json({
         response: 'unavailable',
         status: 415,
-        message: 'this endpoint is not available for json requests'
+        message: 'this endpoint is not available for json requests',
+        redirect: tagDbServiceApi+'/tags'
       });
     }
   });
@@ -48,14 +133,15 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.redirect(tagDbApi+"/tags/tag/:id");
+      res.redirect(tagDbServiceApi+"/tags/tag/:id");
     } else {
       if (DEBUG) console.log("json request");
       res.json(
         {
           response: 'unavailable',
           status: 415,
-          message: 'this endpoint is not available for json requests'
+          message: 'this endpoint is not available for json requests',
+          redirect: tagDbServiceApi+'/tags/tag/:id'
         });
     }
   });
@@ -66,21 +152,67 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.redirect(tagDbApi+"/tags/tag/create");
+      res.redirect(tagDbServiceApi+"/tags/tag/create");
     } else {
       if (DEBUG) console.log("json request");
       res.json(
         {
           response: 'unavailable',
           status: 415,
-          message: 'this endpoint is not available for json requests'
+          message: 'this endpoint is not available for json requests',
+          redirect: tagDbServiceApi+'/tags/tag'
         });
     }
   });
+  app.get("/tags/info", function(req, res){
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
 
+    if (acceptsHTML) {
+      res.redirect(tagDbServiceApi+"/tags/info");
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json(
+        {
+          response: 'unavailable',
+          status: 415,
+          message: 'this endpoint is not available for json requests',
+          redirect: tagDbServiceApi+"/tags/info"
+        });
+    }
+  });
+  // the player
+  plr.get(playerApi+"/player/info", function(req, res) {
+    if (DEBUG) console.log("GET::"+playerApi+"/player/info");
+    // the server checks whether the client accepts html (browser) or
+    // json machine to machine communication
+    var acceptsHTML = req.accepts('html');
+    var acceptsJSON = req.accepts('json');
+    var obj = playerEndpoints;
+
+    var responseJson = {
+      headline: 'MP3 Player API Infoseite',
+      subheadline: 'API Endpunkte',
+      messagetext: 'Folgende Endpunkte sind über die API des Players erreichbar',
+      endpoints: obj.endpoints
+    };
+
+    res.setHeader('X-Powered-By', 'bacon');
+
+    if (acceptsHTML) {
+      if (DEBUG) console.log("html request");
+      var endObj = responseJson;
+      res.render('player_nav', endObj);
+    } else {
+      if (DEBUG) console.log("json request");
+      res.json(playerEndpoints);
+    }
+  });
 
   // get the listing of all stored rfid tags
-  app.get(tagDbApi+"/tags", function(req, res) {
+  app.get(tagDbServiceApi+"/tags", function(req, res) {
     if (DEBUG) console.log('get::/tags called');
 
     // the server checks whether the client accepts html (browser) or
@@ -135,7 +267,7 @@ var tagRouter = function(app) {
   })
 
   // the root entry shall show what could be done
-  app.get(tagDbApi+"/tags/tag/create", function(req, res) {
+  app.get(tagDbServiceApi+"/tags/tag/create", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/create called');
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -161,7 +293,7 @@ var tagRouter = function(app) {
   });
 
   // get the the content of one stored rfid tag
-  app.get(tagDbApi+"/tags/tag/:id", function(req, res) {
+  app.get(tagDbServiceApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/:id called');
 
     var rfidTagFile = 'NOTAG';
@@ -309,7 +441,7 @@ var tagRouter = function(app) {
   })
 
   // get the the content of one stored rfid tag
-  app.get(tagDbApi+"/tags/playdata/:id", function(req, res) {
+  app.get(tagDbServiceApi+"/tags/playdata/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/playdata/:id called');
 
     var rfidTagFile = 'NOTAG';
@@ -371,7 +503,7 @@ var tagRouter = function(app) {
     }
   })
   // store the current played position of the last track for the rfid tag
-  app.post(tagDbApi+"/tags/playdata/:id", function(req, res) {
+  app.post(tagDbServiceApi+"/tags/playdata/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/playdata/:id called');
 
     var rfidTagFile = 'NOTAG';
@@ -433,7 +565,7 @@ var tagRouter = function(app) {
     }
   })
   // target of the create a new rfid tag form
-  app.post(tagDbApi+"/tags/tag/:id", function(req, res) {
+  app.post(tagDbServiceApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id  called');
 
     // the server checks whether the client accepts html (browser) or
@@ -526,7 +658,7 @@ var tagRouter = function(app) {
   })
 
   // target of the create a new rfid tag form
-  app.post(tagDbApi+"/tags/tag/:id/picture", function(req, res) {
+  app.post(tagDbServiceApi+"/tags/tag/:id/picture", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id/picture  called');
 
     // the server checks whether the client accepts html (browser) or

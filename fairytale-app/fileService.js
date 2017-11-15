@@ -1,6 +1,6 @@
 var express = require('express'),
   app = express(),
-  port = process.env.PORT || 3001;
+  port = process.env.PORT || 3004;
 
 // this is needed for the file upload to dir and checking for magic number prior upload
 var path = require('path');
@@ -22,32 +22,49 @@ app.use(express.static('static'));
 app.use(express.static('../data'));
 app.use(express.static('modules'));
 
+// these set static exposures for media files and pictures and such
+app.use(express.static(path.resolve('./static')));
+app.use(express.static(path.resolve('./modules')));
+app.use(express.static(path.resolve('./views')));
+app.use(express.static(path.resolve('./data')));
+// access to static content, the media and tag files
+app.set('/img', express.static(path.resolve('./static/img')));
+app.set('/sounds', express.static(path.resolve('./static/sounds')));
+app.set('/Media', express.static(path.resolve('../data/Media')));
+app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
+
+
+// get the global configuration
+var config = require('./modules/configuration.js');
+
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
+// a rather ugly global DEBUG switch
+app.set('DEBUG', config.debugging.DEBUG);
+// plus another also very ugly TRACE switch
+app.set('TRACE', config.debugging.TRACE);
+
+// the path to the file system where the rfid tags and Media Files are stored
+app.set('rfidTagDir', config.directories.rfidTagDir);
+app.set('MediaDir', config.directories.MediaDir);
+app.set('SoundDir', config.directories.SoundDir);
 
 // set server address
-app.set('svrProto', 'http');
-app.set('svrAddr', os.hostname());
-app.set('svrPort', Number(3001));
-app.set('svrApi', '/api/v1');
-app.set('svrUrl', '/file');
-
-// and a rather ugly global DEBUG switch
-app.set('DEBUG', true);
-// plus another also very ugly TRACE switch
-app.set('TRACE', true);
-
-app.set('/img', express.static('static/img'));
-app.set('/Media', express.static('../data/Media'));
-app.set('/Cover', express.static('../data/Cover'));
+app.set('AppName', config.fileServiceEndpoint.AppName);
+app.set('svrProtocol', config.fileServiceEndpoint.Protocol);
+app.set('svrHost', config.fileServiceEndpoint.Hostname);
+app.set('svrPort', Number(config.fileServiceEndpoint.Port));
+app.set('svrApi', config.fileServiceEndpoint.Api);
+app.set('svrUrl', config.fileServiceEndpoint.Url);
 
 
 // get global app variables
 var DEBUG = app.get('DEBUG');
 var TRACE = app.get('TRACE');
 
-var svrProto = app.get('svrProto');
-var svrAddr = app.get('svrAddr');
+var AppName = app.get('AppName');
+var svrProto = app.get('svrProtocol');
+var svrAddr = app.get('svrHost');
 var svrPort = app.get('svrPort');
 var svrApi = app.get('svrApi');
 var svrUrl = app.get('svrUrl');
@@ -56,12 +73,10 @@ var svrUrl = app.get('svrUrl');
 // targetTmpDir is where we store the uploaded files,
 // prior resizing and moving to the final directories
 // final directories are /data/Cover/icon .../small .../normal
-var dataDir         = '../data';
-var coverDir        = '/Cover';
-var targetTmpDir    = dataDir + coverDir + '/tmp';
-var targetIconDir   = dataDir + coverDir + '/icon';
-var targetSmallDir  = dataDir + coverDir + '/small';
-var targetNormalDir = dataDir + coverDir + '/normal';
+var targetTmpDir    = config.directories.UploadTmpDir;
+var targetIconDir   = config.directories.UploadIconDir;
+var targetSmallDir  = config.directories.UploadSmallDir;
+var targetNormalDir = config.directories.UploadNormalDir;
 
 
 var MAGIC_NUMBERS = {
@@ -246,5 +261,5 @@ app.post(svrApi+'/file', function(req, res) {
 
 // start the server
 var server = app.listen(port, function () {
-  console.log("fileService listening on %s://%s:%s with API on %s%s...", svrProto, svrAddr, svrPort, svrApi, svrUrl);
+  console.log("%s listening on %s://%s:%s with API on %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

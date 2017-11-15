@@ -13,17 +13,21 @@ var path = require('path');
     Hostname: os.hostname(),
     Port: Number(3000),
     Api: '/api/v1',
-    Url: '/'
+    Url: '/',
+    HealthUri: '/health',
+    Description: 'Main Application - the glue'
   };
 
   // http and rest api endpoint for the tag db interface
-  var tagDbEndpoint = {
+  var tagDbServiceEndpoint = {
     AppName: 'TagDb Service',
     Protocol: 'http',
     Hostname: os.hostname(),
     Port: Number(3001),
     Api: '/api/v1',
-    Url: '/tags'
+    Url: '/tags',
+    HealthUri: '/health',
+    Description: 'Tag Database Service'
   };
 
   // this is for the thrid node.js app, that does the actual audio playback
@@ -33,7 +37,9 @@ var path = require('path');
     Hostname: os.hostname(),
     Port: Number(3002),
     Api: '/api/v1',
-    Url: '/player'
+    Url: '/player',
+    HealthUri: '/health',
+    Description: 'The MP3 Player'
   };
 
   // this is for the 4th node.js app, that controls the rfid reader
@@ -43,7 +49,9 @@ var path = require('path');
     Hostname: os.hostname(),
     Port: Number(3003),
     Api: '/api/v1',
-    Url: '/rfid'
+    Url: '/rfid',
+    HealthUri: '/health',
+    Description: 'The RFID/NFC reader service'
   };
 
   // this is for the node.js app, that does the actual file uploading
@@ -53,14 +61,20 @@ var path = require('path');
     Hostname: os.hostname(),
     Port: Number(3004),
     Api: '/api/v1',
-    Url: '/file'
+    Url: '/file',
+    HealthUri: '/health',
+    Description: 'File Uploaad Service'
   };
 
   var directories = {
     // the path to the file system where the rfid tags and Media Files are stored
-    rfidTagDir: path.resolve('../../data/TagDB'),
-    MediaDir: path.resolve('../../data/Media'),
-    SoundDir: path.resolve('./static/sounds')
+    rfidTagDir: path.resolve('../data/TagDB'),
+    MediaDir: path.resolve('../data/Media'),
+    SoundDir: path.resolve('./static/sounds'),
+    UploadTmpDir: path.resolve('../data/Cover/tmp'),
+    UploadIconDir: path.resolve('../data/Cover/icon'),
+    UploadSmallDir: path.resolve('../data/Cover/small'),
+    UploadNormalDir: path.resolve('../data/Cover/normal')
   };
 
   var debugging = {
@@ -70,7 +84,7 @@ var path = require('path');
 
 module.exports = {
   appEndpoint: appEndpoint,
-  tagDbEndpoint: tagDbEndpoint,
+  tagDbServiceEndpoint: tagDbServiceEndpoint,
   fileServiceEndpoint: fileServiceEndpoint,
   playerEndpoint: playerEndpoint,
   rfidReaderEndpoint: rfidReaderEndpoint,

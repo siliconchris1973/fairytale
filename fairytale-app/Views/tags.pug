@@ -11,7 +11,7 @@ block content
           div.col-1 TagId
           div.col-2 File
           div.col-8 Endpoint
-          div.col-1 Link
+          div.col-1 Play
         for tag in varTags
           div.row
             div.col-1
@@ -19,7 +19,7 @@ block content
             div.col-2
               p #{tag.file}
             div.col-8
-              p #{tag.endpoint}
+              a(href = `${tag.endpoint}`) #{tag.endpoint}
             div.col-1
-              a(href = `${tag.endpoint}`)
+              a(href = `${tag.play}`)
                 img.className#IdName(src="/img/link-32.png" alt="Link")
