@@ -168,22 +168,23 @@ For the play to actually play a file, two things need to be done:
 A typical json file looks like follows:
 
 75EDB4.json:
-     {
-      "tagdata": {
+
+       {
+        "tagdata": {
           "TagChecksum": "0x23",
           "TagId": "75EDB4",
           "TagPreTag": "0xf00",
           "TagRawData": "0F0075EDB423"
-      },
-      "MediaTitle": "Frederick",
-      "MediaType": "Hoerspiel",
-      "MediaGenre": "Kindergeschichte",
-      "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
-      "TrackCount": [
+        },
+        "MediaTitle": "Frederick",
+        "MediaType": "Hoerspiel",
+        "MediaGenre": "Kindergeschichte",
+        "MediaDescription": "Ein Hörspiel mit Musik zu Frederick der kleinen Maus",
+        "TrackCount": [
           {"disk": "1", "tracks": "1"}
-      ],
-      "DiskCount": "1",
-      "MediaFiles": [{
+        ],
+        "DiskCount": "1",
+        "MediaFiles": [{
           "disk": "1",
           "part": "1",
           "id": "75EDB4:d1:p1",
@@ -192,13 +193,13 @@ A typical json file looks like follows:
           "lastposition": "-1",
           "playcount": "0",
           "size": "24M"
-      }],
-      "MediaPicture": [{
+        }],
+        "MediaPicture": [{
           "pic": "1",
           "name": "Frederick.jpg",
           "path": "Cover/normal/Frederick.jpg"
-      }]
-     }
+        }]
+       }
 
 As you can see, you can have multiple mp3 files associated with a tag and the player
 will play all files in the given order - you can also split files in disks.
