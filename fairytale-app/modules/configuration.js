@@ -68,7 +68,7 @@ var path = require('path');
 
   var directories = {
     // the path to the file system where the rfid tags and Media Files are stored
-    rfidTagDir: path.resolve('../data/TagDB'),
+    TagDB: path.resolve('../data/TagDB'),
     MediaDir: path.resolve('../data/Media'),
     SoundDir: path.resolve('./static/sounds'),
     UploadTmpDir: path.resolve('../data/Cover/tmp'),

@@ -68,46 +68,6 @@ var tagRouter = function(app) {
   var genServerUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;
   var genPlayerUrl = playerProtocol + '://' + playerHost + ':' + playerPort + playerApi + playerUrl;
 
-  const tagDbServiceEndpoints = {
-    endpoints: [
-      {
-        shortcut: 'info',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/info',
-        method: 'GET',
-        description: 'the info entry of the tagDbService API - this site',
-        alive: 'true'
-      },
-      {
-        shortcut: 'tags',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl,
-        method: 'GET',
-        description: 'returns a list of available tags',
-        alive: 'true'
-      },
-      {
-        shortcut: 'tag',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
-        method: 'GET',
-        description: 'a specific tag referenced via ID',
-        alive: 'true'
-      },
-      {
-        shortcut: 'tag',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
-        method: 'POST',
-        description: 'create a new tag referenced via ID - called via create form',
-        alive: 'true'
-      },
-      {
-        shortcut: 'create',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/create',
-        method: 'GET',
-        description: 'a form to register a new tag in the system',
-        alive: 'true'
-      }
-    ]
-  };
-
   app.get("/tags", function(req, res){
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -183,15 +143,13 @@ var tagRouter = function(app) {
         });
     }
   });
-  // the player
-  plr.get(playerApi+"/player/info", function(req, res) {
+  app.get(playerApi+"/tags/info", function(req, res) {
     if (DEBUG) console.log("GET::"+playerApi+"/player/info");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
-    var obj = playerEndpoints;
-
+    var obj = tagController.getEndpoints(app);
     var responseJson = {
       headline: 'MP3 Player API Infoseite',
       subheadline: 'API Endpunkte',
@@ -220,38 +178,22 @@ var tagRouter = function(app) {
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
-    if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
-      tagController.getTagList(app, function(err, result) {
-        if (err) {
-          console.error('error: getting the list of tags failed\nerror message: ' + err.toString());
-          res.render('tags_error', {
-            title: 'RFID Tag Fehlerseite',
-            headline: 'RFID Tag Liste Fehler',
-            errorname: 'Error',
-            errortext: 'Fehler beim abrufen der Liste an verf&uuml;gbarer Tags ',
-            exceptionname: 'Exception',
-            exceptiontext: err.toString()
-          });
-        } else {
-          var obj = result;
+
+    var result = function(app) {
+      tagController.getTagList
+      .then(function (result){
+        var obj = result;
+        if (acceptsHTML) {
+          if (DEBUG) console.log("html request");
           if (DEBUG) console.log("request to render tag list");
           if (TRACE) console.log(obj.tags);
           res.render('tags', {
-              title: 'RFID Tag Startseite',
-              headline: 'RFID Tag Startseite',
-              subheadline: 'Verf&uuml;gbare Tags',
-              messagetext: 'Bitte ein RFID Tag ausw&auml;hlen, um mehr Daten angezeigt zu bekommen',
-              varTags: obj.tags
+            title: 'RFID Tag Startseite',
+            headline: 'RFID Tag Startseite',
+            subheadline: 'Verf&uuml;gbare Tags',
+            messagetext: 'Bitte ein RFID Tag ausw&auml;hlen, um mehr Daten angezeigt zu bekommen',
+            varTags: obj.tags
           });
-        }
-      });
-    } else {
-      if (DEBUG) console.log("json request");
-      tagController.getTagList(app, function(err, result) {
-        if (err) {
-            console.log(err);
-            res.send(err.toString());
         } else {
           res.json({
               info: {
@@ -261,10 +203,26 @@ var tagRouter = function(app) {
                 endpoints: result
               }
           });
-        }
+        };
+      })
+      .catch(function(err){
+        console.error('error: getting the list of tags failed\nerror message: ' + err.toString());
+        if (acceptsHTML) {
+          res.render('tags_error', {
+            title: 'RFID Tag Fehlerseite',
+            headline: 'RFID Tag Liste Fehler',
+            errorname: 'Error',
+            errortext: 'Fehler beim abrufen der Liste an verf&uuml;gbarer Tags ',
+            exceptionname: 'Exception',
+            exceptiontext: err.toString()
+          })
+        } else {
+          console.log(err);
+          res.send(err.toString());
+        };
       });
-    }
-  })
+    };
+  });
 
   // the root entry shall show what could be done
   app.get(tagDbServiceApi+"/tags/tag/create", function(req, res) {

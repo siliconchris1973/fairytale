@@ -67,6 +67,127 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 var rfidTagDir = tagDB;
 
+// this is a synchronous function taht returns all the endpoints.
+var getEndpoints = function(app) {
+  if (DEBUG) console.log('getEndpoints called');
+  if (TRACE) console.log('soundDir = ' + soundDir + ' / mediaDir = ' + mediaDir + ' / tagDB = ' + tagDB);
+  const tagDbServiceEndpoints = {
+    endpoints: [
+      {
+        shortcut: 'info',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/info',
+        method: 'GET',
+        description: 'the info entry of the tagDbService API - this site',
+        alive: 'true'
+      },
+      {
+        shortcut: 'tags',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl,
+        method: 'GET',
+        description: 'returns a list of available tags',
+        alive: 'true'
+      },
+      {
+        shortcut: 'tag',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
+        method: 'GET',
+        description: 'a specific tag referenced via ID',
+        alive: 'true'
+      },
+      {
+        shortcut: 'tag',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
+        method: 'POST',
+        description: 'create a new tag referenced via ID - called via create form',
+        alive: 'true'
+      },
+      {
+        shortcut: 'create',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/create',
+        method: 'GET',
+        description: 'a form to register a new tag in the system',
+        alive: 'true'
+      }
+    ]
+  };
+  return tagDbServiceEndpoints;
+};
+
+// asynchronous promised function to get a list of tags, together with
+// media title and meta data like number of disks, tracks etc.
+var getTagList = new Promise(
+  function(app, resolve, reject){
+    if (DEBUG) console.log('function getTagList called');
+
+    try {
+      fs.readdir(tagDB, function(err, items) {
+        if (DEBUG) console.log('working on directory ' + rfidTagDir);
+
+        if (err) {
+          // irgendein Fehler beim einlesen des Verzeichnisses
+          console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
+          var err = {
+            response: 'error',
+            message: 'error getting files from directory ' + rfidTagDir,
+            error: err.toString()
+          };
+
+          reject(err);
+        } else if (!items.length) {
+          // directory appears to be empty
+          console.warn("warning: nothing to read in directory "+rfidTagDir);
+          var err = {
+            response: 'warning',
+            message: 'nothing to read from directory '+rfidTagDir
+          };
+
+          reject(err);
+        } else {
+          // im Verzeichnis sind tatsaechlich Dateien
+          if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
+
+          var tagItemArray = [];
+
+          for (i in items) {
+            if (items[i].toString().substr(items[i].indexOf('.')) == '.json') {
+              if (DEBUG) console.log('Arbeite auf item ' + items[i]);
+              var dirItem = '';
+
+              // tag-id auslesen, da wir sie gleich brauchen
+              var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
+              dirItem = {
+                tag: tag,
+                endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/'+tag,
+                file: items[i],
+                play: playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl+'/'+tag+'/play'
+              };
+
+              tagItemArray.push(dirItem);
+            } else {
+              if (DEBUG) console.log('ignoring file ' + items[i] + ' as it is not a json file');
+            }
+          }
+        }
+        if (DEBUG) console.log('taglist ready, providing via callback');
+        var respCallback = {
+          tags: tagItemArray
+        };
+        if (TRACE) console.log(respCallback);
+        resolve(respCallback);
+      });
+    } catch (ex) {
+      console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + ex.toString());
+      var err = {
+        response: 'error',
+        message: 'could not read tags from directory ' + rfidTagDir,
+        error: ex.toString()
+      };
+      reject(err);
+    }
+  }
+);
+
+/*
 var getTagList = function(app, callback){
   if (DEBUG) console.log('function getTagList called');
 
@@ -136,6 +257,7 @@ var getTagList = function(app, callback){
     callback(errCallback);
   }
 }
+*/
 
 var checkTagExist = function(app, tagFile, callback){
   if (DEBUG) console.log('function checkTagExist called for tag ' + tagFile);
