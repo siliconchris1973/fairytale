@@ -2,7 +2,7 @@ var path = require('path');
 var fs = require('fs');
 var http = require('http');
 
-var config = require('../../../modules/configuration.js');
+var config = require('../../../../modules/configuration.js');
 
 // CONFIG data on the app
 const svrAppName = config.appEndpoint.AppName;
@@ -67,7 +67,7 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 var rfidTagDir = tagDB;
 
-var tagDbServiceController = require('../../../controller/tagDbServiceController.js');
+var tagDbServiceController = require('../../../../controller/tagDbServiceController.js');
 
 var tagRouter = function(app) {
   var genServerUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;

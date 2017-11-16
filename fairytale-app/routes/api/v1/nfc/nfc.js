@@ -2,7 +2,7 @@ var path = require('path');
 var fs = require('fs');
 var http = require('http');
 
-var config = require('../../../modules/configuration.js');
+var config = require('../../../../modules/configuration.js');
 
 // CONFIG data on the app
 const svrAppName = config.appEndpoint.AppName;
@@ -67,7 +67,7 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 var rfidTagDir = tagDB;
 
-var rfidController = require('../../../controller/rfidController.js');
+var rfidController = require('../../../../controller/rfidController.js');
 
 var rfidRouter = function(app) {
   // the root entry shall show what could be done
