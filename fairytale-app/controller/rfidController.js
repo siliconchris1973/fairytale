@@ -59,4 +59,17 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 var rfidTagDir = tagDB;
 
-module.exports = {}
+// this is a synchronous function that returns all the endpoints.
+var getEndpoints = function(app) {
+  if (DEBUG) console.log('getEndpoints called');
+  const theEndpoints = {
+    endpoints: [
+
+    ]
+  };
+  return theEndpoints;
+}
+
+module.exports = {
+  getEndpoints: getEndpoints
+}

@@ -209,5 +209,5 @@ Currently, when you have a new tag and want to associate it with mp3-files you w
 to do the following:
 
 - copy/create a json file in the data/TagDB directory. The name of the file needs to match the UUID
-- make a new directory with the UUID of the nfc tag bewlo data/Media - all upper case
-- copy all mp3-files in the sub directories you referenced within the json files in the path section.
+- make a new directory with the UUID of the nfc tag below data/Media - the directory name should be all upper case
+- copy all mp3-files in the sub directories you used within the json file in the path section.

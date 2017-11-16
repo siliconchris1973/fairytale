@@ -15,6 +15,7 @@ var path = require('path');
     Api: '/api/v1',
     Url: '/',
     HealthUri: '/health',
+    HelpUri: '/help',
     Description: 'Main Application - the glue'
   };
 
@@ -27,6 +28,7 @@ var path = require('path');
     Api: '/api/v1',
     Url: '/tags',
     HealthUri: '/health',
+    HelpUri: '/help',
     Description: 'Tag Database Service'
   };
 
@@ -39,6 +41,7 @@ var path = require('path');
     Api: '/api/v1',
     Url: '/player',
     HealthUri: '/health',
+    HelpUri: '/help',
     Description: 'The MP3 Player'
   };
 
@@ -51,6 +54,7 @@ var path = require('path');
     Api: '/api/v1',
     Url: '/rfid',
     HealthUri: '/health',
+    HelpUri: '/help',
     Description: 'The RFID/NFC reader service'
   };
 
@@ -63,6 +67,7 @@ var path = require('path');
     Api: '/api/v1',
     Url: '/file',
     HealthUri: '/health',
+    HelpUri: '/help',
     Description: 'File Uploaad Service'
   };
 

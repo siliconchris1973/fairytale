@@ -67,11 +67,10 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 var rfidTagDir = tagDB;
 
-// this is a synchronous function taht returns all the endpoints.
+// this is a synchronous function that returns all the endpoints.
 var getEndpoints = function(app) {
   if (DEBUG) console.log('getEndpoints called');
-  if (TRACE) console.log('soundDir = ' + soundDir + ' / mediaDir = ' + mediaDir + ' / tagDB = ' + tagDB);
-  const tagDbServiceEndpoints = {
+  const theEndpoints = {
     endpoints: [
       {
         shortcut: 'info',
@@ -110,14 +109,14 @@ var getEndpoints = function(app) {
       }
     ]
   };
-  return tagDbServiceEndpoints;
+  return theEndpoints;
 };
 
-/*
+
 // asynchronous promised function to get a list of tags, together with
 // media title and meta data like number of disks, tracks etc.
-var getTagList = new Promise(
-  function(app, resolve, reject){
+var getTagList = function(app){
+  return new Promise(function(resolve, reject){
     if (DEBUG) console.log('function getTagList called');
 
     try {
@@ -187,8 +186,8 @@ var getTagList = new Promise(
     }
   }
 );
-*/
 
+/*
 var getTagList = function(app, callback){
   if (DEBUG) console.log('function getTagList called');
 
@@ -258,7 +257,7 @@ var getTagList = function(app, callback){
     callback(errCallback);
   }
 }
-
+*/
 
 var checkTagExist = function(app, tagFile, callback){
   if (DEBUG) console.log('function checkTagExist called for tag ' + tagFile);
@@ -635,6 +634,7 @@ var uploadFile = function(app, file, callback) {
 }
 
 module.exports = {
+  getEndpoints: getEndpoints,
   getTagList: getTagList,
   getTagData: getTagData,
   getTagToPlay: getTagToPlay,

@@ -12,6 +12,7 @@ const svrPort = Number(config.appEndpoint.Port);
 const svrApi = config.appEndpoint.Api;
 const svrUrl = config.appEndpoint.Url;
 const svrHealthUri = config.appEndpoint.HealthUri;
+const svrHelpUri = config.appEndpoint.HelpUri;
 const svrDescription = config.appEndpoint.Description;
 
 // CONFIG data on the file Upload Service
@@ -22,6 +23,7 @@ const fileServicePort = Number(config.fileServiceEndpoint.Port);
 const fileServiceApi = config.fileServiceEndpoint.Api;
 const fileServiceUrl = config.fileServiceEndpoint.Url;
 const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
+const fileServiceHelpUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Reader Service
@@ -32,6 +34,7 @@ const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
 const rfidReaderApi = config.rfidReaderEndpoint.Api;
 const rfidReaderUrl = config.rfidReaderEndpoint.Url;
 const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
+const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
 const rfidReaderDescription = config.rfidReaderEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Tag DB Service
@@ -42,6 +45,7 @@ const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
 const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
 const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
 const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
 const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
 
 // CONFIG data on the MP3 Player
@@ -52,6 +56,7 @@ const playerPort = Number(config.playerEndpoint.Port);
 const playerApi = config.playerEndpoint.Api;
 const playerUrl = config.playerEndpoint.Url;
 const playerHealthUri = config.playerEndpoint.HealthUri;
+const playerHelpUri = config.playerEndpoint.HelpUri;
 const playerDescription = config.playerEndpoint.Description;
 
 const DEBUG = config.debugging.DEBUG;
@@ -62,23 +67,6 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 
 var appController = require('../controller/appController.js');
-
-var appEndpoints = [
-    {endpoint: svrHost+':'+svrPort+svrApi+svrUrl, description: svrDescription},
-    {endpoint: svrHost+':'+svrPort+svrApi+'/status', description: 'status'},
-    {endpoint: svrHost+':'+svrPort+svrApi+svrHealthUri, description: svrDescription + ' health interface'},
-
-    {endpoint: tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl, description: tagDbServiceDescription},
-    {endpoint: tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceHealthUri, description: tagDbServiceDescription + ' health interface'},
-    {endpoint: playerHost+':'+playerPort+playerApi+playerUrl, description: playerDescription},
-    {endpoint: playerHost+':'+playerPort+playerApi+playerHealthUri, description: playerDescription + 'health interface'},
-
-    {endpoint: rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, description: rfidReaderDescription},
-    {endpoint: rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderHealthUri, description: rfidReaderDescription + ' health interface'},
-    {endpoint: fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceUrl, description: fileServiceDescription},
-    {endpoint: fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceHealthUri, description: fileServiceDescription + ' health interface'},
-  ];
-
 
 var appRouter = function(app) {
 
@@ -124,22 +112,22 @@ var appRouter = function(app) {
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
+    var obj = appController.getEndpoints(app);
 
     if (acceptsHTML) {
       if (DEBUG) console.log("html request");
-      var obj = appEndpoints;
       res.render('endpoints', {
           title: 'Welcome to Fairytale',
           headline: 'Willkommen im Märchenschloss',
-          subheadline: 'Verf&uuml;gbare REST Endpunkte',
+          subheadline: 'Verf&uuml;gbare REST Endpunkte zu den einzelnen Modulen',
           messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
-          varEndpoints: obj
+          varEndpoints: obj.endpoints
       });
     } else {
       if (DEBUG) console.log("json request");
       var respEndpoints = {
         response: 'REST API Endpoints available',
-        endpoints: appEndpoints
+        endpoints: obj.endpoints
         };
       res.json(respEndpoints);
     }
