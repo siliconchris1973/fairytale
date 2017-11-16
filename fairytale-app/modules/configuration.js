@@ -16,7 +16,7 @@ var path = require('path');
     Url: '/',
     HealthUri: '/health',
     HelpUri: '/help',
-    Description: 'Main Application - the glue'
+    Description: 'Main Application'
   };
 
   // http and rest api endpoint for the tag db interface
@@ -29,7 +29,7 @@ var path = require('path');
     Url: '/tags',
     HealthUri: '/health',
     HelpUri: '/help',
-    Description: 'Tag Database Service'
+    Description: 'Tag Database'
   };
 
   // this is for the thrid node.js app, that does the actual audio playback
@@ -42,7 +42,7 @@ var path = require('path');
     Url: '/player',
     HealthUri: '/health',
     HelpUri: '/help',
-    Description: 'The MP3 Player'
+    Description: 'MP3 Player'
   };
 
   // this is for the 4th node.js app, that controls the rfid reader
@@ -55,7 +55,7 @@ var path = require('path');
     Url: '/rfid',
     HealthUri: '/health',
     HelpUri: '/help',
-    Description: 'The RFID/NFC reader service'
+    Description: 'RFID/NFC Reader'
   };
 
   // this is for the node.js app, that does the actual file uploading
