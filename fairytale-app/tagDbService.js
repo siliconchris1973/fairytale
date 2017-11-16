@@ -47,7 +47,7 @@ app.set('SoundDir', config.directories.SoundDir);
 // set server address
 app.set('AppName', config.tagDbServiceEndpoint.AppName);
 app.set('tagDbServiceProtocol', config.tagDbServiceEndpoint.Protocol);
-app.set('tagDbServiceHost', config.tagDbServiceEndpoint.Hostname);
+app.set('tagDbServiceHost', config.tagDbServiceEndpoint.Host);
 app.set('tagDbServicePort', Number(config.tagDbServiceEndpoint.Port));
 app.set('tagDbServiceApi', config.tagDbServiceEndpoint.Api);
 app.set('tagDbServiceUrl', config.tagDbServiceEndpoint.Url);
@@ -56,6 +56,7 @@ app.set('tagDbServiceUrl', config.tagDbServiceEndpoint.Url);
 // set the routes for different part of the application
 var tagRoutes = require("./routes/routes_tag.js")(app);
 
+// get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('tagDbServiceProtocol');
 var svrAddr = app.get('tagDbServiceHost');

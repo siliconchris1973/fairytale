@@ -56,6 +56,7 @@ app.set('playerUrl', config.playerEndpoint.Url);
 // set the routes for different part of the application
 var playerRoutes = require("./routes/routes_player.js")(app);
 
+// get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('playerProtocol');
 var svrAddr = app.get('playerHost');

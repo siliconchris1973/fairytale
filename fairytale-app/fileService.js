@@ -52,7 +52,7 @@ app.set('SoundDir', config.directories.SoundDir);
 // set server address
 app.set('AppName', config.fileServiceEndpoint.AppName);
 app.set('svrProtocol', config.fileServiceEndpoint.Protocol);
-app.set('svrHost', config.fileServiceEndpoint.Hostname);
+app.set('svrHost', config.fileServiceEndpoint.Host);
 app.set('svrPort', Number(config.fileServiceEndpoint.Port));
 app.set('svrApi', config.fileServiceEndpoint.Api);
 app.set('svrUrl', config.fileServiceEndpoint.Url);
@@ -62,6 +62,7 @@ app.set('svrUrl', config.fileServiceEndpoint.Url);
 var DEBUG = app.get('DEBUG');
 var TRACE = app.get('TRACE');
 
+// get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('svrProtocol');
 var svrAddr = app.get('svrHost');

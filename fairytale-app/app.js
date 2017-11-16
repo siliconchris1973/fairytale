@@ -47,7 +47,7 @@ app.set('SoundDir', config.directories.SoundDir);
 // set server address
 app.set('AppName', config.appEndpoint.AppName);
 app.set('svrProtocol', config.appEndpoint.Protocol);
-app.set('svrHost', config.appEndpoint.Hostname);
+app.set('svrHost', config.appEndpoint.Host);
 app.set('svrPort', Number(config.appEndpoint.Port));
 app.set('svrApi', config.appEndpoint.Api);
 app.set('svrUrl', config.appEndpoint.Url);
@@ -56,6 +56,7 @@ app.set('svrUrl', config.appEndpoint.Url);
 // set the routes for different part of the application
 var appRoutes = require("./routes/routes_app.js")(app);
 
+// get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('svrProtocol');
 var svrAddr = app.get('svrHost');
