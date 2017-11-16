@@ -67,7 +67,7 @@ const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 var rfidTagDir = tagDB;
 
-var tagController = require('../controller/tagController.js');
+var tagDbServiceController = require('../controller/tagDbServiceController.js');
 
 var tagRouter = function(app) {
   var genServerUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;
@@ -184,7 +184,7 @@ var tagRouter = function(app) {
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
-    var obj = tagController.getEndpoints(app);
+    var obj = tagDbServiceController.getEndpoints(app);
     var responseJson = {
       headline: 'MP3 Player API Infoseite',
       subheadline: 'API Endpunkte',
@@ -215,7 +215,7 @@ var tagRouter = function(app) {
 
     /* promise call
     var result = function(app) {
-      tagController.getTagList
+      tagDbServiceController.getTagList
       .then(function (result){
         var obj = result;
         if (acceptsHTML) {
@@ -372,7 +372,7 @@ var tagRouter = function(app) {
         var trackCount=0;
 
         if (DEBUG) console.log("html request");
-        tagController.getTagData(app, tag, function(err, result) {
+        tagDbServiceController.getTagData(app, tag, function(err, result) {
           if (err) {
             var errObj = err;
             console.error(errObj);
@@ -419,7 +419,7 @@ var tagRouter = function(app) {
       } else {
         if (DEBUG) console.log("json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
-        tagController.getTagData(app, tag, function(err, result) {
+        tagDbServiceController.getTagData(app, tag, function(err, result) {
           if (err) {
             var errObj = err;
             console.error(errObj);
@@ -473,7 +473,7 @@ var tagRouter = function(app) {
       if (acceptsJSON) {
         if (DEBUG) console.log("json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
-        tagController.getTagToPlay(app, tag, function(err, result) {
+        tagDbServiceController.getTagToPlay(app, tag, function(err, result) {
           if (err) {
             var errObj = err;
             console.error(errObj);
@@ -535,7 +535,7 @@ var tagRouter = function(app) {
       if (acceptsJSON) {
         if (DEBUG) console.log("json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
-        tagController.writeTagDataSync(app, tag, content, function(err, result) {
+        tagDbServiceController.writeTagDataSync(app, tag, content, function(err, result) {
           if (err) {
             var errObj = err;
             console.error(errObj);
@@ -698,7 +698,7 @@ var tagRouter = function(app) {
 
       try {
         // first lets try to upload the picture
-        tagController.uploadFile(app, req.body.CoverFile, function(err, result) {
+        tagDbServiceController.uploadFile(app, req.body.CoverFile, function(err, result) {
           if (DEBUG) console.log('function to call rest api of fileService called')
           if (err) {
             console.error('error: uploading file '+req.body.CoverFile+' for tag '+tagId+' failed - ' + err.toString());
@@ -717,7 +717,7 @@ var tagRouter = function(app) {
     /*
     try {
       // first lets try to upload the picture
-      tagController.uploadFile(app, req.body.CoverFile, function(err, result) {
+      tagDbServiceController.uploadFile(app, req.body.CoverFile, function(err, result) {
         if (DEBUG) console.log('function to call rest api of fileService called')
         if (err) {
           console.error('error: uploading file '+req.body.CoverFile+' for tag '+tagId+' failed - ' + err.toString());
@@ -726,7 +726,7 @@ var tagRouter = function(app) {
           if (TRACE) console.log('result: '+ result.toString());
 
           if (DEBUG) console.log('now, after file was uploaded, add the picture meta data to the json file');
-          tagController.addPictureData(app, tagId, CoverFile, function(err, result) {
+          tagDbServiceController.addPictureData(app, tagId, CoverFile, function(err, result) {
             if (err) {
               console.error('error: error while adding data for tag ' + tagId + '\n   error message: ' + err.toString());
               if (acceptsHTML) {
