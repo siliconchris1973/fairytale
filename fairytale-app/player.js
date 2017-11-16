@@ -47,7 +47,7 @@ app.set('SoundDir', config.directories.SoundDir);
 // http and rest api endpoint for the player
 app.set('AppName', config.playerEndpoint.AppName);
 app.set('playerProtocol', config.playerEndpoint.Protocol);
-app.set('playerHost', config.playerEndpoint.Hostname);
+app.set('playerHost', config.playerEndpoint.Host);
 app.set('playerPort', Number(config.playerEndpoint.Port));
 app.set('playerApi', config.playerEndpoint.Api);
 app.set('playerUrl', config.playerEndpoint.Url);

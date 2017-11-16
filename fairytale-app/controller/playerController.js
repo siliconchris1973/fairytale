@@ -74,49 +74,49 @@ var getEndpoints = function(app) {
     endpoints: [
       {
         AppName: 'info',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/info',
-        description: 'the root entry of the mp3 player API',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/endpoints',
+        description: 'Endpoints of the Player API',
         alive: 'true'
       },
       {
-        shortcut: 'play',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/play',
+        AppName: 'play',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/play',
         description: 'play a given mp3 file'
       },
       {
-        shortcut: 'stop',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/stop',
+        AppName: 'stop',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/stop',
         description: 'stop playing'
       },
       {
-        shortcut: 'pause',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/pause',
+        AppName: 'pause',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/pause',
         description: 'pause playback'
       },
       {
-        shortcut: 'skip',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/skip',
-        description: 'skip 10 seconds of played file'
+        AppName: 'skip',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/skip',
+        description: 'skip 10 seconds in playback'
       },
       {
-        shortcut: 'forward',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/forward',
-        description: 'fast forward in current file'
+        AppName: 'forward',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/forward',
+        description: 'fast forward in playback'
       },
       {
-        shortcut: 'rewind',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/rewind',
-        description: 'rewind in current file'
+        AppName: 'rewind',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/rewind',
+        description: 'rewind in playback'
       },
       {
-        shortcut: 'next',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/next',
-        description: 'jump to next file for currently played album'
+        AppName: 'next',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/next',
+        description: 'jump to next file in album'
       },
       {
-        shortcut: 'previous',
-        endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/:id/prev',
-        description: 'jump to previous file of currently played album'
+        AppName: 'previous',
+        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/prev',
+        description: 'jump to previous file in album'
       }
     ]
   };
