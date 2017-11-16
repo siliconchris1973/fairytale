@@ -1,29 +1,29 @@
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the RFID/NFC Reader Service
-const rfidReaderAppName = config.rfidReaderEndpoint.AppName;
-const rfidReaderProtocol = config.rfidReaderEndpoint.Protocol;
-const rfidReaderHost = config.rfidReaderEndpoint.Host;
-const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
-const rfidReaderApi = config.rfidReaderEndpoint.Api;
-const rfidReaderUrl = config.rfidReaderEndpoint.Url;
-const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
-const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
-const rfidReaderDescription = config.rfidReaderEndpoint.Description;
+const nfcReaderAppName = config.nfcReaderEndpoint.AppName;
+const nfcReaderProtocol = config.nfcReaderEndpoint.Protocol;
+const nfcReaderHost = config.nfcReaderEndpoint.Host;
+const nfcReaderPort = Number(config.nfcReaderEndpoint.Port);
+const nfcReaderApi = config.nfcReaderEndpoint.Api;
+const nfcReaderUrl = config.nfcReaderEndpoint.Url;
+const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
+const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
+const nfcReaderDescription = config.nfcReaderEndpoint.Description;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
-var rfidRouter = function(app) {
+var nfcRouter = function(app) {
   // redirects
-  app.get("/rfid", function(req, res) {
+  app.get("/nfc", function(req, res) {
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(rfidReaderApi+'/rfid');
+      res.status(302).redirect(nfcReaderApi+'/nfc');
     } else {
       if (DEBUG) console.log("json request");
       res.json(
@@ -31,7 +31,7 @@ var rfidRouter = function(app) {
           response: 'redirect',
           status: 302,
           message: 'this endpoint is not available for json requests',
-          redirect: rfidReaderApi+'/rfid'
+          redirect: nfcReaderApi+'/nfc'
         });
     }
   });
@@ -42,7 +42,7 @@ var rfidRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(rfidReaderApi+'/endpoints');
+      res.status(302).redirect(nfcReaderApi+'/endpoints');
     } else {
       if (DEBUG) console.log("json request");
       res.json(
@@ -50,10 +50,10 @@ var rfidRouter = function(app) {
           response: 'redirect',
           status: 302,
           message: 'this endpoint is not available for json requests',
-          redirect: rfidReaderApi+'/endpoints'
+          redirect: nfcReaderApi+'/endpoints'
         });
     }
   });
 }
 
-module.exports = rfidRouter;
+module.exports = nfcRouter;

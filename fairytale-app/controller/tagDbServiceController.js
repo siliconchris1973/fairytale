@@ -29,15 +29,15 @@ const fileServiceHelphUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Reader Service
-const rfidReaderAppName = config.rfidReaderEndpoint.AppName;
-const rfidReaderProtocol = config.rfidReaderEndpoint.Protocol;
-const rfidReaderHost = config.rfidReaderEndpoint.Host;
-const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
-const rfidReaderApi = config.rfidReaderEndpoint.Api;
-const rfidReaderUrl = config.rfidReaderEndpoint.Url;
-const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
-const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
-const rfidReaderDescription = config.rfidReaderEndpoint.Description;
+const nfcReaderAppName = config.nfcReaderEndpoint.AppName;
+const nfcReaderProtocol = config.nfcReaderEndpoint.Protocol;
+const nfcReaderHost = config.nfcReaderEndpoint.Host;
+const nfcReaderPort = Number(config.nfcReaderEndpoint.Port);
+const nfcReaderApi = config.nfcReaderEndpoint.Api;
+const nfcReaderUrl = config.nfcReaderEndpoint.Url;
+const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
+const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
+const nfcReaderDescription = config.nfcReaderEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Tag DB Service
 const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
@@ -67,7 +67,7 @@ const TRACE = config.debugging.TRACE;
 const soundDir = config.directories.SoundDir;
 const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
-var rfidTagDir = tagDB;
+var nfcTagDir = tagDB;
 
 // this is a synchronous function that returns all the endpoints.
 var getEndpoints = function(app) {
@@ -135,7 +135,7 @@ var getTagList = function(app){
   return new Promise(function(resolve, reject){
     if (DEBUG) console.log('function getTagList called');
 
-    
+
 
   })
 }
@@ -144,15 +144,15 @@ var getTagData = function(app, tagId , callback){
   if (DEBUG) console.log('function getTagData called');
 
   var obj = null;
-  var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
+  var tagStorage = path.join(nfcTagDir, tagId .toUpperCase()+'.json');
 
   try {
     jsonfile.readFile(tagStorage, function(err, result) {
       if (err) {
-        console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
+        console.error('error: error getting data of tag '+tagId+' from '+nfcTagDir+' \nerror message: ' +err.toString());
         var errCallback = {
           response: 'error',
-          message: 'error getting data of tag '+tagId+' from '+rfidTagDir,
+          message: 'error getting data of tag '+tagId+' from '+nfcTagDir,
           error: err.toString()
         };
         callback(errCallback);
@@ -177,15 +177,15 @@ var getTagToPlay = function(app, tagId , callback){
   if (DEBUG) console.log('function getTagData called');
 
   var obj = null;
-  var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
+  var tagStorage = path.join(nfcTagDir, tagId .toUpperCase()+'.json');
 
   try {
     jsonfile.readFile(tagStorage, function(err, result) {
       if (err) {
-        console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
+        console.error('error: error getting data of tag '+tagId+' from '+nfcTagDir+' \nerror message: ' +err.toString());
         var errCallback = {
           response: 'error',
-          message: 'error getting data of tag '+tagId+' from '+rfidTagDir,
+          message: 'error getting data of tag '+tagId+' from '+nfcTagDir,
           error: err.toString()
         };
         callback(errCallback);

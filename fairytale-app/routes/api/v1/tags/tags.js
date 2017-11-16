@@ -27,15 +27,15 @@ const fileServiceHelpUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Reader Service
-const rfidReaderAppName = config.rfidReaderEndpoint.AppName;
-const rfidReaderProtocol = config.rfidReaderEndpoint.Protocol;
-const rfidReaderHost = config.rfidReaderEndpoint.Host;
-const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
-const rfidReaderApi = config.rfidReaderEndpoint.Api;
-const rfidReaderUrl = config.rfidReaderEndpoint.Url;
-const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
-const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
-const rfidReaderDescription = config.rfidReaderEndpoint.Description;
+const nfcReaderAppName = config.nfcReaderEndpoint.AppName;
+const nfcReaderProtocol = config.nfcReaderEndpoint.Protocol;
+const nfcReaderHost = config.nfcReaderEndpoint.Host;
+const nfcReaderPort = Number(config.nfcReaderEndpoint.Port);
+const nfcReaderApi = config.nfcReaderEndpoint.Api;
+const nfcReaderUrl = config.nfcReaderEndpoint.Url;
+const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
+const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
+const nfcReaderDescription = config.nfcReaderEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Tag DB Service
 const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
@@ -65,7 +65,7 @@ const TRACE = config.debugging.TRACE;
 const soundDir = config.directories.SoundDir;
 const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
-var rfidTagDir = tagDB;
+var nfcTagDir = tagDB;
 
 var tagDbServiceController = require('../../../../controller/tagDbServiceController.js');
 
@@ -127,7 +127,7 @@ var tagRouter = function(app) {
     }
   });
 
-  // get the listing of all stored rfid tags
+  // get the listing of all stored nfc tags
   app.get(tagDbServiceApi+"/tags", function(req, res) {
     if (DEBUG) console.log('get::/tags called');
 
@@ -209,14 +209,14 @@ var tagRouter = function(app) {
     }
   });
 
-  // get the the content of one stored rfid tag
+  // get the the content of one stored nfc tag
   app.get(tagDbServiceApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/tag/:id called');
 
-    var rfidTagFile = 'NOTAG';
-    var rfidTagFileSuffix = 'json';
+    var nfcTagFile = 'NOTAG';
+    var nfcTagFileSuffix = 'json';
 
-    /* This is how a typical rfid tag with data to an audiobook looks like
+    /* This is how a typical nfc tag with data to an audiobook looks like
     {
       "tagdata":
         {
@@ -262,7 +262,7 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if(!req.params.id) {
-      console.error("rfid tag error: no tag identifier provided")
+      console.error("nfc tag error: no tag identifier provided")
 
       if (acceptsHTML) {
         res.render('tags_error', {
@@ -283,7 +283,7 @@ var tagRouter = function(app) {
       }
     } else {
       var tag = req.params.id.toString().toUpperCase();
-      rfidTagFile = tag + "." + rfidTagFileSuffix;
+      nfcTagFile = tag + "." + nfcTagFileSuffix;
       if (DEBUG) console.log('data for tag ' + tag + ' requested');
 
       // check whether or not this is an interactive browser session or a
@@ -357,12 +357,12 @@ var tagRouter = function(app) {
     }
   })
 
-  // get the the content of one stored rfid tag
+  // get the the content of one stored nfc tag
   app.get(tagDbServiceApi+"/tags/playdata/:id", function(req, res) {
     if (DEBUG) console.log('get::/tags/playdata/:id called');
 
-    var rfidTagFile = 'NOTAG';
-    var rfidTagFileSuffix = 'json';
+    var nfcTagFile = 'NOTAG';
+    var nfcTagFileSuffix = 'json';
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -370,7 +370,7 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if(!req.params.id) {
-      console.error("rfid tag error: no tag identifier provided")
+      console.error("nfc tag error: no tag identifier provided")
 
       if (acceptsJSON) {
         res.json({
@@ -390,7 +390,7 @@ var tagRouter = function(app) {
       }
     } else {
       var tag = req.params.id.toString().toUpperCase();
-      rfidTagFile = tag + "." + rfidTagFileSuffix;
+      nfcTagFile = tag + "." + nfcTagFileSuffix;
       if (DEBUG) console.log('data for tag ' + tag + ' requested');
 
       if (acceptsJSON) {
@@ -419,12 +419,12 @@ var tagRouter = function(app) {
       }
     }
   })
-  // store the current played position of the last track for the rfid tag
+  // store the current played position of the last track for the nfc tag
   app.post(tagDbServiceApi+"/tags/playdata/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/playdata/:id called');
 
-    var rfidTagFile = 'NOTAG';
-    var rfidTagFileSuffix = 'json';
+    var nfcTagFile = 'NOTAG';
+    var nfcTagFileSuffix = 'json';
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -432,7 +432,7 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if(!req.params.id) {
-      console.error("rfid tag error: no tag identifier provided")
+      console.error("nfc tag error: no tag identifier provided")
 
       if (acceptsJSON) {
         res.json({
@@ -452,7 +452,7 @@ var tagRouter = function(app) {
       }
     } else {
       var tag = req.params.id.toString().toUpperCase();
-      rfidTagFile = tag + "." + rfidTagFileSuffix;
+      nfcTagFile = tag + "." + nfcTagFileSuffix;
       if (DEBUG) console.log('data for tag ' + tag + ' requested');
 
       if (acceptsJSON) {
@@ -481,7 +481,7 @@ var tagRouter = function(app) {
       }
     }
   })
-  // target of the create a new rfid tag form
+  // target of the create a new nfc tag form
   app.post(tagDbServiceApi+"/tags/tag/:id", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id  called');
 
@@ -574,7 +574,7 @@ var tagRouter = function(app) {
     }
   })
 
-  // target of the create a new rfid tag form
+  // target of the create a new nfc tag form
   app.post(tagDbServiceApi+"/tags/tag/:id/picture", function(req, res) {
     if (DEBUG) console.log('post::/tags/tag/:id/picture  called');
 

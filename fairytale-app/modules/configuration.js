@@ -1,6 +1,6 @@
 // This file is the central store for the different http and rest api endpoints
 // it is sourced in by all application start scripts, such as cnf.js, player.js
-// or rfidService.js.
+// or nfcService.js.
 // If you want to change ports and or other settings, such as API version,
 // you can do it here and all parts of the fairytale app are informed.
 var os = require('os');
@@ -45,14 +45,14 @@ var path = require('path');
     Description: 'MP3 Player'
   };
 
-  // this is for the 4th node.js app, that controls the rfid reader
-  var rfidReaderEndpoint = {
+  // this is for the 4th node.js app, that controls the nfc reader
+  var nfcReaderEndpoint = {
     AppName: 'RFID Reader',
     Protocol: 'http',
     Host: os.hostname(),
     Port: Number(3003),
     Api: '/api/v1',
-    Url: '/rfid',
+    Url: '/nfc',
     HealthUri: '/health',
     HelpUri: '/help',
     Description: 'RFID/NFC Reader'
@@ -72,7 +72,7 @@ var path = require('path');
   };
 
   var directories = {
-    // the path to the file system where the rfid tags and Media Files are stored
+    // the path to the file system where the nfc tags and Media Files are stored
     TagDB: path.resolve('../data/TagDB'),
     MediaDir: path.resolve('../data/Media'),
     SoundDir: path.resolve('./static/sounds'),
@@ -92,7 +92,7 @@ module.exports = {
   tagDbServiceEndpoint: tagDbServiceEndpoint,
   fileServiceEndpoint: fileServiceEndpoint,
   playerEndpoint: playerEndpoint,
-  rfidReaderEndpoint: rfidReaderEndpoint,
+  nfcReaderEndpoint: nfcReaderEndpoint,
   directories: directories,
   debugging: debugging
 }

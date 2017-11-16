@@ -7,16 +7,20 @@ nav.navbar.navbar-default( role="navigation" )
       ul.nav.navbar-nav
         li: a(href="/") Home
         li: a(href="/player") Player
-        li: a(href="/tags") RFID Tags
-        li: a(href="/rfid") RFID Reader
+        li: a(href="/tags") Tags
+        li: a(href="/nfc") NFC Reader
         li.Erweitert
           a.dropdown-toggle( href="#", data-toggle="dropdown", role="button", aria-expanded="false" ) Erweitert
             span.caret
           ul.dropdown-menu( role="menu" )
             li: a( href="/tags/tag/create" ) Neues Tag erzeugen
-            li: a( href="/tags" ) Tag Liste bearbeiten
             li.divider
             li.dropdown-header Hilfeseiten
             li: a( href="/player/help" ) Hilfeseite f&uuml;r Player
-            li: a( href="/tags/help" ) Hilfeseite f&uuml;r RFID Tags
-            li: a( href="/rfid/help" ) Hilfeseite f&uuml;r RFID Reader
+            li: a( href="/tags/help" ) Hilfeseite f&uuml;r Tags
+            li: a( href="/nfc/help" ) Hilfeseite f&uuml;r NFC Reader
+            li.divider
+            li.dropdown-header Endpunktseiten
+            li: a( href="/player/endpoints" ) Endpunkte f&uuml;r Player
+            li: a( href="/tags/endpoints" ) Endpunkte f&uuml;r Tags
+            li: a( href="/nfc/endpoints" ) Endpunkte f&uuml;r NFC Reader

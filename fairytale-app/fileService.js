@@ -43,8 +43,8 @@ app.set('DEBUG', config.debugging.DEBUG);
 // plus another also very ugly TRACE switch
 app.set('TRACE', config.debugging.TRACE);
 
-// the path to the file system where the rfid tags and Media Files are stored
-app.set('rfidTagDir', config.directories.rfidTagDir);
+// the path to the file system where the nfc tags and Media Files are stored
+app.set('nfcTagDir', config.directories.nfcTagDir);
 app.set('MediaDir', config.directories.MediaDir);
 app.set('SoundDir', config.directories.SoundDir);
 

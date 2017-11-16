@@ -27,15 +27,15 @@ const fileServiceHelpUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Reader Service
-const rfidReaderAppName = config.rfidReaderEndpoint.AppName;
-const rfidReaderProtocol = config.rfidReaderEndpoint.Protocol;
-const rfidReaderHost = config.rfidReaderEndpoint.Host;
-const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
-const rfidReaderApi = config.rfidReaderEndpoint.Api;
-const rfidReaderUrl = config.rfidReaderEndpoint.Url;
-const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
-const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
-const rfidReaderDescription = config.rfidReaderEndpoint.Description;
+const nfcReaderAppName = config.nfcReaderEndpoint.AppName;
+const nfcReaderProtocol = config.nfcReaderEndpoint.Protocol;
+const nfcReaderHost = config.nfcReaderEndpoint.Host;
+const nfcReaderPort = Number(config.nfcReaderEndpoint.Port);
+const nfcReaderApi = config.nfcReaderEndpoint.Api;
+const nfcReaderUrl = config.nfcReaderEndpoint.Url;
+const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
+const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
+const nfcReaderDescription = config.nfcReaderEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Tag DB Service
 const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
@@ -65,19 +65,18 @@ const TRACE = config.debugging.TRACE;
 const soundDir = config.directories.SoundDir;
 const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
-var rfidTagDir = tagDB;
 
-var rfidController = require('../../../../controller/rfidController.js');
+var nfcController = require('../../../../controller/nfcController.js');
 
-var rfidRouter = function(app) {
+var nfcRouter = function(app) {
   // the root entry shall show what could be done
-  app.get(rfidReaderApi+"/endpoints", function(req, res) {
+  app.get(nfcReaderApi+"/endpoints", function(req, res) {
     if (DEBUG) console.log('GET::'+svrApi+'/endpoints');
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
-    var obj = rfidController.getEndpoints(app);
+    var obj = nfcController.getEndpoints(app);
 
     if (acceptsHTML) {
       if (DEBUG) console.log("html request");
@@ -99,8 +98,8 @@ var rfidRouter = function(app) {
   });
 
   // root entry for RFID tag data
-  app.get(rfidReaderApi+"/rfid", function(req, res) {
-    if (DEBUG) console.log("rfid reader entry info requested");
+  app.get(nfcReaderApi+"/nfc", function(req, res) {
+    if (DEBUG) console.log("nfc reader entry info requested");
 
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
@@ -124,19 +123,19 @@ var rfidRouter = function(app) {
         res.json({
           response: 'info endpoint to tags API',
           endpoints: [
-                      {endpoint: rfidReaderProto + '://' + rfidReaderAddr + ':' + rfidReaderPort + rfidReaderApi + '/rfid', description: 'query (GET) the RFID reader'}
+                      {endpoint: nfcReaderProto + '://' + nfcReaderAddr + ':' + nfcReaderPort + nfcReaderApi + '/nfc', description: 'query (GET) the RFID reader'}
           ]
         });
       }
     } catch (ex) {
-      console.error("could not query rfid reader \nException output: " + ex.toString());
+      console.error("could not query nfc reader \nException output: " + ex.toString());
       //process.exit();
       if (acceptsHTML) {
-        res.render('rfid_error', {
+        res.render('nfc_error', {
           title: 'RFID Reader Fehlerseite',
           headline: 'RFID Reader Fehler',
           errorname: 'Error',
-          errortext: 'could not query rfid reader',
+          errortext: 'could not query nfc reader',
           exceptionname: 'Exception',
           exceptiontext: ex.toString(),
           controlheadline: 'Verf&uuml;gbare Kommandos'
@@ -144,7 +143,7 @@ var rfidRouter = function(app) {
       } else {
         res.json({
           response: 'error',
-          message: 'could not query rfid reader',
+          message: 'could not query nfc reader',
           exception: ex.toString()
         });
       }
@@ -152,4 +151,4 @@ var rfidRouter = function(app) {
   })
 }
 
-module.exports = rfidRouter;
+module.exports = nfcRouter;
