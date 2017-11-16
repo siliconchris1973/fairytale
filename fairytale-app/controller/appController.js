@@ -90,4 +90,6 @@ var getEndpoints = function(app) {
   return theEndpoints;
 }
 
-module.exports = {}
+module.exports = {
+  getEndpoints: getEndpoints
+}
