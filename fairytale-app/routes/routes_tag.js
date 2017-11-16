@@ -162,8 +162,8 @@ var tagRouter = function(app) {
     if (acceptsHTML) {
       if (DEBUG) console.log("html request");
       res.render('endpoints', {
-          title: 'Welcome to Fairytale Player',
-          headline: 'Willkommen im Märchenschloss',
+          title: 'Welcome to Fairytale TagDB',
+          headline: 'TagDB API Endpunkte',
           subheadline: 'Verf&uuml;gbare REST Endpunkte f&uuml;r die Tag DB',
           messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
           varEndpoints: obj.endpoints
@@ -186,9 +186,9 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
     var obj = tagDbServiceController.getEndpoints(app);
     var responseJson = {
-      headline: 'MP3 Player API Infoseite',
+      headline: 'TagDB Service Infoseite',
       subheadline: 'API Endpunkte',
-      messagetext: 'Folgende Endpunkte sind über die API des Players erreichbar',
+      messagetext: 'INFO INFO INFO',
       endpoints: obj.endpoints
     };
 

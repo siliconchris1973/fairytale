@@ -180,7 +180,7 @@ var playerRouter = function(app) {
       if (DEBUG) console.log("html request");
       res.render('endpoints', {
           title: 'Welcome to Fairytale Player',
-          headline: 'Willkommen im Märchenschloss',
+          headline: 'Player API Endpunkte',
           subheadline: 'Verf&uuml;gbare REST Endpunkte f&uuml;r den Player',
           messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
           varEndpoints: obj.endpoints
