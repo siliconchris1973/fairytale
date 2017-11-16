@@ -21,26 +21,14 @@ app.set('view engine', 'pug');
 
 // these set static exposures for media files and pictures and such
 app.use(express.static(path.resolve('./static')));
-app.use(express.static(path.resolve('./modules')));
 app.use(express.static(path.resolve('./views')));
-app.use(express.static(path.resolve('./data')));
-// access to static content, the media and tag files
 app.set('/img', express.static(path.resolve('./static/img')));
-app.set('/sounds', express.static(path.resolve('./static/sounds')));
-app.set('/Media', express.static(path.resolve('../data/Media')));
-app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
 
-// these settings are made available via app.get('variable name')
-// from within all subsequent scripts
+
 // a rather ugly global DEBUG switch
 app.set('DEBUG', config.debugging.DEBUG);
 // plus another also very ugly TRACE switch
 app.set('TRACE', config.debugging.TRACE);
-
-// the path to the file system where the rfid tags and Media Files are stored
-app.set('rfidTagDir', config.directories.rfidTagDir);
-app.set('MediaDir', config.directories.MediaDir);
-app.set('SoundDir', config.directories.SoundDir);
 
 // set server address
 app.set('AppName', config.appEndpoint.AppName);
@@ -50,10 +38,13 @@ app.set('svrPort', Number(config.appEndpoint.Port));
 app.set('svrApi', config.appEndpoint.Api);
 app.set('svrUrl', config.appEndpoint.Url);
 
-
+const routes = require("./routes");//(app);
+app.use('/', routes)
 // set the routes for different part of the application
+/* OLD ROUTE SETTING
 const appRoutes = require("./routes/routes_app.js")(app);
-const appApiRoutes = require("./routes/api/v1/routes_app.js")(app);
+const appApiRoutes = require("./routes/api/v1/app.js")(app);
+*/
 
 // get the info on where we are running
 var AppName = app.get('AppName');

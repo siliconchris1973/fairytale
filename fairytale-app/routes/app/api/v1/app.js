@@ -131,6 +131,7 @@ var appRouter = function(app) {
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
+    var obj = appController.getEndpoints(app);
 
     if (acceptsHTML) {
       if (DEBUG) console.log("html request");
@@ -138,13 +139,15 @@ var appRouter = function(app) {
       res.render('component_status', {
           title: 'Komponentenstatus',
           headline: 'Komponentenstatus',
-          subheadline: 'Status der einzelnen Komponenten...'
+          subheadline: 'Status der einzelnen Komponenten...',
+          messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT STATUS TO COME LATER',
+          varEndpoints: obj.endpoints
       });
     } else {
       if (DEBUG) console.log("json request");
       var respEndpoint = {
         response: 'status information requested',
-        endpoints: appEndpoints
+        endpoints: obj.endpoints
       };
       res.json(respEndpoint);
     }
