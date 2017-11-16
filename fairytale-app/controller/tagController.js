@@ -3,9 +3,6 @@ var path = require('path');
 var jsonfile = require('jsonfile');
 var http = require('http');
 var request = require('request');
-var multer = require('multer');
-var upload = require('../modules/fileUpload.js');
-
 
 var config = require('../modules/configuration.js');
 
@@ -17,6 +14,7 @@ const svrPort = Number(config.appEndpoint.Port);
 const svrApi = config.appEndpoint.Api;
 const svrUrl = config.appEndpoint.Url;
 const svrHealthUri = config.appEndpoint.HealthUri;
+const svrHelpUri = config.appEndpoint.HelpUri;
 const svrDescription = config.appEndpoint.Description;
 
 // CONFIG data on the file Upload Service
@@ -27,6 +25,7 @@ const fileServicePort = Number(config.fileServiceEndpoint.Port);
 const fileServiceApi = config.fileServiceEndpoint.Api;
 const fileServiceUrl = config.fileServiceEndpoint.Url;
 const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
+const fileServiceHelphUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Reader Service
@@ -37,6 +36,7 @@ const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
 const rfidReaderApi = config.rfidReaderEndpoint.Api;
 const rfidReaderUrl = config.rfidReaderEndpoint.Url;
 const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
+const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
 const rfidReaderDescription = config.rfidReaderEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Tag DB Service
@@ -47,6 +47,7 @@ const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
 const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
 const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
 const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
 const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
 
 // CONFIG data on the MP3 Player
@@ -57,6 +58,7 @@ const playerPort = Number(config.playerEndpoint.Port);
 const playerApi = config.playerEndpoint.Api;
 const playerUrl = config.playerEndpoint.Url;
 const playerHealthUri = config.playerEndpoint.HealthUri;
+const playerHelpUri = config.playerEndpoint.HelpUri;
 const playerDescription = config.playerEndpoint.Description;
 
 const DEBUG = config.debugging.DEBUG;
@@ -78,6 +80,20 @@ var getEndpoints = function(app) {
         method: 'GET',
         description: 'the info entry of the tagDbService API - this site',
         alive: 'true'
+      },
+      {
+        shortcut: 'help',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+tagDbServiceHelpUri,
+        method: 'GET',
+        description: 'returns a help page',
+        alive: 'false'
+      },
+      {
+        shortcut: 'health',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+tagDbServiceHealthUri,
+        method: 'GET',
+        description: 'health status interface',
+        alive: 'false'
       },
       {
         shortcut: 'tags',
@@ -119,262 +135,9 @@ var getTagList = function(app){
   return new Promise(function(resolve, reject){
     if (DEBUG) console.log('function getTagList called');
 
-    try {
-      fs.readdir(tagDB, function(err, items) {
-        if (DEBUG) console.log('working on directory ' + rfidTagDir);
 
-        if (err) {
-          // irgendein Fehler beim einlesen des Verzeichnisses
-          console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
-          var err = {
-            response: 'error',
-            message: 'error getting files from directory ' + rfidTagDir,
-            error: err.toString()
-          };
 
-          reject(err);
-        } else if (!items.length) {
-          // directory appears to be empty
-          console.warn("warning: nothing to read in directory "+rfidTagDir);
-          var err = {
-            response: 'warning',
-            message: 'nothing to read from directory '+rfidTagDir
-          };
-
-          reject(err);
-        } else {
-          // im Verzeichnis sind tatsaechlich Dateien
-          if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
-
-          var tagItemArray = [];
-
-          for (i in items) {
-            if (items[i].toString().substr(items[i].indexOf('.')) == '.json') {
-              if (DEBUG) console.log('Arbeite auf item ' + items[i]);
-              var dirItem = '';
-
-              // tag-id auslesen, da wir sie gleich brauchen
-              var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
-              dirItem = {
-                tag: tag,
-                endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/'+tag,
-                file: items[i],
-                play: playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl+'/'+tag+'/play'
-              };
-
-              tagItemArray.push(dirItem);
-            } else {
-              if (DEBUG) console.log('ignoring file ' + items[i] + ' as it is not a json file');
-            }
-          }
-        }
-        if (DEBUG) console.log('taglist ready, providing via callback');
-        var respCallback = {
-          tags: tagItemArray
-        };
-        if (TRACE) console.log(respCallback);
-        resolve(respCallback);
-      });
-    } catch (ex) {
-      console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + ex.toString());
-      var err = {
-        response: 'error',
-        message: 'could not read tags from directory ' + rfidTagDir,
-        error: ex.toString()
-      };
-      reject(err);
-    }
-  }
-);
-
-/*
-var getTagList = function(app, callback){
-  if (DEBUG) console.log('function getTagList called');
-
-  try {
-    fs.readdir(tagDB, function(err, items) {
-      if (DEBUG) console.log('working on directory ' + rfidTagDir);
-
-      if (err) {
-        // irgendein Fehler beim einlesen des Verzeichnisses
-        console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
-        var errCallback = {
-          response: 'error',
-          message: 'error getting files from directory ' + rfidTagDir,
-          error: err.toString()
-        };
-
-        callback(errCallback);
-      } else if (!items.length) {
-        // directory appears to be empty
-        console.warn("warning: nothing to read in directory "+rfidTagDir);
-        var errCallback = {
-          response: 'warning',
-          message: 'nothing to read from directory '+rfidTagDir
-        };
-
-        callback(errCallback);
-      } else {
-        // im Verzeichnis sind tatsaechlich Dateien
-        if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
-
-        var tagItemArray = [];
-
-        for (i in items) {
-          if (items[i].toString().substr(items[i].indexOf('.')) == '.json') {
-            if (DEBUG) console.log('Arbeite auf item ' + items[i]);
-            var dirItem = '';
-
-            // tag-id auslesen, da wir sie gleich brauchen
-            var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
-            dirItem = {
-              tag: tag,
-              endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/'+tag,
-              file: items[i],
-              play: playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl+'/'+tag+'/play'
-            };
-
-            tagItemArray.push(dirItem);
-          } else {
-            if (DEBUG) console.log('ignoring file ' + items[i] + ' as it is not a json file');
-          }
-        }
-      }
-      if (DEBUG) console.log('taglist ready, providing via callback');
-      var respCallback = {
-        tags: tagItemArray
-      };
-      if (TRACE) console.log(respCallback);
-      callback(null, respCallback);
-    });
-  } catch (ex) {
-    console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + ex.toString());
-    var errCallback = {
-      response: 'error',
-      message: 'could not read tags from directory ' + rfidTagDir,
-      error: ex.toString()
-    };
-    callback(errCallback);
-  }
-}
-*/
-
-var checkTagExist = function(app, tagFile, callback){
-  if (DEBUG) console.log('function checkTagExist called for tag ' + tagFile);
-
-  try {
-    fs.readFileSync(tagFile, function(err, result) {
-      if (err) {
-        callback(false);
-      } else {
-        callback(true)
-      }
-    })
-  } catch (ex) {
-    callback(false);
-  }
-}
-
-var getMediaList = function(app, callback){
-  if (DEBUG) console.log('function getTagList called');
-
-  var responseContent = '';
-
-  try {
-    fs.readdir(rfidTagDir, function(err, items) {
-      if (DEBUG) console.log('working on directory ' + rfidTagDir);
-
-      if (err) {
-        // irgendein Fehler beim einlesen des Verzeichnisses
-        console.error("error: error occured trying to read directory "+rfidTagDir + '\n   error message: ' + err.toString());
-        var errCallback = {
-          response: 'error',
-          message: 'error getting files from directory ' + rfidTagDir,
-          error: err.toString()
-        };
-
-        callback(errCallback);
-      } else if (!items.length) {
-        // directory appears to be empty
-        console.warn("warning: nothing to read in directory "+rfidTagDir);
-        var errCallback = {
-          response: 'warning',
-          message: 'nothing to read from directory '+rfidTagDir
-        };
-
-        callback(errCallback);
-      } else {
-        // im Verzeichnis sind tatsaechlich Dateien
-        if (DEBUG) console.log('Anzahl Elemente im Verzeichnis '+rfidTagDir+': ' + items.length);
-        responseContent = "{\'tags\': ["
-
-        //var respCallback = { tags: []};
-        var tagItemArray = [];
-
-        for (i in items) {
-          if (items[i].toString().substr(items[i].indexOf('.')) == '.json') {
-            if (DEBUG) console.log('Arbeite auf item ' + items[i]);
-            var dirItem = '';
-
-            // tag-id auslesen, da wir sie gleich brauchen
-            var tag = items[i].toString().toUpperCase().substring(0,items[i].indexOf('.'));
-
-            getTagData(app, tag, function(err, result){
-              if (err) {
-                console.error('error: could not retrieve tag data for tag ' + tag);
-                /*
-                dirItem = {
-                  tag: tag,
-                  endpoint: tagDbProtocol+'://'+tagDbHost+':'+tagDbPort+tagDbApi+'/tags/tag/'+tag,
-                  title: 'no tag info - error: ' + err.toString()
-                };
-                */
-              } else {
-                if (DEBUG) console.log('data for tag ' + tag + ' retrieved')
-                if (TRACE) console.log(dirItem);
-
-                var obj = result;
-
-                dirItem = {
-                  tag: tag,
-                  endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/'+tag,
-                  title: obj.MediaTitle,
-                  genre: obj.MediaGenre,
-                  type: obj.MediaType,
-                  disks: obj.DiskCount,
-                  tracks: obj.TrackCount
-                };
-                tagItemArray.push(dirItem);
-              }
-            });
-
-            //tagItemArray.push(dirItem);
-
-            // we only need to add the , after an array element in the json
-            // structure, if there are sukzessive elements.
-            if (i<items.length-1) responseContent += ",";
-          } else {
-            if (DEBUG) console.log('ignoring file ' + items[i] + ' as it is not a json file');
-          }
-        }
-        responseContent += "]}"
-      }
-      if (DEBUG) console.log('taglist ready, providing via callback');
-      var respCallback = {
-        tags: tagItemArray
-      };
-      if (TRACE) console.log(respCallback);
-      callback(null, respCallback);
-    });
-  } catch (ex) {
-    console.error("could not read directory "+rfidTagDir+" to list available tags \nException output: " + err.toString());
-    var errCallback = {
-      response: 'error',
-      message: 'could not read tags from directory ' + rfidTagDir,
-      error: ex.toString()
-    };
-    callback(errCallback);
-  }
+  })
 }
 
 var getTagData = function(app, tagId , callback){
@@ -495,48 +258,6 @@ var getTagToPlay = function(app, tagId , callback){
   }
 }
 
-var writeTagDataSync = function(app, tagId, content){
-  var obj = JSON.parse(content);
-
-  if (DEBUG) console.log('function writeTagDataSync called');
-  if (TRACE) console.log('tagId:   ' + tagId);
-  if (TRACE) console.log('content: ' + content);
-  if (TRACE) console.log('obj:     ' + obj);
-
-  var tagStorage = path.join(rfidTagDir, tagId .toUpperCase()+'.json');
-
-  jsonfile.readFile(tagStorage, function(err, result) {
-    if (err) {
-      console.error('error: error getting data of tag '+tagId+' from '+rfidTagDir+' \nerror message: ' +err.toString());
-    } else {
-      if (DEBUG) console.log('getting data for tag ' + tagId  + ' from file ' + tagStorage +':');
-
-      var diskObj = result;
-      if (obj.hasOwnProperty('lastTrack')) {
-        if (DEBUG) console.log('got a lastTrack information ' + obj.lastTrack)
-        diskObj.lastTrack = obj.lastTrack;
-      }
-      if (obj.hasOwnProperty('position')) {
-        if (DEBUG) console.log('got a position information ' + obj.position)
-        for (i in diskObj.MediaFiles) {
-          if (diskObj.MediaFiles[i].id == lastTrack) {
-            diskObj.MediaFiles[i].lastposition = obj.position;
-          }
-        }
-      }
-      if (TRACE) console.log('this is the new json that is gonna written to disk:');
-      if (TRACE) console.log(diskObj);
-      /*
-      try {
-        jsonfile.writeFileSync(tagStorage, diskObj, {spaces: 2});
-      } catch (ex) {
-        console.error('error: could not write data for tag ' + tagId + ' to file ' + tagStorage + ' - exception: ' + ex.toString());
-      }
-      */
-      console.log('success: data for tag '+tagId+' written to file ' + tagStorage);
-    }
-  });
-}
 
 var addPictureData = function(app, tagId , picture, callback){
   if (DEBUG) console.log('function addPictureData called');
@@ -590,54 +311,12 @@ var addPictureData = function(app, tagId , picture, callback){
   });
 }
 
-var uploadFile = function(app, file, callback) {
-  if (DEBUG) console.log('proxy function uploadFile called');
-  if (TRACE) console.log('   file to post: '+file.toString());
 
-  try {
-    var url = fileServiceProtocol+'//'+fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceUrl;
-    var options = {
-      protocol: fileServiceProtocol,
-      host: fileServiceHost,
-      port: Number(fileServicePort),
-      path: fileServiceApi+fileServiceUrl,
-      family: 4,
-      headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
-      multipart: [{
-        body: '<FILE_DATA>'
-      }],
-      method: 'POST'
-    };
-    if (DEBUG) console.log('sending http request to fileService REST api');
-    if (TRACE) console.log(options);
-
-    http.request(options, function(res) {
-      if (DEBUG) console.log('STATUS: ' + res.statusCode);
-      if (TRACE) console.log('HEADERS: ' + JSON.stringify(res.headers));
-      res.setEncoding('utf8');
-      res.on('data', function (chunk) {
-        if (TRACE) console.log('BODY: ' + chunk);
-      });
-    }).end();
-    callback(null, chunk);
-
-  } catch (ex) {
-    console.error('error: exception while uploading the file \''+picture+'\'\n   exception text: ' + ex.toString());
-    var errCallback = {
-      reponse: error,
-      message: 'exception while uploading file ' + picture,
-      error: ex.toString()
-    };
-    callback(errCallback);
-  }
-
-}
 
 module.exports = {
   getEndpoints: getEndpoints,
   getTagList: getTagList,
   getTagData: getTagData,
   getTagToPlay: getTagToPlay,
-  addPictureData: addPictureData,
-  uploadFile: uploadFile
+  addPictureData: addPictureData
 }

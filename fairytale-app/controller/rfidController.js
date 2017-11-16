@@ -9,6 +9,7 @@ const svrPort = Number(config.appEndpoint.Port);
 const svrApi = config.appEndpoint.Api;
 const svrUrl = config.appEndpoint.Url;
 const svrHealthUri = config.appEndpoint.HealthUri;
+const svrHelpUri = config.appEndpoint.HelpUri;
 const svrDescription = config.appEndpoint.Description;
 
 // CONFIG data on the file Upload Service
@@ -19,6 +20,7 @@ const fileServicePort = Number(config.fileServiceEndpoint.Port);
 const fileServiceApi = config.fileServiceEndpoint.Api;
 const fileServiceUrl = config.fileServiceEndpoint.Url;
 const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
+const fileServiceHelpUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Reader Service
@@ -29,6 +31,7 @@ const rfidReaderPort = Number(config.rfidReaderEndpoint.Port);
 const rfidReaderApi = config.rfidReaderEndpoint.Api;
 const rfidReaderUrl = config.rfidReaderEndpoint.Url;
 const rfidReaderHealthUri = config.rfidReaderEndpoint.HealthUri;
+const rfidReaderHelpUri = config.rfidReaderEndpoint.HelpUri;
 const rfidReaderDescription = config.rfidReaderEndpoint.Description;
 
 // CONFIG data on the RFID/NFC Tag DB Service
@@ -39,6 +42,7 @@ const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
 const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
 const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
 const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
 const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
 
 // CONFIG data on the MP3 Player
@@ -49,6 +53,7 @@ const playerPort = Number(config.playerEndpoint.Port);
 const playerApi = config.playerEndpoint.Api;
 const playerUrl = config.playerEndpoint.Url;
 const playerHealthUri = config.playerEndpoint.HealthUri;
+const playerHelpUri = config.playerEndpoint.HelpUri;
 const playerDescription = config.playerEndpoint.Description;
 
 const DEBUG = config.debugging.DEBUG;
@@ -64,7 +69,20 @@ var getEndpoints = function(app) {
   if (DEBUG) console.log('getEndpoints called');
   const theEndpoints = {
     endpoints: [
-
+      {
+        shortcut: 'help',
+        endpoint: rfidReaderProtocol + '://' + rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl+rfidReaderHelpUri,
+        method: 'GET',
+        description: 'returns a help page',
+        alive: 'false'
+      },
+      {
+        shortcut: 'health',
+        endpoint: rfidReaderProtocol + '://' + rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl+rfidReaderHealthUri,
+        method: 'GET',
+        description: 'health status interface',
+        alive: 'false'
+      }
     ]
   };
   return theEndpoints;
