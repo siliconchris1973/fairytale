@@ -1,10 +1,11 @@
 {
   "name": "fairytale",
-  "version": "0.1.0",
-  "description": "An audiobook player with node.js and RFID interface for the Raspberry Pi",
+  "version": "0.3.0",
+  "description": "An audiobook player with node.js and NFC interface for the Raspberry Pi",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node app.js & node tagDbService.js & node player.js"
   },
   "repository": {
     "type": "git",
@@ -17,9 +18,6 @@
     "mp3",
     "player"
   ],
-  "start": "nodemon app.js",
-  "start": "nodemon tagDbService.js",
-  "start": "nodemon player.js",
   "author": "c.guenther@mac.com",
   "license": "ISC",
   "dependencies": {
