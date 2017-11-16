@@ -73,7 +73,7 @@ var getEndpoints = function(app) {
   const theEndpoints = {
     endpoints: [
       {
-        shortcut: 'info',
+        AppName: 'info',
         endpoint: playerProto + '://' + playerAddr+':'+playerPort+playerApi+playerUrl+'/info',
         description: 'the root entry of the mp3 player API',
         alive: 'true'

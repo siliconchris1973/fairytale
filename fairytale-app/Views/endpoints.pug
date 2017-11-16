@@ -8,15 +8,15 @@ block content
         p!= messagetext
 
         div.row
-          div.col-2 Name
-          div.col-5 Endpunkt
+          div.col-1 Name
+          div.col-6 Endpunkt
           div.col-4 Beschreibung
           div.col-1 Link
         for endpoint in varEndpoints
           div.row
-            div.col-2
+            div.col-1
               p #{endpoint.AppName}
-            div.col-5
+            div.col-6
               p #{endpoint.endpoint}
             div.col-4
               p #{endpoint.description}

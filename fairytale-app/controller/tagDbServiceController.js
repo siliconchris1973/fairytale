@@ -75,52 +75,52 @@ var getEndpoints = function(app) {
   const theEndpoints = {
     endpoints: [
       {
-        shortcut: 'info',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/info',
+        AppName: 'endpoints',
+        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/endpoints',
         method: 'GET',
-        description: 'the info entry of the tagDbService API - this site',
+        description: 'Endpoints of the tagDbService API',
         alive: 'true'
       },
       {
-        shortcut: 'help',
+        AppName: 'help',
         endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+tagDbServiceHelpUri,
         method: 'GET',
-        description: 'returns a help page',
+        description: 'Get Help',
         alive: 'false'
       },
       {
-        shortcut: 'health',
+        AppName: 'health',
         endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+tagDbServiceHealthUri,
         method: 'GET',
-        description: 'health status interface',
+        description: 'Health status interface',
         alive: 'false'
       },
       {
-        shortcut: 'tags',
+        AppName: 'tags',
         endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl,
         method: 'GET',
-        description: 'returns a list of available tags',
+        description: 'List of available tags',
         alive: 'true'
       },
       {
-        shortcut: 'tag',
+        AppName: 'tag',
         endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
         method: 'GET',
-        description: 'a specific tag referenced via ID',
+        description: 'A specific tag',
         alive: 'true'
       },
       {
-        shortcut: 'tag',
+        AppName: 'tag',
         endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
         method: 'POST',
-        description: 'create a new tag referenced via ID - called via create form',
+        description: 'POST API to create new tag',
         alive: 'true'
       },
       {
-        shortcut: 'create',
+        AppName: 'create',
         endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/create',
         method: 'GET',
-        description: 'a form to register a new tag in the system',
+        description: 'Form to create new tag',
         alive: 'true'
       }
     ]
