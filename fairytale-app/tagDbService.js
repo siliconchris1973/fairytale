@@ -51,11 +51,6 @@ app.set('tagDbServicePort', Number(config.tagDbServiceEndpoint.Port));
 app.set('tagDbServiceApi', config.tagDbServiceEndpoint.Api);
 app.set('tagDbServiceUrl', config.tagDbServiceEndpoint.Url);
 
-
-// set the routes for different part of the application
-const tagRoutes = require("./routes/routes_tag.js")(app);
-const tagApiRoutes = require("./routes/api/v1/routes_tag.js")(app);
-
 // get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('tagDbServiceProtocol');
@@ -63,6 +58,12 @@ var svrAddr = app.get('tagDbServiceHost');
 var svrPort = app.get('tagDbServicePort');
 var svrApi = app.get('tagDbServiceApi');
 var svrUrl = app.get('tagDbServiceUrl');
+
+// set the routes for different part of the application
+//const tagRoutes = require("./routes/routes_tag.js")(app);
+//const tagApiRoutes = require("./routes/api/v1/routes_tag.js")(app);
+const routes = require("./routes/"+svrApi+svrUrl)(app);
+app.use('/'+svrApi+svrUrl, routes)
 
 var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);

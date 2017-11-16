@@ -51,11 +51,6 @@ app.set('playerPort', Number(config.playerEndpoint.Port));
 app.set('playerApi', config.playerEndpoint.Api);
 app.set('playerUrl', config.playerEndpoint.Url);
 
-
-// set the routes for different part of the application
-const playerRoutes = require("./routes/routes_player.js")(app);
-const playerApiRoutes = require("./routes/api/v1/routes_player.js")(app);
-
 // get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('playerProtocol');
@@ -63,6 +58,12 @@ var svrAddr = app.get('playerHost');
 var svrPort = app.get('playerPort');
 var svrApi = app.get('playerApi');
 var svrUrl = app.get('playerUrl');
+
+// set the routes for different part of the application
+//const playerRoutes = require("./routes/routes_player.js")(app);
+//const playerApiRoutes = require("./routes/api/v1/routes_player.js")(app);
+const routes = require("./routes/"+svrApi+svrUrl)(app);
+app.use('/'+svrApi+svrUrl, routes)
 
 var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);

@@ -38,14 +38,6 @@ app.set('svrPort', Number(config.appEndpoint.Port));
 app.set('svrApi', config.appEndpoint.Api);
 app.set('svrUrl', config.appEndpoint.Url);
 
-const routes = require("./routes");//(app);
-app.use('/', routes)
-// set the routes for different part of the application
-/* OLD ROUTE SETTING
-const appRoutes = require("./routes/routes_app.js")(app);
-const appApiRoutes = require("./routes/api/v1/app.js")(app);
-*/
-
 // get the info on where we are running
 var AppName = app.get('AppName');
 var svrProto = app.get('svrProtocol');
@@ -53,6 +45,16 @@ var svrAddr = app.get('svrHost');
 var svrPort = app.get('svrPort');
 var svrApi = app.get('svrApi');
 var svrUrl = app.get('svrUrl');
+
+// set the routes for different part of the application
+/* OLD ROUTE SETTING
+const appRoutes = require("./routes/routes_app.js")(app);
+const appApiRoutes = require("./routes/api/v1/app.js")(app);
+*/
+const routes = require("./routes")(app);
+app.use('/', routes)
+const apiRoutes = require("./routes/"+svrApi+svrUrl)(app);
+app.use('/'+svrApi+svrUrl, apiRoutes)
 
 var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
