@@ -1,6 +1,5 @@
-var express = require('express'),
-  app = express(),
-  port = process.env.PORT || 3004;
+const express = require('express'),
+  app = express();
 
 // this is needed for the file upload to dir and checking for magic number prior upload
 var path = require('path');
@@ -35,7 +34,7 @@ app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
 
 
 // get the global configuration
-var config = require('./modules/configuration.js');
+const config = require('./modules/configuration.js');
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
@@ -261,6 +260,6 @@ app.post(svrApi+'/file', function(req, res) {
 })
 
 // start the server
-var server = app.listen(port, function () {
+var server = app.listen(svrPort, function () {
   console.log("%s listening on %s://%s:%s with API on %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

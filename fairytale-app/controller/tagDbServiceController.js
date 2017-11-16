@@ -135,7 +135,7 @@ var getTagList = function(app){
   return new Promise(function(resolve, reject){
     if (DEBUG) console.log('function getTagList called');
 
-
+    
 
   })
 }

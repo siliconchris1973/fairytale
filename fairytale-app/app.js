@@ -1,6 +1,5 @@
-var express = require('express'),
+const express = require('express'),
   app = express(),
-  port = process.env.PORT || 3000,
   stylus = require('stylus'),
   nib = require('nib');
 
@@ -30,7 +29,7 @@ app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
 
 
 // get the global configuration
-var config = require('./modules/configuration.js');
+const config = require('./modules/configuration.js');
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
@@ -54,7 +53,7 @@ app.set('svrUrl', config.appEndpoint.Url);
 
 
 // set the routes for different part of the application
-var appRoutes = require("./routes/routes_app.js")(app);
+const appRoutes = require("./routes/routes_app.js")(app);
 
 // get the info on where we are running
 var AppName = app.get('AppName');
@@ -64,6 +63,6 @@ var svrPort = app.get('svrPort');
 var svrApi = app.get('svrApi');
 var svrUrl = app.get('svrUrl');
 
-var server = app.listen(port, function () {
+var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

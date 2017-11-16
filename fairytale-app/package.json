@@ -17,9 +17,13 @@
     "mp3",
     "player"
   ],
+  "start": "nodemon app.js",
+  "start": "nodemon tagDbService.js",
+  "start": "nodemon player.js",
   "author": "c.guenther@mac.com",
   "license": "ISC",
   "dependencies": {
+    "nodemon": "latest",
     "fs": "latest",
     "os": "latest",
     "play-sound": "latest",
