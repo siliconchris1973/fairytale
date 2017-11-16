@@ -10,7 +10,7 @@ var path = require('path');
   var appEndpoint = {
     AppName: 'App',
     Protocol: 'http',
-    Hostname: os.hostname(),
+    Host: os.hostname(),
     Port: Number(3000),
     Api: '/api/v1',
     Url: '/',
@@ -23,7 +23,7 @@ var path = require('path');
   var tagDbServiceEndpoint = {
     AppName: 'TagDb Service',
     Protocol: 'http',
-    Hostname: os.hostname(),
+    Host: os.hostname(),
     Port: Number(3001),
     Api: '/api/v1',
     Url: '/tags',
@@ -36,7 +36,7 @@ var path = require('path');
   var playerEndpoint = {
     AppName: 'Player',
     Protocol: 'http',
-    Hostname: os.hostname(),
+    Host: os.hostname(),
     Port: Number(3002),
     Api: '/api/v1',
     Url: '/player',
@@ -49,7 +49,7 @@ var path = require('path');
   var rfidReaderEndpoint = {
     AppName: 'RFID Reader',
     Protocol: 'http',
-    Hostname: os.hostname(),
+    Host: os.hostname(),
     Port: Number(3003),
     Api: '/api/v1',
     Url: '/rfid',
@@ -60,15 +60,15 @@ var path = require('path');
 
   // this is for the node.js app, that does the actual file uploading
   var fileServiceEndpoint = {
-    AppName: 'FileService',
+    AppName: 'File Service',
     Protocol: 'http',
-    Hostname: os.hostname(),
+    Host: os.hostname(),
     Port: Number(3004),
     Api: '/api/v1',
     Url: '/file',
     HealthUri: '/health',
     HelpUri: '/help',
-    Description: 'File Uploaad Service'
+    Description: 'File Service'
   };
 
   var directories = {

@@ -78,13 +78,15 @@ var getEndpoints = function(app) {
       {endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceHealthUri, description: tagDbServiceDescription + ' Health interface'},
       {endpoint: tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceHelpUri, description: tagDbServiceDescription + ' Help interface'},
 
-      {endpoint: playerHost+':'+playerPort+playerApi+playerUrl, description: playerDescription},
-      {endpoint: playerHost+':'+playerPort+playerApi+playerHealthUri, description: playerDescription + ' Health interface'},
-      {endpoint: playerHost+':'+playerPort+playerApi+playerHelpUri, description: playerDescription + ' Help interface'},
+      {endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl, description: playerDescription},
+      {endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerHealthUri, description: playerDescription + ' Health interface'},
+      {endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerHelpUri, description: playerDescription + ' Help interface'},
 
-      {endpoint: rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, description: rfidReaderDescription},
-      {endpoint: rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderHealthUri, description: rfidReaderDescription + ' Health interface'},
-      {endpoint: fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceHelpUri, description: fileServiceDescription + ' Help interface'},
+      {endpoint: rfidReaderProtocol + '://' + rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderUrl, description: rfidReaderDescription},
+      {endpoint: rfidReaderProtocol + '://' + rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderHealthUri, description: rfidReaderDescription + ' Health interface'},
+      {endpoint: rfidReaderProtocol + '://' + rfidReaderHost+':'+rfidReaderPort+rfidReaderApi+rfidReaderHealthUri, description: rfidReaderDescription + ' Help interface'},
+
+      {endpoint: fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceHelpUri, description: fileServiceDescription + ' Upload Form'},
     ]
   };
   return theEndpoints;
