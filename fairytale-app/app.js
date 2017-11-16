@@ -7,6 +7,9 @@ const express = require('express'),
 var os = require('os');
 var path = require('path');
 
+// get the global configuration
+const config = require('./modules/configuration.js');
+
 // how do we handle requests and parse the request body
 var bodyParser = require("body-parser");
 app.use(bodyParser.json());
@@ -26,10 +29,6 @@ app.set('/img', express.static(path.resolve('./static/img')));
 app.set('/sounds', express.static(path.resolve('./static/sounds')));
 app.set('/Media', express.static(path.resolve('../data/Media')));
 app.set('/TagDB', express.static(path.resolve('../data/TagDB')));
-
-
-// get the global configuration
-const config = require('./modules/configuration.js');
 
 // these settings are made available via app.get('variable name')
 // from within all subsequent scripts
@@ -54,6 +53,7 @@ app.set('svrUrl', config.appEndpoint.Url);
 
 // set the routes for different part of the application
 const appRoutes = require("./routes/routes_app.js")(app);
+const appApiRoutes = require("./routes/api/v1/routes_app.js")(app);
 
 // get the info on where we are running
 var AppName = app.get('AppName');

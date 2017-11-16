@@ -54,6 +54,7 @@ app.set('tagDbServiceUrl', config.tagDbServiceEndpoint.Url);
 
 // set the routes for different part of the application
 const tagRoutes = require("./routes/routes_tag.js")(app);
+const tagApiRoutes = require("./routes/api/v1/routes_tag.js")(app);
 
 // get the info on where we are running
 var AppName = app.get('AppName');
