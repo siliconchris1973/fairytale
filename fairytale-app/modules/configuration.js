@@ -13,7 +13,7 @@ var path = require('path');
     Host: os.hostname(),
     Port: Number(3000),
     Api: '/api/v1',
-    Url: '/',
+    Url: '/app',
     HealthUri: '/health',
     HelpUri: '/help',
     Description: 'Main Application'

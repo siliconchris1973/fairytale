@@ -1,3 +1,5 @@
+const routes = require('express').Router();
+
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the app
@@ -10,6 +12,7 @@ const svrUrl = config.appEndpoint.Url;
 const svrHealthUri = config.appEndpoint.HealthUri;
 const svrHelpUri = config.appEndpoint.HelpUri;
 const svrDescription = config.appEndpoint.Description;
+const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 // CONFIG data on the file Upload Service
 const fileServiceAppName = config.fileServiceEndpoint.AppName;
@@ -21,6 +24,7 @@ const fileServiceUrl = config.fileServiceEndpoint.Url;
 const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
 const fileServiceHelpUri = config.fileServiceEndpoint.HelpUri;
 const fileServiceDescription = config.fileServiceEndpoint.Description;
+const fileServiceFullUrl = fileServiceProtocol+'://'+fileServiceHost+':'+fileServicePort+fileServiceApi+fileServiceUrl;
 
 // CONFIG data on the RFID/NFC Reader Service
 const nfcReaderAppName = config.nfcReaderEndpoint.AppName;
@@ -32,6 +36,7 @@ const nfcReaderUrl = config.nfcReaderEndpoint.Url;
 const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
 const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
 const nfcReaderDescription = config.nfcReaderEndpoint.Description;
+const nfcReaderFullUrl = nfcReaderProtocol+'://'+nfcReaderHost+':'+nfcReaderPort+nfcReaderApi+nfcReaderUrl;
 
 // CONFIG data on the RFID/NFC Tag DB Service
 const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
@@ -43,6 +48,7 @@ const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
 const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
 const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
 const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
+const tagDbServiceFullUrl = tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl;
 
 // CONFIG data on the MP3 Player
 const playerAppName = config.playerEndpoint.AppName;
@@ -54,66 +60,74 @@ const playerUrl = config.playerEndpoint.Url;
 const playerHealthUri = config.playerEndpoint.HealthUri;
 const playerHelpUri = config.playerEndpoint.HelpUri;
 const playerDescription = config.playerEndpoint.Description;
+const playerFullUrl = playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
-var appRouter = function(app) {
+//var appRouter = function(app) {
 
   /*
    *       MAIN APP ROUTES FOR REDIRECTION
    */
-  app.get("/", function(req, res) {
+  routes.get("/", function(req, res) {
+    if (DEBUG) console.log("GET::/");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(svrApi+'/');
+      if (TRACE) console.log('   html request')
+      res.status(302).redirect(svrFullUrl);
+      ///res.status(200).json({ message: 'Connected!' });
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: svrApi+"/"
+        redirect: svrFullUrl
       });
     }
   });
-  app.get("/status", function(req, res) {
+  routes.get("/status", function(req, res) {
+    if (DEBUG) console.log("GET::/status");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(svrApi+'/status');
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(svrFullUrl+'/status');
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: svrApi+"/status"
+        redirect: svrFullUrl+'status'
       });
     }
   });
-  app.get("/endpoints", function(req, res) {
+  routes.get("/endpoints", function(req, res) {
+    if (DEBUG) console.log("GET::/endpoints");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(svrApi+'/endpoints');
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(svrFullUrl+'/endpoints');
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: svrApi+"/endpoints"
+        redirect: svrFullUrl+'endpoints'
       });
     }
   });
@@ -121,75 +135,83 @@ var appRouter = function(app) {
   /*
    *      PLAYER ROUTES FOR REDIRECTION
    */
-  app.get("/player", function(req, res){
+  routes.get("/player", function(req, res){
+    if (DEBUG) console.log("GET::/player");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(playerApi+"/player/info");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(playerFullUrl+"/info");
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'unavailable',
         status: 415,
         message: 'this endpoint is not available for json requests',
-        redirect: playerApi+"/player/info"
+        redirect: playerFullUrl
       });
     }
   });
-  app.get("/player/info", function(req, res){
+  routes.get("/player/info", function(req, res){
+    if (DEBUG) console.log("GET::/player/info");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(playerApi+"/player/info");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(playerFullUrl+"/info");
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: playerApi+"/player/info"
+        redirect: playerFullUrl+'/info'
       });
     }
   });
-  app.get("/player/demo", function(req, res){
+  routes.get("/player/demo", function(req, res){
+    if (DEBUG) console.log("GET::/player/demo");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(playerApi+"/player/demo");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(playerFullUrl+"/demo");
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: playerApi+"/player/demo"
+        redirect: playerFullUrl+'/demo'
       });
     }
   });
-  app.get("/player/endpoints", function(req, res){
+  routes.get("/player/endpoints", function(req, res){
+    if (DEBUG) console.log("GET::/player/endpoints");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(playerApi+"/player/endpoints");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(playerFullUrl+"/endpoints");
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: playerApi+"/player/endpoints"
+        redirect: playerFullUrl+'/endpoints'
       });
     }
   });
@@ -198,96 +220,111 @@ var appRouter = function(app) {
   /*
    *      TAG DB SERVICE ROUTES FOR REDIRECTION
    */
-  app.get("/tags", function(req, res){
+  routes.get("/tags", function(req, res){
+    if (DEBUG) console.log("GET::/tags");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(tagDbServiceApi+"/tags");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(tagDbServiceFullUrl);
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: tagDbServiceApi+'/tags'
+        redirect: tagDbServiceFullUrl
       });
     }
   });
-  app.get("/tags/tag/:id", function(req, res){
+  routes.get("/tags/tag/:id", function(req, res){
+    if (DEBUG) console.log("GET::/tags/tag/:id");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
+    // normally this endpoint needs an id given as part of the url
+    var id = 0;
+    // if there is such an id, we put it in a var to make the reidrect complete
+    if (req.params.id) id = req.params.id
+
     if (acceptsHTML) {
-      res.status(302).redirect(tagDbServiceApi+"/tags/tag/:id");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(tagDbServiceFullUrl+'/tag/'+id);
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: tagDbServiceApi+'/tags/tag/:id'
+        redirect: tagDbServiceFullUrl+'/tag/'+id
       });
     }
   });
-  app.get("/tags/tag/create", function(req, res){
+  routes.get("/tags/tag/create", function(req, res){
+    if (DEBUG) console.log("GET::/tags/tag/create");
     // the server checks whether the client accepts html (browser) or
     // json machine to machine communication
     var acceptsHTML = req.accepts('html');
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(tagDbServiceApi+"/tags/tag/create");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(tagDbServiceFullUrl+'/tag/create');
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'unavailable',
         status: 415,
         message: 'this endpoint is not available for json requests',
-        redirect: tagDbServiceApi+'/tags/tag'
+        redirect: tagDbServiceFullUrl+'/tag'
       });
     }
   });
-  app.get("/tags/info", function(req, res){
+  routes.get("/tags/info", function(req, res){
+    if (DEBUG) console.log("GET::/tags/info");
    // the server checks whether the client accepts html (browser) or
    // json machine to machine communication
    var acceptsHTML = req.accepts('html');
    var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      res.status(302).redirect(tagDbServiceApi+"/tags/info");
+      if (TRACE) console.log('   html request');
+      res.status(302).redirect(tagDbServiceFullUrl+'/info');
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json({
         response: 'redirect',
         status: 302,
         message: 'this endpoint is not available for json requests',
-        redirect: tagDbServiceApi+"/tags/info"
+        redirect: tagDbServiceFullUrl+'/info'
       });
     }
   });
-  app.get("/tags/endpoints", function(req, res){
+  routes.get("/tags/endpoints", function(req, res){
+    if (DEBUG) console.log("GET::/tags/endpoints");
    // the server checks whether the client accepts html (browser) or
    // json machine to machine communication
    var acceptsHTML = req.accepts('html');
    var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-   res.status(302).redirect(tagDbServiceApi+"/endpoints");
+    if (TRACE) console.log('   html request');
+   res.status(302).redirect(tagDbServiceFullUrl+'/endpoints');
   } else {
-    if (DEBUG) console.log("json request");
+    if (TRACE) console.log("   json request");
     res.json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: tagDbServiceApi+"/tags/endpoints"
+      redirect: tagDbServiceFullUrl+'/endpoints'
     });
   }
   });
-}
+//}
 
-module.exports = appRouter;
+module.exports = routes;

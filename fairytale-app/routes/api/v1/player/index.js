@@ -79,16 +79,16 @@ var playerRouter = function(app) {
     var obj = playerController.getEndpoints(app);
 
     if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
+      if (TRACE) console.log("   html request");
       res.render('endpoints', {
-          title: 'Welcome to Fairytale Player',
-          headline: 'Player API Endpunkte',
-          subheadline: 'Verf&uuml;gbare REST Endpunkte f&uuml;r den Player',
-          messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
-          varEndpoints: obj.endpoints
+        title: 'Welcome to Fairytale Player',
+        headline: 'Player API Endpunkte',
+        subheadline: 'Verf&uuml;gbare REST Endpunkte f&uuml;r den Player',
+        messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
+        varEndpoints: obj.endpoints
       });
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       var respEndpoints = {
         response: 'REST API Endpoints available',
         endpoints: obj.endpoints
@@ -116,11 +116,11 @@ var playerRouter = function(app) {
     res.setHeader('X-Powered-By', 'bacon');
 
     if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
+      if (TRACE) console.log("   html request");
       var endObj = responseJson;
       res.render('player_nav', endObj);
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json(playerEndpoints);
     }
   });
@@ -146,8 +146,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -158,9 +160,11 @@ var playerRouter = function(app) {
       //thePlayer.play(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }
@@ -185,8 +189,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -196,9 +202,11 @@ var playerRouter = function(app) {
       //thePlayer.stop(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }
@@ -226,8 +234,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -237,9 +247,11 @@ var playerRouter = function(app) {
       //thePlayer.pause(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }
@@ -266,8 +278,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -307,8 +321,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -318,9 +334,11 @@ var playerRouter = function(app) {
       //thePlayer.prev(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }
@@ -348,8 +366,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -359,9 +379,11 @@ var playerRouter = function(app) {
       //thePlayer.skip(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }
@@ -387,8 +409,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -398,9 +422,11 @@ var playerRouter = function(app) {
       //thePlayer.forward(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }
@@ -426,8 +452,10 @@ var playerRouter = function(app) {
 
       res.statusCode = 400;
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('player_error', responseJson);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     } else {
@@ -437,9 +465,11 @@ var playerRouter = function(app) {
       //thePlayer.rewind(app, tagId);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         var respObj = responseJson;
         res.render('player_view', respObj);
       } else {
+        if (TRACE) console.log("   json request");
         res.json(responseJson);
       }
     }

@@ -83,7 +83,7 @@ var tagRouter = function(app) {
     var obj = tagDbServiceController.getEndpoints(app);
 
     if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
+      if (TRACE) console.log("   html request");
       res.render('endpoints', {
           title: 'Welcome to Fairytale TagDB',
           headline: 'TagDB API Endpunkte',
@@ -92,7 +92,7 @@ var tagRouter = function(app) {
           varEndpoints: obj.endpoints
       });
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       var respEndpoints = {
         response: 'REST API Endpoints available',
         endpoints: obj.endpoints
@@ -118,11 +118,11 @@ var tagRouter = function(app) {
     res.setHeader('X-Powered-By', 'bacon');
 
     if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
+      if (TRACE) console.log("   html request");
       var endObj = responseJson;
       res.render('player_nav', endObj);
     } else {
-      if (DEBUG) console.log("json request");
+      if (TRACE) console.log("   json request");
       res.json(playerEndpoints);
     }
   });
@@ -142,7 +142,7 @@ var tagRouter = function(app) {
       .then(function (result){
         var obj = result;
         if (acceptsHTML) {
-          if (DEBUG) console.log("html request");
+          if (TRACE) console.log("   html request");
           if (DEBUG) console.log("request to render tag list");
           if (TRACE) console.log(obj.tags);
           res.render('tags', {
@@ -153,19 +153,21 @@ var tagRouter = function(app) {
             varTags: obj.tags
           });
         } else {
+          if (TRACE) console.log('   json request');
           res.json({
-              info: {
-                response: 'info',
-                status: 200,
-                message: 'endpoint to tags API',
-                endpoints: result
-              }
+            info: {
+              response: 'info',
+              status: 200,
+              message: 'endpoint to tags API',
+              endpoints: result
+            }
           });
         };
       })
       .catch(function(err){
         console.error('error: getting the list of tags failed\nerror message: ' + err.toString());
         if (acceptsHTML) {
+          if (TRACE) console.log('   html request');
           res.render('tags_error', {
             title: 'RFID Tag Fehlerseite',
             headline: 'RFID Tag Liste Fehler',
@@ -173,10 +175,17 @@ var tagRouter = function(app) {
             errortext: 'Fehler beim abrufen der Liste an verf&uuml;gbarer Tags ',
             exceptionname: 'Exception',
             exceptiontext: err.toString()
-          })
+          });
         } else {
+          if (TRACE) console.log('   json request');
           console.log(err);
-          res.send(err.toString());
+          res.json({
+            response: 'error',
+            status: '500 - internal server error',
+            http_status: 500,
+            message: 'error retrieving data on available tags',
+            error: err.toString()
+          });
         };
       });
     };
@@ -192,20 +201,19 @@ var tagRouter = function(app) {
     var acceptsJSON = req.accepts('json');
 
     if (acceptsHTML) {
-      if (DEBUG) console.log("html request");
+      if (TRACE) console.log("   html request");
       res.render('create_tag', {
-          title: 'Neues RFID Tag registrieren',
-          subheadline: 'Neues RFID Tag registrieren',
-          messagetext: 'Bitte Daten f&uuml;r das neue Tag eintragen und Dateien ausw&auml;hlen',
+        title: 'Neues RFID Tag registrieren',
+        subheadline: 'Neues RFID Tag registrieren',
+        messagetext: 'Bitte Daten f&uuml;r das neue Tag eintragen und Dateien ausw&auml;hlen',
       });
     } else {
-      if (DEBUG) console.log("json request");
-      res.json(
-        {
-          response: 'unavailable',
-          status: 415,
-          message: 'this endpoint is not available for json requests'
-        });
+      if (TRACE) console.log("   json request");
+      res.json({
+        response: 'unavailable',
+        status: 415,
+        message: 'this endpoint is not available for json requests'
+      });
     }
   });
 
@@ -265,6 +273,7 @@ var tagRouter = function(app) {
       console.error("nfc tag error: no tag identifier provided")
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('tags_error', {
           title: 'RFID Tag Fehlerseite',
           headline: 'RFID Tag Fehler',
@@ -275,6 +284,7 @@ var tagRouter = function(app) {
           controlheadline: 'Verf&uuml;gbare Kommandos'
         });
       } else {
+        if (TRACE) console.log("   json request");
         res.json({
             response: 'error',
             status: 400,
@@ -294,7 +304,7 @@ var tagRouter = function(app) {
         var pictureCount=0;
         var trackCount=0;
 
-        if (DEBUG) console.log("html request");
+        if (TRACE) console.log("   html request");
         tagDbServiceController.getTagData(app, tag, function(err, result) {
           if (err) {
             var errObj = err;
@@ -340,7 +350,7 @@ var tagRouter = function(app) {
           }
         });
       } else {
-        if (DEBUG) console.log("json request");
+        if (TRACE) console.log("   json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
         tagDbServiceController.getTagData(app, tag, function(err, result) {
           if (err) {
@@ -373,12 +383,14 @@ var tagRouter = function(app) {
       console.error("nfc tag error: no tag identifier provided")
 
       if (acceptsJSON) {
+        if (TRACE) console.log("   json request");
         res.json({
             response: 'error',
             status: 400,
             message: 'no tag identifier provided'
         });
       } else {
+        if (TRACE) console.log("   html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
           headline: 'Interface Fehler',
@@ -394,7 +406,7 @@ var tagRouter = function(app) {
       if (DEBUG) console.log('data for tag ' + tag + ' requested');
 
       if (acceptsJSON) {
-        if (DEBUG) console.log("json request");
+        if (TRACE) console.log("   json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
         tagDbServiceController.getTagToPlay(app, tag, function(err, result) {
           if (err) {
@@ -408,6 +420,7 @@ var tagRouter = function(app) {
           }
         });
       } else {
+        if (TRACE) console.log("   html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
           headline: 'Interface Fehler',
@@ -435,12 +448,14 @@ var tagRouter = function(app) {
       console.error("nfc tag error: no tag identifier provided")
 
       if (acceptsJSON) {
+        if (TRACE) console.log("   json request");
         res.json({
             response: 'error',
             status: 400,
             message: 'no tag identifier provided'
         });
       } else {
+        if (TRACE) console.log("   html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
           headline: 'Interface Fehler',
@@ -456,7 +471,7 @@ var tagRouter = function(app) {
       if (DEBUG) console.log('data for tag ' + tag + ' requested');
 
       if (acceptsJSON) {
-        if (DEBUG) console.log("json request");
+        if (TRACE) console.log("   json request");
         // in case we shall output JSON it's quite simple, as the stored tag dat ais already json
         tagDbServiceController.writeTagDataSync(app, tag, content, function(err, result) {
           if (err) {
@@ -470,6 +485,7 @@ var tagRouter = function(app) {
           }
         });
       } else {
+        if (TRACE) console.log("   html request");
         res.render('player_error', {
           title: 'Player Fehlerseite',
           headline: 'Interface Fehler',
@@ -514,6 +530,7 @@ var tagRouter = function(app) {
       }
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('tags_error', {
           title: 'RFID Tag Fehlerseite',
           headline: 'RFID Tag Fehler',
@@ -524,6 +541,7 @@ var tagRouter = function(app) {
           controlheadline: 'Verf&uuml;gbare Kommandos'
         });
       } else {
+        if (TRACE) console.log("   json request");
         res.json({
           response: 'error',
           status: res.statusCode,
@@ -557,6 +575,7 @@ var tagRouter = function(app) {
       if (TRACE) console.log('This is the created json:\n' + jsonContent);
 
       if (acceptsHTML) {
+        if (TRACE) console.log("   html request");
         res.render('tags', {
           title: 'RFID Tags',
           headline: 'RFID Tags',
@@ -565,6 +584,7 @@ var tagRouter = function(app) {
           controlheadline: 'Verf&uuml;gbare Kommandos'
         });
       } else {
+        if (TRACE) console.log("   json request");
         res.json({
             response: 'info',
             message: 'provded data for new tag ' + TagId,
@@ -598,7 +618,7 @@ var tagRouter = function(app) {
       console.error("error: no tag identifier provided")
 
       if (acceptsHTML) {
-        if (DEBUG) console.log('rendering page tags_error');
+        if (TRACE) console.log("   html request");
         res.render('tags_error', {
           title: 'RFID Tag Fehlerseite',
           headline: 'RFID Tag Fehler',
@@ -608,7 +628,7 @@ var tagRouter = function(app) {
           exceptiontext: 'keine Exception aufgetreten',
         });
       } else {
-        if (DEBUG) console.log('returning json error response');
+        if (TRACE) console.log("   json request");
         res.json({
           response: 'error',
           message: 'no tag identifier provided'
@@ -653,8 +673,7 @@ var tagRouter = function(app) {
             if (err) {
               console.error('error: error while adding data for tag ' + tagId + '\n   error message: ' + err.toString());
               if (acceptsHTML) {
-                if (DEBUG) console.log("html request");
-                if (DEBUG) console.log('rendering page tags_error');
+                if (TRACE) console.log("   html request");
                 res.render('tags_error', {
                   title: 'RFID Tag Fehlerseite',
                   headline: 'RFID Tag Fehler',
@@ -664,6 +683,7 @@ var tagRouter = function(app) {
                   exceptiontext: err.toString()
                 });
               } else {
+                if (TRACE) console.log("   json request");
                 res.json({response: 'error',
                           message: 'error while updating meta data for tag ' + tagId,
                           error: err.toString()
@@ -672,7 +692,7 @@ var tagRouter = function(app) {
             } else {
               var obj = result;
               if (acceptsHTML) {
-                if (DEBUG) console.log('rendering page showtag');
+                if (TRACE) console.log("   html request");
                 if (TRACE) console.log(obj);
                 // reload showtag again
                 res.render('showtag', {
@@ -691,6 +711,7 @@ var tagRouter = function(app) {
                     varMediaPictures: obj.MediaPicture
                 });
               } else {
+                if (TRACE) console.log("   json request");
                 res.json({obj});
               }
             }

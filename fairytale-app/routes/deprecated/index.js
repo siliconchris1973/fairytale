@@ -79,7 +79,7 @@ var nfcRouter = function(app) {
     var obj = nfcController.getEndpoints(app);
 
     if (acceptsHTML) {
-      if (TRACE) console.log("   html request");
+      if (DEBUG) console.log("html request");
       res.render('endpoints', {
           title: 'Welcome to Fairytale RFID Reader',
           headline: 'RFID Reader API Endpunkte',
@@ -88,7 +88,7 @@ var nfcRouter = function(app) {
           varEndpoints: obj.endpoints
       });
     } else {
-      if (TRACE) console.log("   json request");
+      if (DEBUG) console.log("json request");
       var respEndpoints = {
         response: 'REST API Endpoints available',
         endpoints: obj.endpoints
@@ -110,7 +110,7 @@ var nfcRouter = function(app) {
     var responseContent = "";
     try {
       if (acceptsHTML) {
-        if (TRACE) console.log("   html request");
+        if (DEBUG) console.log("html request");
         res.render('tags', {
           title: 'RFID Reader Startseite',
           headline: 'RFID Reader Startseite',
@@ -119,7 +119,7 @@ var nfcRouter = function(app) {
           controlheadline: 'Verf&uuml;gbare Kommandos'
         });
       } else {
-        if (TRACE) console.log("   json request");
+        if (DEBUG) console.log("json request");
         res.json({
           response: 'info endpoint to tags API',
           endpoints: [
@@ -131,7 +131,6 @@ var nfcRouter = function(app) {
       console.error("could not query nfc reader \nException output: " + ex.toString());
       //process.exit();
       if (acceptsHTML) {
-        if (TRACE) console.log("   html request");
         res.render('nfc_error', {
           title: 'RFID Reader Fehlerseite',
           headline: 'RFID Reader Fehler',
@@ -142,7 +141,6 @@ var nfcRouter = function(app) {
           controlheadline: 'Verf&uuml;gbare Kommandos'
         });
       } else {
-        if (TRACE) console.log("   json request");
         res.json({
           response: 'error',
           message: 'could not query nfc reader',
