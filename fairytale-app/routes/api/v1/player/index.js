@@ -3,6 +3,7 @@ var fs = require('fs');
 var http = require('http');
 
 var config = require('../../../../modules/configuration.js');
+var playerController = require('../../../../controller/playerController.js');
 
 // CONFIG data on the app
 const svrAppName = config.appEndpoint.AppName;
@@ -66,7 +67,6 @@ const soundDir = config.directories.SoundDir;
 const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
 
-var playerController = require('../../../../controller/playerController.js');
 
 var playerRouter = function(app) {
   // the root entry shall show what could be done

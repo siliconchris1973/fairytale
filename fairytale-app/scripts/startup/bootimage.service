@@ -1,0 +1,10 @@
+[Unit]
+Description=Bootimage
+After=multi-user.target
+
+[Service]
+Type=idle
+ExecStart=/usr/bin/python /opt/startup/image.py
+
+[Install]
+WantedBy=multi-user.target

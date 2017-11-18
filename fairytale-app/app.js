@@ -3,6 +3,9 @@ const express = require('express'),
   stylus = require('stylus'),
   nib = require('nib');
 
+const routes = require("./routes");
+app.use('/', routes);
+
 // get the hostname of the server we run on
 var os = require('os');
 var path = require('path');
@@ -47,13 +50,10 @@ var svrApi = app.get('svrApi');
 var svrUrl = app.get('svrUrl');
 
 // set the routes for different part of the application
-/* OLD ROUTE SETTING
+/* TODO delete OLD ROUTE SETTING
 const appRoutes = require("./routes/routes_app.js")(app);
 const appApiRoutes = require("./routes/api/v1/app.js")(app);
 */
-const routes = require("./routes");
-app.use('/', routes);
-app.use(svrApi+svrUrl, routes);
 
 var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
