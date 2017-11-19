@@ -63,7 +63,7 @@ class Blink(Resource):
         print "Done" ## When loop is complete, print "Done"
         GPIO.cleanup()
 
-api.add_resource(Cycle, '/cycle/<string:onoff')
+api.add_resource(Cycle, '/cycle/<string:onoff>')
 api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
 
 # Main function
