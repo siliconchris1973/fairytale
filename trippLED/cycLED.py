@@ -4,8 +4,8 @@ import time ## Import 'time' library. Allows us to use 'sleep'
 
 GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
 BLUELED = 33
-REDLED = 35
-GREENLED = 37
+REDLED = 37
+GREENLED = 35
 GPIO.setup(BLUELED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(REDLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(GREENLED, GPIO.OUT) ## Setup GPIO Pin to OUT
