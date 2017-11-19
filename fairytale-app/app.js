@@ -49,12 +49,6 @@ var svrPort = app.get('svrPort');
 var svrApi = app.get('svrApi');
 var svrUrl = app.get('svrUrl');
 
-// set the routes for different part of the application
-/* TODO delete OLD ROUTE SETTING
-const appRoutes = require("./routes/routes_app.js")(app);
-const appApiRoutes = require("./routes/api/v1/app.js")(app);
-*/
-
 var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

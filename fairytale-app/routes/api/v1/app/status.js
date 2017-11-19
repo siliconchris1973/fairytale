@@ -17,33 +17,28 @@ const svrDescription = config.appEndpoint.Description;
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
-  appRoutes.get(svrApi+svrUrl+"/status", function(req, res) {
-    if (DEBUG) console.log('GET::'+svrApi+svrUrl+'/status');
-    // the server checks whether the client accepts html (browser) or
-    // json machine to machine communication
-    var acceptsHTML = req.accepts('html');
-    var acceptsJSON = req.accepts('json');
-    var obj = appController.getEndpoints(app);
+appRoutes.get('/status', (req, res) => {
+  if (DEBUG) console.log('GET::'+svrApi+svrUrl+'/status');
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+  var obj = appController.getEndpoints();
 
-    if (acceptsHTML) {
-      if (TRACE) console.log("html request");
+  if (acceptsHTML) {
+    if (TRACE) console.log("html request");
 
-      res.render('component_status', {
-          title: 'Komponentenstatus',
-          headline: 'Komponentenstatus',
-          subheadline: 'Status der einzelnen Komponenten...',
-          messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT STATUS TO COME LATER',
-          varEndpoints: obj.endpoints
-      });
-    } else {
-      if (TRACE) console.log("json request");
-      var respEndpoint = {
-        response: 'status information requested',
-        endpoints: obj.endpoints
-      };
-      res.json(respEndpoint);
-    }
-  });
-
+    res.status(200).render('component_status', {
+        title: 'Komponentenstatus',
+        headline: 'Komponentenstatus',
+        subheadline: 'Status der einzelnen Komponenten...',
+        messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT STATUS TO COME LATER',
+        varEndpoints: obj.endpoints
+    });
+  } else {
+    if (TRACE) console.log("json request");
+    res.status(200).json({ message: 'STATUS!' });
+  }
+});
 
 module.exports = appRoutes;

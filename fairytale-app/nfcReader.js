@@ -34,20 +34,20 @@ app.set('DEBUG', config.debugging.DEBUG);
 app.set('TRACE', config.debugging.TRACE);
 
 // set server address
-app.set('AppName', config.tagDbServiceEndpoint.AppName);
-app.set('tagDbServiceProtocol', config.tagDbServiceEndpoint.Protocol);
-app.set('tagDbServiceHost', config.tagDbServiceEndpoint.Host);
-app.set('tagDbServicePort', Number(config.tagDbServiceEndpoint.Port));
-app.set('tagDbServiceApi', config.tagDbServiceEndpoint.Api);
-app.set('tagDbServiceUrl', config.tagDbServiceEndpoint.Url);
+app.set('AppName', config.nfcReaderEndpoint.AppName);
+app.set('svrProtocol', config.nfcReaderEndpoint.Protocol);
+app.set('svrHost', config.nfcReaderEndpoint.Host);
+app.set('svrPort', Number(config.nfcReaderEndpoint.Port));
+app.set('svrApi', config.nfcReaderEndpoint.Api);
+app.set('svrUrl', config.nfcReaderEndpoint.Url);
 
 // get the info on where we are running
 var AppName = app.get('AppName');
-var svrProto = app.get('tagDbServiceProtocol');
-var svrAddr = app.get('tagDbServiceHost');
-var svrPort = app.get('tagDbServicePort');
-var svrApi = app.get('tagDbServiceApi');
-var svrUrl = app.get('tagDbServiceUrl');
+var svrProto = app.get('svrProtocol');
+var svrAddr = app.get('svrHost');
+var svrPort = app.get('svrPort');
+var svrApi = app.get('svrApi');
+var svrUrl = app.get('svrUrl');
 
 var server = app.listen(svrPort, function () {
     console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);

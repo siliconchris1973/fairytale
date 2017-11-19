@@ -1,14 +1,13 @@
-const routes = require('express').Router();
 /*
-const appRoutes = require('./api/v1/app');
-routes.use('/api/v1/app', appRoutes);
-const tagsRoutes = require('./api/v1/tags');
-routes.use('/api/v1/tags', tagsRoutes);
-const nfcRoutes = require('./api/v1/nfc');
-routes.use('/api/v1/nfc', nfcRoutes);
-const playerRoutes = require('./api/v1/player');
-routes.use('/api/v1/player', playerRoutes);
-*/
+ * This routing file only contains redirects
+ * and the definition of endpoints. The concrete
+ * endpoints are defined below
+ *    /api/v1/[app|nfc|player|tags]
+ * in each index.js and corresponding function files.
+ */
+
+const routes = require('express').Router();
+
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the app
@@ -74,11 +73,18 @@ const playerFullUrl = playerProtocol+'://'+playerHost+':'+playerPort+playerApi+p
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
-
-/*
- *  This routing files only contains redirects
- *  the real endpoints below /api/v1/[app|nfc|player|tags]
- */
+// define routing endpoints based on directory structure
+// in each sub directory defined here, you will find and
+// index.js file that defines endpoints and sourceds in
+// corresponding files with the actual endpoint functionality
+const app = require('./api/v1/app');
+routes.use('/api/v1/app', app);
+const tags = require('./api/v1/tags');
+routes.use('/api/v1/tags', tags);
+const nfc = require('./api/v1/nfc');
+routes.use('/api/v1/nfc', nfc);
+const player = require('./api/v1/player');
+routes.use('/api/v1/player', player);
 
 /*
  *       MAIN APP ROUTES FOR REDIRECTION
@@ -92,14 +98,13 @@ routes.get("/", function(req, res) {
 
   if (acceptsHTML) {
     if (TRACE) console.log('   redirecting to '+svrFullUrl);
-    res.status(302).redirect(svrFullUrl);
-    ///res.status(200).json({ message: 'Connected!' });
+    res.status(302).redirect(svrFullUrl+'/welcome');
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: svrFullUrl
+      redirect: svrFullUrl+'/welcome'
     });
   }
 });
@@ -118,11 +123,10 @@ routes.get("/status", function(req, res) {
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: svrFullUrl+'status'
+      redirect: svrFullUrl+'/status'
     });
   }
 });
-
 routes.get("/endpoints", function(req, res) {
   if (DEBUG) console.log("GET::/endpoints");
   // the server checks whether the client accepts html (browser) or
@@ -138,7 +142,7 @@ routes.get("/endpoints", function(req, res) {
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: svrFullUrl+'endpoints'
+      redirect: svrFullUrl+'/endpoints'
     });
   }
 });
@@ -185,22 +189,22 @@ routes.get("/player/info", function(req, res){
     });
   }
 });
-routes.get("/player/demo", function(req, res){
-  if (DEBUG) console.log("GET::/player/demo");
+routes.get("/player/status", function(req, res){
+  if (DEBUG) console.log("GET::/player/status");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/demo');
-    res.status(302).redirect(playerFullUrl+"/demo");
+    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/status');
+    res.status(302).redirect(playerFullUrl+"/status");
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/demo'
+      redirect: playerFullUrl+'/status'
     });
   }
 });
@@ -224,6 +228,86 @@ routes.get("/player/endpoints", function(req, res){
   }
 });
 
+
+/*
+ *      NFC READER ROUTES FOR REDIRECTION
+ */
+routes.get("/nfc", function(req, res){
+  if (DEBUG) console.log("GET::/nfc");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+nfcReaderFullUrl+'/info');
+    res.status(302).redirect(nfcReaderFullUrl+"/info");
+  } else {
+    res.json({
+      response: 'unavailable',
+      status: 415,
+      message: 'this endpoint is not available for json requests',
+      redirect: nfcReaderFullUrl
+    });
+  }
+});
+routes.get("/nfc/info", function(req, res){
+  if (DEBUG) console.log("GET::/player/info");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+nfcReaderFullUrl+'/info');
+    res.status(302).redirect(nfcReaderFullUrl+"/info");
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      message: 'this endpoint is not available for json requests',
+      redirect: nfcReaderFullUrl+'/info'
+    });
+  }
+});
+routes.get("/nfc/endpoints", function(req, res){
+  if (DEBUG) console.log("GET::/nfc/endpoints");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+nfcReaderFullUrl+'/endpoints');
+    res.status(302).redirect(nfcReaderFullUrl+"/endpoints");
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      message: 'this endpoint is not available for json requests',
+      redirect: nfcReaderFullUrl+'/endpoints'
+    });
+  }
+});
+routes.get("/nfc/status", function(req, res){
+  if (DEBUG) console.log("GET::/nfc/status");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+nfcReaderFullUrl+'/status');
+    res.status(302).redirect(nfcReaderFullUrl+"/status");
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      message: 'this endpoint is not available for json requests',
+      redirect: nfcReaderFullUrl+'/status'
+    });
+  }
+});
 
 /*
  *      TAG DB SERVICE ROUTES FOR REDIRECTION
@@ -328,6 +412,24 @@ if (acceptsHTML) {
   });
 }
 });
+routes.get("/tags/status", function(req, res){
+  if (DEBUG) console.log("GET::/tags/status");
+ // the server checks whether the client accepts html (browser) or
+ // json machine to machine communication
+ var acceptsHTML = req.accepts('html');
+ var acceptsJSON = req.accepts('json');
 
+if (acceptsHTML) {
+  if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl+'/status');
+ res.status(302).redirect(tagDbServiceFullUrl+'/status');
+} else {
+  res.json({
+    response: 'redirect',
+    status: 302,
+    message: 'this endpoint is not available for json requests',
+    redirect: tagDbServiceFullUrl+'/status'
+  });
+}
+});
 
 module.exports = routes;

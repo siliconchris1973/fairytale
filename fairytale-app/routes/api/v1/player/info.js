@@ -17,28 +17,27 @@ const svrDescription = config.appEndpoint.Description;
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
-appRoutes.get('/welcome', (req, res) => {
-  if (DEBUG) console.log('GET::'+svrApi+svrUrl+'/welcome');
+appRoutes.get('/info', (req, res) => {
+  if (DEBUG) console.log('GET::'+svrApi+svrUrl+'/info');
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
+  var obj = appController.getEndpoints();
 
   if (acceptsHTML) {
-    if (TRACE) console.log("   html request");
-    res.status(200).render('content', {
-        title: 'Welcome to Fairytale',
-        headline: 'Willkommen im Märchenschloss',
-        subheadline: 'W&auml;hle eine Funktion',
-        messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
+    if (TRACE) console.log("html request");
+
+    res.status(200).render('component_status', {
+        title: 'Komponentenstatus',
+        headline: 'Komponentenstatus',
+        subheadline: 'Status der einzelnen Komponenten...',
+        messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT INFO TO COME LATER',
+        varEndpoints: obj.endpoints
     });
   } else {
-    if (TRACE) console.log("   json request");
-    var respEndpoints = {
-      response: 'REST API Endpoints available',
-      endpoints: appEndpoints
-      };
-    res.status(200).json({ message: 'WELCOME!' });
+    if (TRACE) console.log("json request");
+    res.status(200).json({ message: 'INFO!' });
   }
 });
 
