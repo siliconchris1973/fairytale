@@ -32,7 +32,7 @@ playerRoutes.get("/welcome", (req, res) => {
       title: 'Player Startseite',
       headline: 'Player Startseite',
       subheadline: 'Willkommen',
-      messagetext: 'Willkommen zum Player',
+      messagetext: 'WELCOME PAGE TO COMPONENT TO COME LATER'
     });
   } else {
     if (TRACE) console.log("   json request");

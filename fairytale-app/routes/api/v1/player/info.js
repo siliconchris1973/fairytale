@@ -28,12 +28,11 @@ appRoutes.get('/info', (req, res) => {
   if (acceptsHTML) {
     if (TRACE) console.log("html request");
 
-    res.status(200).render('component_status', {
-        title: 'Komponentenstatus',
-        headline: 'Komponentenstatus',
-        subheadline: 'Status der einzelnen Komponenten...',
-        messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT INFO TO COME LATER',
-        varEndpoints: obj.endpoints
+    res.status(200).render('player', {
+      title: 'Player',
+      headline: 'Player',
+      subheadline: 'Info',
+      messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT INFO TO COME LATER'
     });
   } else {
     if (TRACE) console.log("json request");

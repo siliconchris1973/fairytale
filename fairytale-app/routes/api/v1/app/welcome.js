@@ -28,9 +28,9 @@ appRoutes.get('/welcome', (req, res) => {
     if (TRACE) console.log("   html request");
     res.status(200).render('content', {
         title: 'Welcome to Fairytale',
-        headline: 'Willkommen im Märchenschloss',
-        subheadline: 'W&auml;hle eine Funktion',
-        messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
+        headline: 'Fairytale Startseite',
+        subheadline: 'Willkommen im M&auml;rchenschloss',
+        messagetext: 'WELCOME PAGE TO COMPONENT TO COME LATER'
     });
   } else {
     if (TRACE) console.log("   json request");

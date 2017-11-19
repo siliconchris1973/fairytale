@@ -28,11 +28,11 @@ nfcRoutes.get("/welcome", (req, res) => {
 
   if (acceptsHTML) {
     if (TRACE) console.log("   html request");
-    res.status(200).render('tags', {
+    res.status(200).render('nfc', {
       title: 'NFC Reader Startseite',
       headline: 'NFC Reader Startseite',
       subheadline: 'Willkommen',
-      messagetext: 'Willkommen zum NFC Reader',
+      messagetext: 'WELCOME PAGE TO COMPONENT TO COME LATER'
     });
   } else {
     if (TRACE) console.log("   json request");

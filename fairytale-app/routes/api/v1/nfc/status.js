@@ -30,7 +30,7 @@ nfcRoutes.get("/status", (req, res) => {
   var responseContent = "";
   if (acceptsHTML) {
     if (TRACE) console.log("   html request");
-    res.status(200).render('tags', {
+    res.status(200).render('nfc', {
       title: 'NFC Reader Statusseite',
       headline: 'NFC Reader Statusseite',
       subheadline: 'Willkommen',
