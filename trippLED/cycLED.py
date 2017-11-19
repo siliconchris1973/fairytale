@@ -24,9 +24,8 @@ api = Api(app)
 
 ##Define a function named Blink()
 class Cycle(Resource):
-    def get(self):
-        for i in range(0,NUM_TIMES):## Run loop numTimes
-            print "Iteration " + str(i+1)## Print current loop
+    def get(self, onoff):
+        if (onoff == 'on'):
             GPIO.output(REDLED,True)## Switch on pin
             time.sleep(TIME_ON)## Wait
             GPIO.output(REDLED,False)## Switch off pin
@@ -39,12 +38,22 @@ class Cycle(Resource):
             time.sleep(TIME_ON)## Wait
             GPIO.output(BLUELED,False)## Switch off pin
             time.sleep(TIME_OFF)## Wait
-        print "Done" ## When loop is complete, print "Done"
-        GPIO.cleanup()
+        else:
+            GPIO.output(REDLED,False)## Switch on pin
+            GPIO.output(GREENLED,False)## Switch on pin
+            GPIO.output(BLUELED,False)## Switch off pin
+            GPIO.cleanup()
 
 ##Define a function named Blink()
 class Blink(Resource):
-    def get(self, pin):
+    def get(self, color, number, speed):
+        if (color == 'red'):
+            pin = REDLED
+        elif (color == 'green'):
+            pin = GREENLED
+        else:
+            pin = BLUELED
+
         for i in range(0,NUM_TIMES):## Run loop numTimes
             print "Iteration " + str(i+1)## Print current loop
             GPIO.output(pin,True)## Switch on pin
@@ -54,8 +63,8 @@ class Blink(Resource):
         print "Done" ## When loop is complete, print "Done"
         GPIO.cleanup()
 
-api.add_resource(Cycle, '/cycle')
-api.add_resource(Blink, '/blink/<int:pin>')
+api.add_resource(Cycle, '/cycle/<string:onoff')
+api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
 
 # Main function
 def main():
