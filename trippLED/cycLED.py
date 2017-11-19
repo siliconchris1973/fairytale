@@ -22,32 +22,40 @@ GPIO.setup(GREENLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 app = Flask(__name__)
 api = Api(app)
 
+def driveLed(pin, speed):
+    GPIO.output(pin,True)## Switch on pin
+    time.sleep(speed)## Wait
+    GPIO.output(pin,False)## Switch off pin
+
 ##Define a function named Blink()
 class Cycle(Resource):
+    def cycle(self, ON_TIME, OFF_TIME):
+        driveLed(REDLED,ON_TIME)
+        time.sleep(OFF_TIME)
+        driveLed(GREENLED,ON_TIME)
+        time.sleep(OFF_TIME)
+        driveLed(BLUELED,ON_TIME)
+        time.sleep(OFF_TIME)
+    def stop(self):
+        GPIO.output(REDLED,False)## Switch on pin
+        GPIO.output(GREENLED,False)## Switch on pin
+        GPIO.output(BLUELED,False)## Switch off pin
+        GPIO.cleanup()
+
     def get(self, mode, iterations, speed):
         if (mode == 'on'):
             for i in range(0,iterations):## Run loop numTimes
-                GPIO.output(REDLED,True)## Switch on pin
-                time.sleep(speed)## Wait
-                GPIO.output(REDLED,False)## Switch off pin
-                time.sleep(speed/2)## Wait
-                GPIO.output(GREENLED,True)## Switch on pin
-                time.sleep(speed)## Wait
-                GPIO.output(GREENLED,False)## Switch off pin
-                time.sleep(speed/2)## Wait
-                GPIO.output(BLUELED,True)## Switch on pin
-                time.sleep(speed)## Wait
-                GPIO.output(BLUELED,False)## Switch off pin
-                time.sleep(speed/2)## Wait
-            GPIO.output(REDLED,False)## Switch on pin
-            GPIO.output(GREENLED,False)## Switch on pin
-            GPIO.output(BLUELED,False)## Switch off pin
-            GPIO.cleanup()
+                cycle(speed, speed/2)
+            stop()
         else:
-            GPIO.output(REDLED,False)## Switch on pin
-            GPIO.output(GREENLED,False)## Switch on pin
-            GPIO.output(BLUELED,False)## Switch off pin
-            GPIO.cleanup()
+            stop()
+    def get(self, mode):
+        if (mode == 'on'):
+            for i in range(0,10):## Run loop numTimes
+                cycle(1, 0,5)
+            stop()
+        else:
+            stop()
 
 ##Define a function named Blink()
 class Blink(Resource):
@@ -68,7 +76,9 @@ class Blink(Resource):
         else:
             GPIO.cleanup()
 
-api.add_resource(Cycle, '/cycle/<string:mode>/<int:number>/<int:speed>')
+api.add_resource(Cycle, '/cycle/<string:mode>')
+api.add_resource(Cycle, '/cycle/<string:mode>/<int:number>')
+api.add_resource(Cycle, '/cycle/<string:mode>/<int:number>/<float:speed>')
 api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
 
 # Main function
