@@ -46,7 +46,7 @@ class Cycle(Resource):
     def get(self, mode):
         if (mode == 'on'):
             while (True):
-                self.cycle(1, 0,5)
+                cycle(1, 0,5)
         else:
             stop()
 
