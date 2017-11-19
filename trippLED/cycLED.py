@@ -6,10 +6,30 @@ GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
 BLUELED = 33
 REDLED = 37
 GREENLED = 35
+GPIO.setwarnings(False) ## disable warnings in case GPIO port is already set
 GPIO.setup(BLUELED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(REDLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(GREENLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 
+
+##Define a function named Blink()
+def Cycle(numTimes,speed):
+    for i in range(0,numTimes):## Run loop numTimes
+        print "Iteration " + str(i+1)## Print current loop
+        GPIO.output(REDLED,True)## Switch on pin 7
+        time.sleep(speed)## Wait
+        GPIO.output(REDLED,False)## Switch off pin 7
+        time.sleep(speed/2)## Wait
+        GPIO.output(GREENLED,True)## Switch on pin 7
+        time.sleep(speed)## Wait
+        GPIO.output(GREENLED,False)## Switch off pin 7
+        time.sleep(speed/2)## Wait
+        GPIO.output(BLUELED,True)## Switch on pin 7
+        time.sleep(speed)## Wait
+        GPIO.output(BLUELED,False)## Switch off pin 7
+        time.sleep(speed/2)## Wait
+    print "Done" ## When loop is complete, print "Done"
+    GPIO.cleanup()
 
 ##Define a function named Blink()
 def Blink(pin, numTimes,speed):
@@ -36,4 +56,5 @@ else:
 
 ## Start Blink() function.
 ## Convert user input from strings to numeric data types and pass to Blink() as parameters
-Blink(int(driveled), int(iterations),float(speed))
+##Blink(int(driveled), int(iterations),float(speed))
+Cycle(int(int(iterations),float(speed))
