@@ -10,6 +10,7 @@ REDLED = 37
 GREENLED = 35
 TIME_ON = 1 ## how long shall an led be turned on (either for blinking or cycle)
 TIME_OFF = 1 ## how long shall an led be turned off (either for blinking or cycle)
+IP_ADDR = '0.0.0.0'
 PORT = 3010 ## port the webserver listens for client requests
 NUM_TIMES = 3
 GPIO.setwarnings(False) ## disable warnings in case GPIO port is already set
@@ -27,24 +28,24 @@ class Cycle(Resource):
         for i in range(0,NUM_TIMES):## Run loop numTimes
             print "Iteration " + str(i+1)## Print current loop
             GPIO.output(REDLED,True)## Switch on pin
-            time.sleep(speed)## Wait
+            time.sleep(TIME_ON)## Wait
             GPIO.output(REDLED,False)## Switch off pin
-            time.sleep(speed)## Wait
+            time.sleep(TIME_OFF)## Wait
             GPIO.output(GREENLED,True)## Switch on pin
-            time.sleep(speed)## Wait
+            time.sleep(TIME_ON)## Wait
             GPIO.output(GREENLED,False)## Switch off pin
-            time.sleep(speed)## Wait
+            time.sleep(TIME_OFF)## Wait
             GPIO.output(BLUELED,True)## Switch on pin
-            time.sleep(speed)## Wait
+            time.sleep(TIME_ON)## Wait
             GPIO.output(BLUELED,False)## Switch off pin
-            time.sleep(speed)## Wait
+            time.sleep(TIME_OFF)## Wait
         print "Done" ## When loop is complete, print "Done"
         GPIO.cleanup()
 
 ##Define a function named Blink()
 class Blink(Resource):
     def get(self, pin):
-        for i in range(0,numTimes):## Run loop numTimes
+        for i in range(0,NUM_TIMES):## Run loop numTimes
             print "Iteration " + str(i+1)## Print current loop
             GPIO.output(pin,True)## Switch on pin
             time.sleep(TIME_ON)## Wait
@@ -59,7 +60,7 @@ api.add_resource(Blink, '/blink/<int:pin>')
 # Main function
 def main():
     try:
-        app.run()
+        app.run(host= IP_ADDR, port=PORT)
     except KeyboardInterrupt:
         # exit from the program
         sys.exit(0)
