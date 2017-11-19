@@ -24,8 +24,8 @@ api = Api(app)
 
 ##Define a function named Blink()
 class Cycle(Resource):
-    def get(self, onoff):
-        if (onoff == 'on'):
+    def get(self, mode):
+        if (mode == 'on'):
             GPIO.output(REDLED,True)## Switch on pin
             time.sleep(TIME_ON)## Wait
             GPIO.output(REDLED,False)## Switch off pin
@@ -63,7 +63,7 @@ class Blink(Resource):
         print "Done" ## When loop is complete, print "Done"
         GPIO.cleanup()
 
-api.add_resource(Cycle, '/cycle/<string:onoff>')
+api.add_resource(Cycle, '/cycle/<string:mode>')
 api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
 
 # Main function
