@@ -24,20 +24,25 @@ api = Api(app)
 
 ##Define a function named Blink()
 class Cycle(Resource):
-    def get(self, mode):
+    def get(self, mode, iterations, speed):
         if (mode == 'on'):
-            GPIO.output(REDLED,True)## Switch on pin
-            time.sleep(TIME_ON)## Wait
-            GPIO.output(REDLED,False)## Switch off pin
-            time.sleep(TIME_OFF)## Wait
-            GPIO.output(GREENLED,True)## Switch on pin
-            time.sleep(TIME_ON)## Wait
-            GPIO.output(GREENLED,False)## Switch off pin
-            time.sleep(TIME_OFF)## Wait
-            GPIO.output(BLUELED,True)## Switch on pin
-            time.sleep(TIME_ON)## Wait
+            for i in range(0,iterations):## Run loop numTimes
+                GPIO.output(REDLED,True)## Switch on pin
+                time.sleep(speed)## Wait
+                GPIO.output(REDLED,False)## Switch off pin
+                time.sleep(speed/2)## Wait
+                GPIO.output(GREENLED,True)## Switch on pin
+                time.sleep(speed)## Wait
+                GPIO.output(GREENLED,False)## Switch off pin
+                time.sleep(speed/2)## Wait
+                GPIO.output(BLUELED,True)## Switch on pin
+                time.sleep(speed)## Wait
+                GPIO.output(BLUELED,False)## Switch off pin
+                time.sleep(speed/2)## Wait
+            GPIO.output(REDLED,False)## Switch on pin
+            GPIO.output(GREENLED,False)## Switch on pin
             GPIO.output(BLUELED,False)## Switch off pin
-            time.sleep(TIME_OFF)## Wait
+            GPIO.cleanup()
         else:
             GPIO.output(REDLED,False)## Switch on pin
             GPIO.output(GREENLED,False)## Switch on pin
@@ -46,24 +51,24 @@ class Cycle(Resource):
 
 ##Define a function named Blink()
 class Blink(Resource):
-    def get(self, color, number, speed):
+    def get(self, color, mode, iterations, speed):
         if (color == 'red'):
             pin = REDLED
         elif (color == 'green'):
             pin = GREENLED
         else:
             pin = BLUELED
+        if (mode == 'on'):
+            for i in range(0,iterations):## Run loop numTimes
+                GPIO.output(pin,True)## Switch on pin
+                time.sleep(speed)## Wait
+                GPIO.output(pin,False)## Switch off pin
+                time.sleep(speed)## Wait
+            GPIO.cleanup()
+        else:
+            GPIO.cleanup()
 
-        for i in range(0,NUM_TIMES):## Run loop numTimes
-            print "Iteration " + str(i+1)## Print current loop
-            GPIO.output(pin,True)## Switch on pin
-            time.sleep(TIME_ON)## Wait
-            GPIO.output(pin,False)## Switch off pin
-            time.sleep(TIME_OFF)## Wait
-        print "Done" ## When loop is complete, print "Done"
-        GPIO.cleanup()
-
-api.add_resource(Cycle, '/cycle/<string:mode>')
+api.add_resource(Cycle, '/cycle/<string:mode>/<int:number>/<int:speed>')
 api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
 
 # Main function
