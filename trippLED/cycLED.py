@@ -1,60 +1,69 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
 import RPi.GPIO as GPIO ## Import GPIO library
 import time ## Import 'time' library. Allows us to use 'sleep'
+
+from flask_restful import Resource, Api ## for creation of restful api
 
 GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
 BLUELED = 33
 REDLED = 37
 GREENLED = 35
+TIME_ON = 1 ## how long shall an led be turned on (either for blinking or cycle)
+TIME_OFF = 1 ## how long shall an led be turned off (either for blinking or cycle)
+PORT = 3010 ## port the webserver listens for client requests
+NUM_TIMES = 3
 GPIO.setwarnings(False) ## disable warnings in case GPIO port is already set
 GPIO.setup(BLUELED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(REDLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(GREENLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 
+## initialize the app and the API
+app = Flask(__name__)
+api = Api(app)
 
 ##Define a function named Blink()
-def Cycle(numTimes,speed):
-    for i in range(0,numTimes):## Run loop numTimes
-        print "Iteration " + str(i+1)## Print current loop
-        GPIO.output(REDLED,True)## Switch on pin 7
-        time.sleep(speed)## Wait
-        GPIO.output(REDLED,False)## Switch off pin 7
-        time.sleep(speed/2)## Wait
-        GPIO.output(GREENLED,True)## Switch on pin 7
-        time.sleep(speed)## Wait
-        GPIO.output(GREENLED,False)## Switch off pin 7
-        time.sleep(speed/2)## Wait
-        GPIO.output(BLUELED,True)## Switch on pin 7
-        time.sleep(speed)## Wait
-        GPIO.output(BLUELED,False)## Switch off pin 7
-        time.sleep(speed/2)## Wait
-    print "Done" ## When loop is complete, print "Done"
-    GPIO.cleanup()
+class cycle()
+    def get(self):
+        for i in range(0,NUM_TIMES):## Run loop numTimes
+            print "Iteration " + str(i+1)## Print current loop
+            GPIO.output(REDLED,True)## Switch on pin
+            time.sleep(speed)## Wait
+            GPIO.output(REDLED,False)## Switch off pin
+            time.sleep(speed)## Wait
+            GPIO.output(GREENLED,True)## Switch on pin
+            time.sleep(speed)## Wait
+            GPIO.output(GREENLED,False)## Switch off pin
+            time.sleep(speed)## Wait
+            GPIO.output(BLUELED,True)## Switch on pin
+            time.sleep(speed)## Wait
+            GPIO.output(BLUELED,False)## Switch off pin
+            time.sleep(speed)## Wait
+        print "Done" ## When loop is complete, print "Done"
+        GPIO.cleanup()
 
 ##Define a function named Blink()
-def Blink(pin, numTimes,speed):
-    for i in range(0,numTimes):## Run loop numTimes
-        print "Iteration " + str(i+1)## Print current loop
-        GPIO.output(pin,True)## Switch on pin 7
-        time.sleep(speed)## Wait
-        GPIO.output(pin,False)## Switch off pin 7
-        time.sleep(speed)## Wait
-    print "Done" ## When loop is complete, print "Done"
-    GPIO.cleanup()
+class Blink():
+    def get(self, pin):
+        for i in range(0,numTimes):## Run loop numTimes
+            print "Iteration " + str(i+1)## Print current loop
+            GPIO.output(pin,True)## Switch on pin
+            time.sleep(TIME_ON)## Wait
+            GPIO.output(pin,False)## Switch off pin
+            time.sleep(TIME_OFF)## Wait
+        print "Done" ## When loop is complete, print "Done"
+        GPIO.cleanup()
 
-## Ask user for total number of blinks and length of each blink
-iterations = raw_input("Enter total number of times to blink: ")
-speed = raw_input("Enter length of each blink(seconds): ")
-led = raw_input("Enter color of led to blink (red|green|blue): ")
+api.add_resource(Cycle, '/cycle')
+api.add_resource(Blink, '/blink/<int:pin>')
 
-if (led == "red"):
-    driveled = REDLED
-elif (led == "green"):
-    driveled = GREENLED
-else:
-    driveled = BLUELED
+# Main function
+def main():
+    try:
+        app.run()
+    except KeyboardInterrupt:
+        # exit from the program
+        sys.exit(0)
 
-## Start Blink() function.
-## Convert user input from strings to numeric data types and pass to Blink() as parameters
-##Blink(int(driveled), int(iterations),float(speed))
-Cycle(int(int(iterations),float(speed))
+# Execute main if the script is directly called
+if __name__ == "__main__":
+    main()
