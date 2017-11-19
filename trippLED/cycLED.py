@@ -29,7 +29,7 @@ led = raw_input("Enter color of led to blink (red|green|blue): ")
 
 if (led == "red"):
     driveled = REDLED
-else if (led == "green"):
+elif (led == "green"):
     driveled = GREENLED
 else:
     driveled = BLUELED
