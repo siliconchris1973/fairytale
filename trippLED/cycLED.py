@@ -4,15 +4,17 @@ import time ## Import 'time' library. Allows us to use 'sleep'
 from flask import Flask, request
 from flask_restful import Resource, Api ## for creation of restful api
 
-GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
+## IP and Port to listen on
+IP_ADDR = '0.0.0.0'
+PORT = 3010 ## port the webserver listens for client requests
+
+## pin numbering for the leds - check GPIO mode below
 BLUELED = 33
 REDLED = 37
 GREENLED = 35
-TIME_ON = 1 ## how long shall an led be turned on (either for blinking or cycle)
-TIME_OFF = 1 ## how long shall an led be turned off (either for blinking or cycle)
-IP_ADDR = '0.0.0.0'
-PORT = 3010 ## port the webserver listens for client requests
-NUM_TIMES = 3
+
+## setup GPIO
+GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
 GPIO.setwarnings(False) ## disable warnings in case GPIO port is already set
 GPIO.setup(BLUELED, GPIO.OUT) ## Setup GPIO Pin to OUT
 GPIO.setup(REDLED, GPIO.OUT) ## Setup GPIO Pin to OUT
@@ -22,13 +24,12 @@ GPIO.setup(GREENLED, GPIO.OUT) ## Setup GPIO Pin to OUT
 app = Flask(__name__)
 api = Api(app)
 
-def driveLed(pin, speed):
-    GPIO.output(pin,True)## Switch on pin
-    time.sleep(speed)## Wait
-    GPIO.output(pin,False)## Switch off pin
-
-##Define a function named Blink()
+## Define class to cycle through the 3 leds
 class Cycle(Resource):
+    def driveLed(pin, speed):
+        GPIO.output(pin,True)## Switch on pin
+        time.sleep(speed)## Wait
+        GPIO.output(pin,False)## Switch off pin
     def cycle(self, ON_TIME, OFF_TIME):
         driveLed(REDLED,ON_TIME)
         time.sleep(OFF_TIME)
@@ -49,8 +50,13 @@ class Cycle(Resource):
         else:
             stop()
 
-##Define a function named Blink()
+## Define a class to blink a specific led
 class Blink(Resource):
+    def driveLed(pin, speed):
+        GPIO.output(pin,True)## Switch on pin
+        time.sleep(speed)## Wait
+        GPIO.output(pin,False)## Switch off pin
+
     def get(self, color, mode, iterations, speed):
         if (color == 'red'):
             pin = REDLED
@@ -58,6 +64,7 @@ class Blink(Resource):
             pin = GREENLED
         else:
             pin = BLUELED
+        
         if (mode == 'on'):
             for i in range(0,iterations):## Run loop numTimes
                 driveLed(pin,speed)
@@ -67,7 +74,7 @@ class Blink(Resource):
             GPIO.cleanup()
 
 api.add_resource(Cycle, '/cycle/<string:mode>')
-api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
+api.add_resource(Blink, '/blink/<string:color>/<string:mode>/<int:iterations>/<int:speed>')
 
 # Main function
 def main():
