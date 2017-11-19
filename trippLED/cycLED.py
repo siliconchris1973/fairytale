@@ -22,7 +22,7 @@ app = Flask(__name__)
 api = Api(app)
 
 ##Define a function named Blink()
-class Cycle():
+class Cycle(Resource):
     def get(self):
         for i in range(0,NUM_TIMES):## Run loop numTimes
             print "Iteration " + str(i+1)## Print current loop
@@ -42,7 +42,7 @@ class Cycle():
         GPIO.cleanup()
 
 ##Define a function named Blink()
-class Blink():
+class Blink(Resource):
     def get(self, pin):
         for i in range(0,numTimes):## Run loop numTimes
             print "Iteration " + str(i+1)## Print current loop
