@@ -26,7 +26,7 @@ api = Api(app)
 
 ## Define class to cycle through the 3 leds
 class Cycle(Resource):
-    def driveLed(pin, speed):
+    def driveLed(self, pin, speed):
         GPIO.output(pin,True)## Switch on pin
         time.sleep(speed)## Wait
         GPIO.output(pin,False)## Switch off pin
@@ -46,13 +46,13 @@ class Cycle(Resource):
     def get(self, mode):
         if (mode == 'on'):
             while (True):
-                cycle(1, 0,5)
+                self.cycle(1, 0,5)
         else:
             stop()
 
 ## Define a class to blink a specific led
 class Blink(Resource):
-    def driveLed(pin, speed):
+    def driveLed(self, pin, speed):
         GPIO.output(pin,True)## Switch on pin
         time.sleep(speed)## Wait
         GPIO.output(pin,False)## Switch off pin
@@ -62,12 +62,14 @@ class Blink(Resource):
             pin = REDLED
         elif (color == 'green'):
             pin = GREENLED
-        else:
+        elif:
             pin = BLUELED
-        
+        else:
+            pin = REDLED
+
         if (mode == 'on'):
             for i in range(0,iterations):## Run loop numTimes
-                driveLed(pin,speed)
+                self.driveLed(pin, speed)
                 time.sleep(speed/2)## Wait
             GPIO.cleanup()
         else:
