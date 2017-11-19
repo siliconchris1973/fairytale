@@ -29,8 +29,8 @@ appRoutes.get('/info', (req, res) => {
     if (TRACE) console.log("html request");
 
     res.status(200).render('app', {
-      title: 'App Info',
-      headline: 'App',
+      title: 'Fairytale App Info',
+      headline: 'Fairytale App',
       subheadline: 'Info',
       messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT INFO TO COME LATER'
     });

@@ -65,7 +65,7 @@ const tagDB = config.directories.TagDB;
 var nfcTagDir = tagDB;
 
 // this is a synchronous function that returns all the endpoints.
-var getEndpoints = function(app) {
+var getEndpoints = function() {
   if (DEBUG) console.log('getEndpoints called');
   const theEndpoints = {
     endpoints: [

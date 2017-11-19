@@ -26,8 +26,9 @@ appRoutes.get('/welcome', (req, res) => {
 
   if (acceptsHTML) {
     if (TRACE) console.log("   html request");
+
     res.status(200).render('content', {
-        title: 'Welcome to Fairytale',
+        title: 'Fairytale Startseite',
         headline: 'Fairytale Startseite',
         subheadline: 'Willkommen im M&auml;rchenschloss',
         messagetext: 'WELCOME PAGE TO COMPONENT TO COME LATER'

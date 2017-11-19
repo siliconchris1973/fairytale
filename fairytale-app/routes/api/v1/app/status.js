@@ -23,17 +23,15 @@ appRoutes.get('/status', (req, res) => {
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
-  var obj = appController.getEndpoints();
-
+  
   if (acceptsHTML) {
     if (TRACE) console.log("html request");
 
     res.status(200).render('component_status', {
-        title: 'Komponentenstatus',
-        headline: 'Komponentenstatus',
-        subheadline: 'Status der einzelnen Komponenten...',
-        messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT STATUS TO COME LATER',
-        varEndpoints: obj.endpoints
+      title: 'Komponentenstatus',
+      headline: 'Komponentenstatus',
+      subheadline: 'Status der einzelnen Komponenten...',
+      messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT STATUS TO COME LATER'
     });
   } else {
     if (TRACE) console.log("json request");

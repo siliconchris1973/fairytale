@@ -29,8 +29,8 @@ appRoutes.get('/info', (req, res) => {
     if (TRACE) console.log("html request");
 
     res.status(200).render('nfc', {
-        title: 'NFC Reader',
-        headline: 'NFC Reader',
+        title: 'NFC Reader Info',
+        headline: 'Fairytale NFC Reader',
         subheadline: 'Info',
         messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT INFO TO COME LATER'
     });

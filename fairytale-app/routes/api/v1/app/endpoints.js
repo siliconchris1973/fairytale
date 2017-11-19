@@ -27,12 +27,13 @@ appRoutes.get('/endpoints', (req, res) => {
 
   if (acceptsHTML) {
     if (TRACE) console.log("html request");
+
     res.status(200).render('endpoints', {
-        title: 'Welcome to Fairytale',
-        headline: 'Willkommen im Märchenschloss',
-        subheadline: 'Verf&uuml;gbare REST Endpunkte zu den einzelnen Modulen',
-        messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
-        varEndpoints: obj.endpoints
+      title: 'Fairytale App Endpoints',
+      headline: 'Willkommen im Märchenschloss',
+      subheadline: 'Endpunkte',
+      messagetext: 'Endpunkt ausw&auml;hlen',
+      varEndpoints: obj.endpoints
     });
   } else {
     if (TRACE) console.log("json request");

@@ -2,7 +2,7 @@
  * This routing file only contains redirects
  * and the definition of endpoints. The concrete
  * endpoints are defined below
- *    /api/v1/[app|nfc|player|tags]
+ *    /api/v1/[app|nfc|led|tags]
  * in each index.js and corresponding function files.
  */
 
@@ -70,6 +70,18 @@ const playerHelpUri = config.playerEndpoint.HelpUri;
 const playerDescription = config.playerEndpoint.Description;
 const playerFullUrl = playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl;
 
+// CONFIG data on the LED Controller
+const ledServiceAppName = config.ledServiceEndpoint.AppName;
+const ledServiceProtocol = config.ledServiceEndpoint.Protocol;
+const ledServiceHost = config.ledServiceEndpoint.Host;
+const ledServicePort = Number(config.ledServiceEndpoint.Port);
+const ledServiceApi = config.ledServiceEndpoint.Api;
+const ledServiceUrl = config.ledServiceEndpoint.Url;
+const ledServiceHealthUri = config.ledServiceEndpoint.HealthUri;
+const ledServiceHelpUri = config.ledServiceEndpoint.HelpUri;
+const ledServiceDescription = config.ledServiceEndpoint.Description;
+const ledServiceFullUrl = ledServiceProtocol+'://'+ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl;
+
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
@@ -85,6 +97,8 @@ const nfc = require('./api/v1/nfc');
 routes.use('/api/v1/nfc', nfc);
 const player = require('./api/v1/player');
 routes.use('/api/v1/player', player);
+const led = require('./api/v1/led');
+routes.use('/api/v1/led', led);
 
 /*
  *       MAIN APP ROUTES FOR REDIRECTION
@@ -149,81 +163,162 @@ routes.get("/endpoints", function(req, res) {
 
 
 /*
- *      PLAYER ROUTES FOR REDIRECTION
+ *      LED CONTROLLER ROUTES FOR REDIRECTION
  */
-routes.get("/player", function(req, res){
-  if (DEBUG) console.log("GET::/player");
+routes.get("/led", function(req, res){
+  if (DEBUG) console.log("GET::/led");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/info');
-    res.status(302).redirect(playerFullUrl+"/info");
+    if (TRACE) console.log('   redirecting to '+ledServiceFullUrl+'/info');
+    res.status(302).redirect(ledServiceFullUrl+"/info");
   } else {
     res.json({
       response: 'unavailable',
       status: 415,
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl
+      redirect: ledServiceFullUrl
     });
   }
 });
-routes.get("/player/info", function(req, res){
-  if (DEBUG) console.log("GET::/player/info");
+routes.get("/led/info", function(req, res){
+  if (DEBUG) console.log("GET::/led/info");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/info');
-    res.status(302).redirect(playerFullUrl+"/info");
+    if (TRACE) console.log('   redirecting to '+ledServiceFullUrl+'/info');
+    res.status(302).redirect(ledServiceFullUrl+"/info");
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/info'
+      redirect: ledServiceFullUrl+'/info'
     });
   }
 });
-routes.get("/player/status", function(req, res){
-  if (DEBUG) console.log("GET::/player/status");
+routes.get("/led/status", function(req, res){
+  if (DEBUG) console.log("GET::/led/status");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/status');
-    res.status(302).redirect(playerFullUrl+"/status");
+    if (TRACE) console.log('   redirecting to '+ledServiceFullUrl+'/status');
+    res.status(302).redirect(ledServiceFullUrl+"/status");
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/status'
+      redirect: ledServiceFullUrl+'/status'
     });
   }
 });
-routes.get("/player/endpoints", function(req, res){
-  if (DEBUG) console.log("GET::/player/endpoints");
+routes.get("/led/endpoints", function(req, res){
+  if (DEBUG) console.log("GET::/led/endpoints");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/endpoints');
-    res.status(302).redirect(playerFullUrl+"/endpoints");
+    if (TRACE) console.log('   redirecting to '+ledServiceFullUrl+'/endpoints');
+    res.status(302).redirect(ledServiceFullUrl+"/endpoints");
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/endpoints'
+      redirect: ledServiceFullUrl+'/endpoints'
+    });
+  }
+});
+
+
+/*
+ *      PLAYER ROUTES FOR REDIRECTION
+ */
+routes.get("/led", function(req, res){
+  if (DEBUG) console.log("GET::/led");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+ledFullUrl+'/info');
+    res.status(302).redirect(ledFullUrl+"/info");
+  } else {
+    res.json({
+      response: 'unavailable',
+      status: 415,
+      message: 'this endpoint is not available for json requests',
+      redirect: ledFullUrl
+    });
+  }
+});
+routes.get("/led/info", function(req, res){
+  if (DEBUG) console.log("GET::/led/info");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+ledFullUrl+'/info');
+    res.status(302).redirect(ledFullUrl+"/info");
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      message: 'this endpoint is not available for json requests',
+      redirect: ledFullUrl+'/info'
+    });
+  }
+});
+routes.get("/led/status", function(req, res){
+  if (DEBUG) console.log("GET::/led/status");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+ledFullUrl+'/status');
+    res.status(302).redirect(ledFullUrl+"/status");
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      message: 'this endpoint is not available for json requests',
+      redirect: ledFullUrl+'/status'
+    });
+  }
+});
+routes.get("/led/endpoints", function(req, res){
+  if (DEBUG) console.log("GET::/led/endpoints");
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+ledFullUrl+'/endpoints');
+    res.status(302).redirect(ledFullUrl+"/endpoints");
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      message: 'this endpoint is not available for json requests',
+      redirect: ledFullUrl+'/endpoints'
     });
   }
 });
@@ -252,7 +347,7 @@ routes.get("/nfc", function(req, res){
   }
 });
 routes.get("/nfc/info", function(req, res){
-  if (DEBUG) console.log("GET::/player/info");
+  if (DEBUG) console.log("GET::/led/info");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');

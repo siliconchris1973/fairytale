@@ -1,4 +1,5 @@
-// This file is the central store for the different http and rest api endpoints
+// This file is the central store for all configuration settings, such as,
+// but not limited to, the different http and rest api endpoints
 // it is sourced in by all application start scripts, such as cnf.js, player.js
 // or nfcService.js.
 // If you want to change ports and or other settings, such as API version,
@@ -16,6 +17,8 @@ var path = require('path');
     Url: '/app',
     HealthUri: '/health',
     HelpUri: '/help',
+    InfoUri: '/info',
+    StatusUri: '/status',
     Description: 'Main Application'
   };
 
@@ -29,20 +32,9 @@ var path = require('path');
     Url: '/tags',
     HealthUri: '/health',
     HelpUri: '/help',
+    InfoUri: '/info',
+    StatusUri: '/status',
     Description: 'Tag Database'
-  };
-
-  // this is for the thrid node.js app, that does the actual audio playback
-  var playerEndpoint = {
-    AppName: 'Player',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3002),
-    Api: '/api/v1',
-    Url: '/player',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    Description: 'MP3 Player'
   };
 
   // this is for the 4th node.js app, that controls the nfc reader
@@ -55,6 +47,8 @@ var path = require('path');
     Url: '/nfc',
     HealthUri: '/health',
     HelpUri: '/help',
+    InfoUri: '/info',
+    StatusUri: '/status',
     Description: 'RFID/NFC Reader'
   };
 
@@ -68,7 +62,39 @@ var path = require('path');
     Url: '/file',
     HealthUri: '/health',
     HelpUri: '/help',
+    InfoUri: '/info',
+    StatusUri: '/status',
     Description: 'File Service'
+  };
+
+  // this is for the thrid node.js app, that does the actual audio playback
+  var playerEndpoint = {
+    AppName: 'Player',
+    Protocol: 'http',
+    Host: os.hostname(),
+    Port: Number(3002),
+    Api: '/api/v1',
+    Url: '/player',
+    HealthUri: '/health',
+    HelpUri: '/help',
+    InfoUri: '/info',
+    StatusUri: '/status',
+    Description: 'MP3 Player'
+  };
+
+  // http and rest api endpoint for the tag db interface
+  var ledServiceEndpoint = {
+    AppName: 'LED Service',
+    Protocol: 'http',
+    Host: os.hostname(),
+    Port: Number(3005),
+    Api: '/api/v1',
+    Url: '/led',
+    HealthUri: '/health',
+    HelpUri: '/help',
+    InfoUri: '/info',
+    StatusUri: '/status',
+    Description: 'Drive LEDs'
   };
 
   var directories = {
@@ -82,6 +108,19 @@ var path = require('path');
     UploadNormalDir: path.resolve('../data/Cover/normal')
   };
 
+  var leds = {
+    'trippLED': {
+      'BLUELED': Number(33),
+      'REDLED': Number(37),
+      'GREENLED': Number(35)
+    },
+    'blinkspeed': {
+      'slow': Number(2),
+      'normal': Number(0,75),
+      'fast': Number(0,5)
+    }
+  };
+
   var debugging = {
     DEBUG: true,
     TRACE: true
@@ -92,7 +131,9 @@ module.exports = {
   tagDbServiceEndpoint: tagDbServiceEndpoint,
   fileServiceEndpoint: fileServiceEndpoint,
   playerEndpoint: playerEndpoint,
+  ledServiceEndpoint: ledServiceEndpoint,
   nfcReaderEndpoint: nfcReaderEndpoint,
   directories: directories,
+  leds: leds,
   debugging: debugging
 }

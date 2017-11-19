@@ -71,11 +71,14 @@ class Blink(Resource):
             GPIO.cleanup()
 
         if (mode == 'on'):
+            print('blink on requested...')
             for i in range(0,iterations):## Run loop numTimes
+                print('blinking ' + str(i+1))
                 self.driveLed(pin, speed)
                 time.sleep(speed/2)## Wait
             GPIO.cleanup()
         else:
+            print('blink off requested ')
             GPIO.cleanup()
 
 api.add_resource(Cycle, '/cycle/<string:mode>')

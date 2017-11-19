@@ -17,7 +17,6 @@ const nfcReaderDescription = config.nfcReaderEndpoint.Description;
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
 
-// endpoints entry for the NFC Reader API
 nfcRoutes.get("/endpoints", (req, res) => {
   if (DEBUG) console.log('GET::'+nfcReaderApi+nfcReaderUrl+'/endpoints');
   // the server checks whether the client accepts html (browser) or
@@ -28,12 +27,13 @@ nfcRoutes.get("/endpoints", (req, res) => {
 
   if (acceptsHTML) {
     if (TRACE) console.log("   html request");
+
     res.status(200).render('endpoints', {
-        title: 'Welcome to Fairytale NFC Reader',
-        headline: 'NFC Reader API Endpunkte',
-        subheadline: 'Verf&uuml;gbare REST Endpunkte f&uuml;r den NFC Reader',
-        messagetext: '&Uuml;ber die Navigation kannst Du die einzelnen Funktionen ausw&auml;hlen',
-        varEndpoints: obj.endpoints
+      title: 'Fairytale NFC Reader Endpoints',
+      headline: 'Fairytale NFC Reader',
+      subheadline: 'Endpunkte',
+      messagetext: 'Endpunkt ausw&auml;hlen',
+      varEndpoints: obj.endpoints
     });
   } else {
     if (TRACE) console.log("   json request");
