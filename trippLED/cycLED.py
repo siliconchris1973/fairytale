@@ -42,18 +42,10 @@ class Cycle(Resource):
         GPIO.output(BLUELED,False)## Switch off pin
         GPIO.cleanup()
 
-    def get(self, mode, iterations, speed):
-        if (mode == 'on'):
-            for i in range(0,iterations):## Run loop numTimes
-                cycle(speed, speed/2)
-            stop()
-        else:
-            stop()
     def get(self, mode):
         if (mode == 'on'):
-            for i in range(0,10):## Run loop numTimes
+            while (True):
                 cycle(1, 0,5)
-            stop()
         else:
             stop()
 
@@ -68,17 +60,13 @@ class Blink(Resource):
             pin = BLUELED
         if (mode == 'on'):
             for i in range(0,iterations):## Run loop numTimes
-                GPIO.output(pin,True)## Switch on pin
-                time.sleep(speed)## Wait
-                GPIO.output(pin,False)## Switch off pin
-                time.sleep(speed)## Wait
+                driveLed(pin,speed)
+                time.sleep(speed/2)## Wait
             GPIO.cleanup()
         else:
             GPIO.cleanup()
 
 api.add_resource(Cycle, '/cycle/<string:mode>')
-api.add_resource(Cycle, '/cycle/<string:mode>/<int:number>')
-api.add_resource(Cycle, '/cycle/<string:mode>/<int:number>/<float:speed>')
 api.add_resource(Blink, '/blink/<string:color>/<int:number>/<int:speed>')
 
 # Main function
