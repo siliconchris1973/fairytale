@@ -38,8 +38,8 @@ class Cycle(Resource):
         driveLed(BLUELED,ON_TIME)
         time.sleep(OFF_TIME)
     def stop(self):
-        GPIO.output(REDLED,False)## Switch on pin
-        GPIO.output(GREENLED,False)## Switch on pin
+        GPIO.output(REDLED,False)## Switch off pin
+        GPIO.output(GREENLED,False)## Switch off pin
         GPIO.output(BLUELED,False)## Switch off pin
         GPIO.cleanup()
 
@@ -62,10 +62,13 @@ class Blink(Resource):
             pin = REDLED
         elif (color == 'green'):
             pin = GREENLED
-        elif:
+        elif (color == 'blue'):
             pin = BLUELED
         else:
-            pin = REDLED
+            GPIO.output(REDLED,False)## Switch off pin
+            GPIO.output(GREENLED,False)## Switch off pin
+            GPIO.output(BLUELED,False)## Switch off pin
+            GPIO.cleanup()
 
         if (mode == 'on'):
             for i in range(0,iterations):## Run loop numTimes
