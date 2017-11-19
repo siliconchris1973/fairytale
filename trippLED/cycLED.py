@@ -22,7 +22,7 @@ app = Flask(__name__)
 api = Api(app)
 
 ##Define a function named Blink()
-class cycle()
+class Cycle():
     def get(self):
         for i in range(0,NUM_TIMES):## Run loop numTimes
             print "Iteration " + str(i+1)## Print current loop
