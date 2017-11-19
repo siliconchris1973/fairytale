@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import RPi.GPIO as GPIO ## Import GPIO library
 import time ## Import 'time' library. Allows us to use 'sleep'
-
+from flask import Flask, request
 from flask_restful import Resource, Api ## for creation of restful api
 
 GPIO.setmode(GPIO.BOARD) ## Use board pin numbering
