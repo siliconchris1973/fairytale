@@ -1,0 +1,26 @@
+nav.navbar.navbar-default( role="navigation" )
+  .navbar-header
+    button.navbar-toggle.collapsed( type="button", data-toggle="collapse", data-target="#navbar-inverse", aria-expanded="false", aria-controls="navbar")
+      img(src='/img/9-dots-square-32x32.png', alt='navigation')
+
+    #navbar-inverse.collapse.navbar-collapse
+      ul.nav.navbar-nav
+        li: a(href="/") Home
+        li: a(href="/player") Player
+        li: a(href="/tags") Tags
+        li: a(href="/nfc") NFC Reader
+        li.Erweitert
+          a.dropdown-toggle( href="#", data-toggle="dropdown", role="button", aria-expanded="false" ) Erweitert
+            span.caret
+          ul.dropdown-menu( role="menu" )
+            li: a( href="/tags/tag/create" ) Neues Tag erzeugen
+            li.divider
+            li.dropdown-header Hilfeseiten
+            li: a( href="/player/help" ) Hilfeseite f&uuml;r Player
+            li: a( href="/tags/help" ) Hilfeseite f&uuml;r Tags
+            li: a( href="/nfc/help" ) Hilfeseite f&uuml;r NFC Reader
+            li.divider
+            li.dropdown-header Endpunktseiten
+            li: a( href="/player/endpoints" ) Endpunkte f&uuml;r Player
+            li: a( href="/tags/endpoints" ) Endpunkte f&uuml;r Tags
+            li: a( href="/nfc/endpoints" ) Endpunkte f&uuml;r NFC Reader

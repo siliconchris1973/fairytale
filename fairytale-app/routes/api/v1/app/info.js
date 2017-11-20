@@ -3,7 +3,7 @@ const appRoutes = require('express').Router();
 var config = require('../../../../modules/configuration.js');
 var appController = require('../../../../controller/appController.js');
 
-// CONFIG data on the app
+// CONFIG data on the MP3 Player
 const svrAppName = config.appEndpoint.AppName;
 const svrProtocol = config.appEndpoint.Protocol;
 const svrHost = config.appEndpoint.Host;
@@ -12,7 +12,11 @@ const svrApi = config.appEndpoint.Api;
 const svrUrl = config.appEndpoint.Url;
 const svrHealthUri = config.appEndpoint.HealthUri;
 const svrHelpUri = config.appEndpoint.HelpUri;
+const svrInfoUri = config.appEndpoint.InfoUri;
+const svrStatusUri = config.appEndpoint.StatusUri;
+const svrEndpointsUri = config.appEndpoint.EndpointsUri;
 const svrDescription = config.appEndpoint.Description;
+const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -23,19 +27,18 @@ appRoutes.get('/info', (req, res) => {
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
-  var obj = appController.getEndpoints();
 
   if (acceptsHTML) {
-    if (TRACE) console.log("html request");
+    if (TRACE) console.log("   html request");
 
-    res.status(200).render('app', {
-      title: 'Fairytale App Info',
-      headline: 'Fairytale App',
+    res.status(200).render('info', {
+      title: svrAppName + ' Info',
+      headline: svrAppName,
       subheadline: 'Info',
       messagetext: 'THIS PAGE IS A PLACEHOLDER - COMPONENT INFO TO COME LATER'
     });
   } else {
-    if (TRACE) console.log("json request");
+    if (TRACE) console.log("   json request");
     res.status(200).json({ message: 'INFO!' });
   }
 });

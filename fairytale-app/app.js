@@ -9,6 +9,7 @@ app.use('/', routes);
 // get the hostname of the server we run on
 var os = require('os');
 var path = require('path');
+var fs = require('fs');
 
 // get the global configuration
 const config = require('./modules/configuration.js');
@@ -50,5 +51,9 @@ var svrApi = app.get('svrApi');
 var svrUrl = app.get('svrUrl');
 
 var server = app.listen(svrPort, function () {
-    console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
+  var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
+  var app_ascii = fs.readFileSync('static/ascii/app.txt').toString();
+  console.log(fairytale_ascii);
+  console.log(app_ascii);
+  console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

@@ -1,0 +1,50 @@
+{
+  "name": "fairytale",
+  "version": "0.3.0",
+  "description": "An audiobook player with node.js and NFC interface for the Raspberry Pi",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "nodemon app.js & nodemon player.js & nodemon nfcReader.js "
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/siliconchris1973/fairytale.git"
+  },
+  "keywords": [
+    "node.js",
+    "RFID",
+    "audiobook",
+    "mp3",
+    "player"
+  ],
+  "author": "c.guenther@mac.com",
+  "license": "ISC",
+  "dependencies": {
+    "nodemon": "latest",
+    "fs": "latest",
+    "os": "latest",
+    "play-sound": "latest",
+    "path": "latest",
+    "express": "latest",
+    "body-parser": "latest",
+    "stylus": "latest",
+    "nib": "latest",
+    "ejs": "latest",
+    "mongoose": "latest",
+    "pug": "latest",
+    "multer": "latest",
+    "jsonfile": "latest",
+    "node-cmd": "latest",
+    "request": "latest",
+    "mplayer": "latest",
+    "music-metadata": "latest"
+  },
+  "bugs": {
+    "url": "https://github.com/siliconchris1973/fairytale/issues"
+  },
+  "homepage": "https://github.com/siliconchris1973/fairytale#readme",
+  "devDependencies": {
+    "nodemon": "^1.12.1"
+  }
+}
