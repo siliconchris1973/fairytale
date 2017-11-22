@@ -24,7 +24,7 @@ player.get('/status', status);
 player.get('/info', info);
 player.get('/help', help);
 player.get('/health', health);
-player.get('/play', play);
+player.get('/play/:id', play);
 /*
 player.get('/pause', pause);
 player.get('/stop', stop);

@@ -41,7 +41,7 @@ playerRoutes.get("/play/:id", (req, res) => {
 
     if (acceptsHTML) {
       if (TRACE) console.log("   html request");
-      res.status(400).render('player_error', responseJson);
+      res.status(400).render('app_error', responseJson);
     } else {
       if (TRACE) console.log("   json request");
       res.status(400).json(responseJson);
@@ -49,14 +49,14 @@ playerRoutes.get("/play/:id", (req, res) => {
   } else {
     // get all the necesary information on the album and the track to be played
     var tagId = req.params.id;
-
+    if (TRACE) console.log('request to play album ' + tagId + ' received');
     // TODO add call to playerController
-    //thePlayer.play(tagId);
+    thePlayer.play(tagId);
 
     if (acceptsHTML) {
       if (TRACE) console.log("   html request");
       var respObj = responseJson;
-      res.status(200).render('player_view', respObj);
+      res.status(200).render('app_view', respObj);
     } else {
       if (TRACE) console.log("   json request");
       res.status(200).json(responseJson);

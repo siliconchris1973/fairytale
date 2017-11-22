@@ -11,6 +11,6 @@ tagRoutes.get('/', all);
 tagRoutes.get('/welcome', welcome);
 tagRoutes.get('/endpoints', endpoints);
 tagRoutes.get('/info', info);
-tagRoutes.get('/tag', tag);
+tagRoutes.get('/tag/:id', tag);
 
 module.exports = tagRoutes;
