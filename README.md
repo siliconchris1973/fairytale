@@ -116,25 +116,36 @@ For information on node-nfc-daemon setEncoding
 
 
 ## Running
-fairytale is composed of 5 different services:
+fairytale is composed of 6 different services:
 1. app.js - main server application
 2. player.js - the mp3 player
 3. tagDbService.js - an interface to the stored tags with meta data on the mp3 files
-4. node-nfc-daemon - the nfc reader service
-5. fileService.js - upload files
+4. nfcReader - the nfc reader service
+5. fileService.js - upload files (optional you can also do this manually)
+6. ledService - drives 3 colored LEDs (optional)
+
+All components are in their respective subdirectory with [App-Name]-app as the directory name.
 
 ### Mandatory components
 #### app.js
 This is the main component. It listens on port 3000 and exposes it's endpoints to /api/v1/... for json and html clients.
 
-To start up the main application execute:
+To start up the main application with nodemon monitoring execute:
+
+     npm start
+
+To start it manually execute:
 
      node app.js
 
 #### player.js
 The MP3 Player application. It listens on port 3001 and exposes it's endpoint to /api/v1/player for json and html clients.
 
-To start the mp3 player execute:
+To start the mp3 player with nodemon monitoring execute:
+
+     npm start
+
+Without nodemon:
 
      node player.js
 
@@ -142,23 +153,49 @@ To start the mp3 player execute:
 An interface to stored json files that contain the necessary meta data on the nfc tags.
 Within each json file a nfc tag and the corresponding mp3 files are described.
 
-To start the TagDB service execute:
+To start the TagDB service with nodemon monitoring execute:
+
+     npm start
+
+Without nodemon:
 
      node tagDbService.js
 
-### Optional components
-#### rfidService.js
+#### nfcService.js
 The RFID and NFC tag reader. It listens on port 3003 and exposes it's endpoint to /api/v1/rfid for json and html clients.
 
-To start the RFID and NFC Reader execute:
+To start the RFID and NFC Reader with nodemon monitoring execute:
 
-     node rfidService.js
+     npm start
+
+Without nodemon:
+
+     node nfcService.js
+
+### Optional components
+#### ledService.js
+The driver for the leds. It listens on port 3005 and exposes it's endpoint to /api/v1/rfid for json and html clients.
+
+To start the LED Service with nodemon monitoring execute:
+
+     npm start
+
+Without nodemon:
+
+     node ledService.js
 
 #### fileService.js
 The file uploader only exposes a html formm at the moment and is available on port 3002 at /api/v1/file
 To start the optional fileService (for uploading files) execute:
 
      node fileService.js
+
+
+## interacting with the application
+### via curl on command line
+
+     curl -X GET -H "Content-type: application/json" -H "Accept: application/json"  "http://deepthought.local:3002/api/v1/player/{"id":"0443e222e74c81"}"
+
 
 ## Create Content to play
 For the play to actually play a file, two things need to be done:

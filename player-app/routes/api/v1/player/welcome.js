@@ -31,14 +31,14 @@ appRoutes.get("/", (req, res) => {
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/welcome');
-    res.status(302).redirect(playerFullUrl+'/welcome');
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/welcome');
+    res.status(302).redirect(svrFullUrl+'/welcome');
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/welcome'
+      redirect: svrFullUrl+'/welcome'
     });
   }
 });
