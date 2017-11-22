@@ -92,10 +92,10 @@ app.get('/', function(req, res) {
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
   if (acceptsHTML) {
-    res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+svrUrl);
+    res.status(302).redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+svrUrl);
   } else {
     if (DEBUG) console.log("json request");
-    res.json({
+    res.status(415).json({
       response: 'unavailable',
       status: 415,
       message: 'this endpoint is not available for json requests'
@@ -111,10 +111,10 @@ app.get(svrApi+'/', function(req, res) {
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
   if (acceptsHTML) {
-    res.redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
+    res.status(302).redirect(svrProto+'://'+svrAddr+':'+svrPort+svrApi+'/file');
   } else {
     if (DEBUG) console.log("json request");
-    res.json({
+    res.status(415).json({
       response: 'unavailable',
       status: 415,
       message: 'this endpoint is not available for json requests'
@@ -130,10 +130,10 @@ app.get(svrApi+'/file', function(req, res) {
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
   if (acceptsHTML) {
-    res.render('fileform', { message: 'choose a file' });
+    res.status(200).render('fileform', { message: 'choose a file' });
   } else {
     if (DEBUG) console.log("json request");
-    res.json({
+    res.status(415).json({
       response: 'unavailable',
       status: 415,
       message: 'this endpoint is not available for json requests'
@@ -172,10 +172,11 @@ app.post(svrApi+'/file', function(req, res) {
             console.error('error: could not upload '+filename+' to '+targetTmpDir+'.' + err.toString());
             if (acceptsHTML) {
               var message = 'could not upload '+filename+' to '+targetTmpDir+'.' + err.toString()
-              res.render('fileform', { message: message });
+              res.status(500).render('fileform', { message: message });
             } else {
               responseContent = {
                 response: 'error',
+                status: 500,
                 message: 'could not upload file ' + filename + ' to directory ' + targetTmpDir,
                 error: err.toString()
               };
@@ -192,10 +193,11 @@ app.post(svrApi+'/file', function(req, res) {
             if (DEBUG) console.log('File \'' + filename + '\' uploaded to ' + targetTmpDir);
             if (acceptsHTML) {
               var message = 'File '+filename+' uploaded to ' + targetTmpDir;
-              res.render('fileform', { message: message });
+              res.status(200).render('fileform', { message: message });
             } else {
               responseContent = {
                 response: 'success',
+                status: 200,
                 message: 'file ' + filename + ' uploaded to directory ' + targetTmpDir
               };
               return(responseContent);
@@ -212,10 +214,11 @@ app.post(svrApi+'/file', function(req, res) {
         console.error('error: could not upload '+filename+' to '+targetTmpDir+'.' + ex.toString());
         if (acceptsHTML) {
           var message = 'There was an exception while uploading file '+filename+' to '+targetTmpDir+' - exception: ' + ex.toString();
-          res.render('fileform', { message: message });
+          res.status(500).render('fileform', { message: message });
         } else {
           responseContent = {
             response: 'error',
+            status: 500,
             message: 'exception while uploading file ' + filename + ' to directory ' + targetTmpDir,
             error: ex.toString()
           };
@@ -233,10 +236,11 @@ app.post(svrApi+'/file', function(req, res) {
       console.warn('provided file ' + filename + ' is not a valid image - not uploaded');
       if (acceptsHTML) {
         var message = 'File is not valid - not uploaded';
-        res.render('fileform', { message: message });
+        res.status.(400).render('fileform', { message: message });
       } else {
         responseContent = {
           response: 'warning',
+          status: 400,
           message: 'file ' + filename + ' is not an image - not uploaded'
         };
         return(responseContent);

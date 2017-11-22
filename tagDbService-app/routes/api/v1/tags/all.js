@@ -44,7 +44,7 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
         if (TRACE) console.log("   html request");
         if (DEBUG) console.log("request to render tag list");
         if (TRACE) console.log(obj.tags);
-        res.render('tags', {
+        res.status(200).render('tags', {
           title: 'RFID Tag Startseite',
           headline: 'RFID Tag Startseite',
           subheadline: 'Verf&uuml;gbare Tags',
@@ -53,7 +53,7 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
         });
       } else {
         if (TRACE) console.log('   json request');
-        res.json({
+        res.status(200).json({
           info: {
             response: 'info',
             status: 200,
@@ -67,7 +67,7 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
       console.error('error: getting the list of tags failed\nerror message: ' + err.toString());
       if (acceptsHTML) {
         if (TRACE) console.log('   html request');
-        res.render('tags_error', {
+        res.status(500).render('tags_error', {
           title: 'RFID Tag Fehlerseite',
           headline: 'RFID Tag Liste Fehler',
           errorname: 'Error',
@@ -78,7 +78,7 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
       } else {
         if (TRACE) console.log('   json request');
         console.log(err);
-        res.json({
+        res.status(500).json({
           response: 'error',
           status: '500 - internal server error',
           http_status: 500,
