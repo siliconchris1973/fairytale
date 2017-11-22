@@ -14,7 +14,7 @@ const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
 const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
 const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
 
-var genServerUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;
+var tagDbServiceFullUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;
 //var genPlayerUrl = playerProtocol + '://' + playerHost + ':' + playerPort + playerApi + playerUrl;
 
 const DEBUG = config.debugging.DEBUG;
@@ -57,6 +57,7 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
           info: {
             response: 'info',
             status: 200,
+            status_text: '200 - ok'
             message: 'endpoint to tags API',
             endpoints: result
           }
@@ -80,8 +81,8 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
         console.log(err);
         res.status(500).json({
           response: 'error',
-          status: '500 - internal server error',
-          http_status: 500,
+          status: 500,
+          status_text: '500 - internal server error',
           message: 'error retrieving data on available tags',
           error: err.toString()
         });

@@ -11,16 +11,20 @@ const routes = require('express').Router();
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the RFID/NFC Tag DB Service
-const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
-const tagDbServiceProtocol = config.tagDbServiceEndpoint.Protocol;
-const tagDbServiceHost = config.tagDbServiceEndpoint.Host;
-const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
-const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
-const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
-const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
-const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
-const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
-const tagDbServiceFullUrl = tagDbServiceProtocol+'://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl;
+const svrAppName = config.tagDbServiceEndpoint.AppName;
+const svrProtocol = config.tagDbServiceEndpoint.Protocol;
+const svrHost = config.tagDbServiceEndpoint.Host;
+const svrPort = Number(config.tagDbServiceEndpoint.Port);
+const svrApi = config.tagDbServiceEndpoint.Api;
+const svrUrl = config.tagDbServiceEndpoint.Url;
+const svrHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const svrHelpUri = config.tagDbServiceEndpoint.HelpUri;
+const svrDescription = config.tagDbServiceEndpoint.Description;
+const svrInfoUri = config.tagDbServiceEndpoint.InfoUri;
+const svrStatusUri = config.tagDbServiceEndpoint.StatusUri;
+const svrEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
+
+const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -29,8 +33,8 @@ const TRACE = config.debugging.TRACE;
 // in each sub directory defined here, you will find and
 // index.js file that defines endpoints and sourceds in
 // corresponding files with the actual endpoint functionality
-const tags = require('.'+tagDbServiceApi+tagDbServiceUrl);
-routes.use(tagDbServiceApi+tagDbServiceUrl, tags);
+const tags = require('./api/v1/tags');
+routes.use('/api/v1/tags', tags);
 
 /*
  *      TAG DB SERVICE ROUTES FOR REDIRECTION
@@ -43,15 +47,15 @@ routes.use(tagDbServiceApi+tagDbServiceUrl, tags);
    var acceptsJSON = req.accepts('json');
 
    if (acceptsHTML) {
-     if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl);
-     res.status(302).redirect(tagDbServiceFullUrl);
+     if (TRACE) console.log('   redirecting to '+svrFullUrl);
+     res.status(302).redirect(svrFullUrl);
    } else {
      res.json({
        response: 'redirect',
        status: 302,
        status_text: '302 - redirect',
        message: 'this endpoint is not available for json requests',
-       redirect: tagDbServiceFullUrl
+       redirect: svrFullUrl
      });
    }
  });
@@ -63,15 +67,15 @@ routes.get("/tags", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl);
-    res.status(302).redirect(tagDbServiceFullUrl);
+    if (TRACE) console.log('   redirecting to '+svrFullUrl);
+    res.status(302).redirect(svrFullUrl);
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: tagDbServiceFullUrl
+      redirect: svrFullUrl
     });
   }
 });
@@ -88,15 +92,15 @@ routes.get("/tags/tag/:id", function(req, res){
   if (req.params.id) id = req.params.id
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl+'/tag'+id);
-    res.status(302).redirect(tagDbServiceFullUrl+'/tag/'+id);
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/tag'+id);
+    res.status(302).redirect(svrFullUrl+'/tag/'+id);
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: tagDbServiceFullUrl+'/tag/'+id
+      redirect: svrFullUrl+'/tag/'+id
     });
   }
 });
@@ -108,15 +112,15 @@ routes.get("/tags/tag/create", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl+'/tag/create');
-    res.status(302).redirect(tagDbServiceFullUrl+'/tag/create');
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/tag/create');
+    res.status(302).redirect(svrFullUrl+'/tag/create');
   } else {
     res.json({
       response: 'unavailable',
       status: 415,
       status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests',
-      redirect: tagDbServiceFullUrl+'/tag'
+      redirect: svrFullUrl+'/tag'
     });
   }
 });
@@ -128,15 +132,15 @@ routes.get("/tags/info", function(req, res){
  var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl+'/info');
-    res.status(302).redirect(tagDbServiceFullUrl+'/info');
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/info');
+    res.status(302).redirect(svrFullUrl+'/info');
   } else {
     res.json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: tagDbServiceFullUrl+'/info'
+      redirect: svrFullUrl+'/info'
     });
   }
 });
@@ -148,15 +152,15 @@ routes.get("/tags/endpoints", function(req, res){
  var acceptsJSON = req.accepts('json');
 
 if (acceptsHTML) {
-  if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl+'/endpoints');
- res.status(302).redirect(tagDbServiceFullUrl+'/endpoints');
+  if (TRACE) console.log('   redirecting to '+svrFullUrl+'/endpoints');
+ res.status(302).redirect(svrFullUrl+'/endpoints');
 } else {
   res.json({
     response: 'redirect',
     status: 302,
     status_text: '302 - redirect',
     message: 'this endpoint is not available for json requests',
-    redirect: tagDbServiceFullUrl+'/endpoints'
+    redirect: svrFullUrl+'/endpoints'
   });
 }
 });
@@ -168,15 +172,15 @@ routes.get("/tags/status", function(req, res){
  var acceptsJSON = req.accepts('json');
 
 if (acceptsHTML) {
-  if (TRACE) console.log('   redirecting to '+tagDbServiceFullUrl+'/status');
- res.status(302).redirect(tagDbServiceFullUrl+'/status');
+  if (TRACE) console.log('   redirecting to '+svrFullUrl+'/status');
+ res.status(302).redirect(svrFullUrl+'/status');
 } else {
   res.json({
     response: 'redirect',
     status: 302,
     status_text: '302 - redirect',
     message: 'this endpoint is not available for json requests',
-    redirect: tagDbServiceFullUrl+'/status'
+    redirect: svrFullUrl+'/status'
   });
 }
 });

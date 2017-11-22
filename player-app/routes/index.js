@@ -11,19 +11,19 @@ const routes = require('express').Router();
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the MP3 Player
-const playerAppName = config.playerEndpoint.AppName;
-const playerProtocol = config.playerEndpoint.Protocol;
-const playerHost = config.playerEndpoint.Host;
-const playerPort = Number(config.playerEndpoint.Port);
-const playerApi = config.playerEndpoint.Api;
-const playerUrl = config.playerEndpoint.Url;
-const playerHealthUri = config.playerEndpoint.HealthUri;
-const playerHelpUri = config.playerEndpoint.HelpUri;
-const playerInfoUri = config.playerEndpoint.InfoUri;
-const playerStatusUri = config.playerEndpoint.StatusUri;
-const playerEndpointsUri = config.playerEndpoint.EndpointsUri;
-const playerDescription = config.playerEndpoint.Description;
-const playerFullUrl = playerProtocol+'://'+playerHost+':'+playerPort+playerApi+playerUrl;
+const svrAppName = config.playerEndpoint.AppName;
+const svrProtocol = config.playerEndpoint.Protocol;
+const svrHost = config.playerEndpoint.Host;
+const svrPort = Number(config.playerEndpoint.Port);
+const svrApi = config.playerEndpoint.Api;
+const svrUrl = config.playerEndpoint.Url;
+const svrHealthUri = config.playerEndpoint.HealthUri;
+const svrHelpUri = config.playerEndpoint.HelpUri;
+const svrInfoUri = config.playerEndpoint.InfoUri;
+const svrStatusUri = config.playerEndpoint.StatusUri;
+const svrEndpointsUri = config.playerEndpoint.EndpointsUri;
+const svrDescription = config.playerEndpoint.Description;
+const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -46,15 +46,15 @@ routes.get("/", function(req, res){
  var acceptsJSON = req.accepts('json');
 
  if (acceptsHTML) {
-   if (TRACE) console.log('   redirecting to '+playerFullUrl+'/welcome');
-   res.status(302).redirect(playerFullUrl+'/welcome');
+   if (TRACE) console.log('   redirecting to '+svrFullUrl+'/welcome');
+   res.status(302).redirect(svrFullUrl+'/welcome');
  } else {
    res.status(302).json({
      response: 'redirect',
      status: 302,
      status_text: '302 - redirect',
      message: 'this endpoint is not available for json requests',
-     redirect: playerFullUrl
+     redirect: svrFullUrl
    });
  }
 });
@@ -66,15 +66,15 @@ routes.get("/player", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/welcome');
-    res.status(302).redirect(playerFullUrl+"/welcome");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/welcome');
+    res.status(302).redirect(svrFullUrl+"/welcome");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl
+      redirect: svrFullUrl
     });
   }
 });
@@ -86,15 +86,15 @@ routes.get("/player/help", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/help');
-    res.status(302).redirect(playerFullUrl+"/help");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/help');
+    res.status(302).redirect(svrFullUrl+"/help");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/help'
+      redirect: svrFullUrl+'/help'
     });
   }
 });
@@ -106,15 +106,15 @@ routes.get("/player/health", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/health');
-    res.status(302).redirect(playerFullUrl+"/health");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/health');
+    res.status(302).redirect(svrFullUrl+"/health");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/health'
+      redirect: svrFullUrl+'/health'
     });
   }
 });
@@ -126,15 +126,15 @@ routes.get("/player/info", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/info');
-    res.status(302).redirect(playerFullUrl+"/info");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/info');
+    res.status(302).redirect(svrFullUrl+"/info");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/info'
+      redirect: svrFullUrl+'/info'
     });
   }
 });
@@ -146,15 +146,15 @@ routes.get("/player/status", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/status');
-    res.status(302).redirect(playerFullUrl+"/status");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/status');
+    res.status(302).redirect(svrFullUrl+"/status");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/status'
+      redirect: svrFullUrl+'/status'
     });
   }
 });
@@ -166,15 +166,15 @@ routes.get("/player/endpoints", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/endpoints');
-    res.status(302).redirect(playerFullUrl+"/endpoints");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/endpoints');
+    res.status(302).redirect(svrFullUrl+"/endpoints");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/endpoints'
+      redirect: svrFullUrl+'/endpoints'
     });
   }
 });
@@ -186,15 +186,15 @@ routes.get("/player/welcome", function(req, res){
   var acceptsJSON = req.accepts('json');
 
   if (acceptsHTML) {
-    if (TRACE) console.log('   redirecting to '+playerFullUrl+'/welcome');
-    res.status(302).redirect(playerFullUrl+"/welcome");
+    if (TRACE) console.log('   redirecting to '+svrFullUrl+'/welcome');
+    res.status(302).redirect(svrFullUrl+"/welcome");
   } else {
     res.status(302).json({
       response: 'redirect',
       status: 302,
       status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
-      redirect: playerFullUrl+'/welcome'
+      redirect: svrFullUrl+'/welcome'
     });
   }
 });
