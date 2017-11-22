@@ -10,6 +10,7 @@ const svrApi = config.appEndpoint.Api;
 const svrUrl = config.appEndpoint.Url;
 const svrHealthUri = config.appEndpoint.HealthUri;
 const svrHelpUri = config.appEndpoint.HelpUri;
+const svrWelcomeUri = config.appEndpoint.WelcomeUri;
 const svrInfoUri = config.appEndpoint.InfoUri;
 const svrStatusUri = config.appEndpoint.StatusUri;
 const svrEndpointsUri = config.appEndpoint.EndpointsUri;
@@ -24,6 +25,7 @@ const nfcReaderApi = config.nfcReaderEndpoint.Api;
 const nfcReaderUrl = config.nfcReaderEndpoint.Url;
 const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
 const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
+const nfcReaderWelcomeUri = config.nfcReaderEndpoint.WelcomeUri;
 const nfcReaderInfoUri = config.nfcReaderEndpoint.InfoUri;
 const nfcReaderStatusUri = config.nfcReaderEndpoint.StatusUri;
 const nfcReaderEndpointsUri = config.nfcReaderEndpoint.EndpointsUri;
@@ -38,6 +40,7 @@ const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
 const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
 const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
 const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
+const tagDbServiceWelcomeUri = config.tagDbServiceEndpoint.WelcomeUri;
 const tagDbServiceInfoUri = config.tagDbServiceEndpoint.InfoUri;
 const tagDbServiceStatusUri = config.tagDbServiceEndpoint.StatusUri;
 const tagDbServiceEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
@@ -52,6 +55,7 @@ const playerApi = config.playerEndpoint.Api;
 const playerUrl = config.playerEndpoint.Url;
 const playerHealthUri = config.playerEndpoint.HealthUri;
 const playerHelpUri = config.playerEndpoint.HelpUri;
+const playerWelcomeUri = config.playerEndpoint.WelcomeUri;
 const playerInfoUri = config.playerEndpoint.InfoUri;
 const playerStatusUri = config.playerEndpoint.StatusUri;
 const playerEndpointsUri = config.playerEndpoint.EndpointsUri;
@@ -66,6 +70,7 @@ const ledServiceApi = config.ledServiceEndpoint.Api;
 const ledServiceUrl = config.ledServiceEndpoint.Url;
 const ledServiceHealthUri = config.ledServiceEndpoint.HealthUri;
 const ledServiceHelpUri = config.ledServiceEndpoint.HelpUri;
+const ledServiceWelcomeUri = config.ledServiceEndpoint.WelcomeUri;
 const ledServiceInfoUri = config.ledServiceEndpoint.InfoUri;
 const ledServiceStatusUri = config.ledServiceEndpoint.StatusUri;
 const ledServiceEndpointsUri = config.ledServiceEndpoint.EndpointsUri;
@@ -80,6 +85,7 @@ const fileServiceApi = config.fileServiceEndpoint.Api;
 const fileServiceUrl = config.fileServiceEndpoint.Url;
 const fileServiceHealthUri = config.fileServiceEndpoint.HealthUri;
 const fileServiceHelpUri = config.fileServiceEndpoint.HelpUri;
+const fileServiceWelcomeUri = config.fileServiceEndpoint.WelcomeUri;
 const fileServiceInfoUri = config.fileServiceEndpoint.InfoUri;
 const fileServiceStatusUri = config.fileServiceEndpoint.StatusUri;
 const fileServiceEndpointsUri = config.fileServiceEndpoint.EndpointsUri;
@@ -97,6 +103,7 @@ var nfcTagDir = tagDB;
 // this is a synchronous function that returns all the endpoints.
 var getEndpoints = function() {
   if (DEBUG) console.log('getEndpoints called');
+  // TODO get these from already created controller
   const theEndpoints = {
     endpoints: [
       {AppName: svrAppName, endpoint: svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl, description: svrDescription},

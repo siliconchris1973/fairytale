@@ -7,101 +7,107 @@
 var os = require('os');
 var path = require('path');
 
-  // set server  Hostname for the main application
-  var appEndpoint = {
-    AppName: 'App',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3000),
-    Api: '/api/v1',
-    Url: '/app',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    InfoUri: '/info',
-    StatusUri: '/status',
-    EndpointsUri: '/endpoints',
-    Description: 'Main Application'
-  };
+// set server  Hostname for the main application
+var appEndpoint = {
+  AppName: 'App',
+  Protocol: 'http',
+  Host: os.hostname(),
+  Port: Number(3000),
+  Api: '/api/v1',
+  Url: '/app',
+  HealthUri: '/health',
+  HelpUri: '/help',
+  WelcomeUri: '/welcome',
+  InfoUri: '/info',
+  StatusUri: '/status',
+  EndpointsUri: '/endpoints',
+  Description: 'Main Application'
+};
 
-  // http and rest api endpoint for the tag db interface
-  var tagDbServiceEndpoint = {
-    AppName: 'TagDb Service',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3001),
-    Api: '/api/v1',
-    Url: '/tags',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    InfoUri: '/info',
-    StatusUri: '/status',
-    EndpointsUri: '/endpoints',
-    Description: 'Tag Database'
-  };
+// http and rest api endpoint for the tag db interface
+var tagDbServiceEndpoint = {
+  AppName: 'TagDb Service',
+  Protocol: 'http',
+  Host: os.hostname(),
+  Port: Number(3001),
+  Api: '/api/v1',
+  Url: '/tags',
+  HealthUri: '/health',
+  HelpUri: '/help',
+  WelcomeUri: '/welcome',
+  InfoUri: '/info',
+  StatusUri: '/status',
+  EndpointsUri: '/endpoints',
+  Description: 'Tag Database'
+};
 
-  // this is for the 4th node.js app, that controls the nfc reader
-  var nfcReaderEndpoint = {
-    AppName: 'RFID Reader',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3003),
-    Api: '/api/v1',
-    Url: '/nfc',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    InfoUri: '/info',
-    StatusUri: '/status',
-    EndpointsUri: '/endpoints',
-    Description: 'RFID/NFC Reader'
-  };
+// this is for the 4th node.js app, that controls the nfc reader
+var nfcReaderEndpoint = {
+  AppName: 'RFID Reader',
+  Protocol: 'http',
+  Host: os.hostname(),
+  Port: Number(3003),
+  Api: '/api/v1',
+  Url: '/nfc',
+  HealthUri: '/health',
+  HelpUri: '/help',
+  WelcomeUri: '/welcome',
+  InfoUri: '/info',
+  StatusUri: '/status',
+  EndpointsUri: '/endpoints',
+  Description: 'RFID/NFC Reader'
+};
 
-  // this is for the node.js app, that does the actual file uploading
-  var fileServiceEndpoint = {
-    AppName: 'File Service',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3004),
-    Api: '/api/v1',
-    Url: '/file',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    InfoUri: '/info',
-    StatusUri: '/status',
-    EndpointsUri: '/endpoints',
-    Description: 'File Service'
-  };
+// this is for the node.js app, that does the actual file uploading
+var fileServiceEndpoint = {
+  AppName: 'File Service',
+  Protocol: 'http',
+  Host: os.hostname(),
+  Port: Number(3004),
+  Api: '/api/v1',
+  Url: '/file',
+  HealthUri: '/health',
+  HelpUri: '/help',
+  WelcomeUri: '/welcome',
+  InfoUri: '/info',
+  StatusUri: '/status',
+  EndpointsUri: '/endpoints',
+  Description: 'File Service'
+};
 
-  // this is for the thrid node.js app, that does the actual audio playback
-  var playerEndpoint = {
-    AppName: 'Player',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3002),
-    Api: '/api/v1',
-    Url: '/player',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    InfoUri: '/info',
-    StatusUri: '/status',
-    EndpointsUri: '/endpoints',
-    Description: 'MP3 Player'
-  };
+// this is for the thrid node.js app, that does the actual audio playback
+var playerEndpoint = {
+  AppName: 'Player',
+  Protocol: 'http',
+  Host: os.hostname(),
+  Port: Number(3002),
+  Api: '/api/v1',
+  Url: '/player',
+  HealthUri: '/health',
+  HelpUri: '/help',
+  WelcomeUri: '/welcome',
+  InfoUri: '/info',
+  StatusUri: '/status',
+  EndpointsUri: '/endpoints',
+  Description: 'MP3 Player'
+};
 
-  // http and rest api endpoint for the tag db interface
-  var ledServiceEndpoint = {
-    AppName: 'LED Service',
-    Protocol: 'http',
-    Host: os.hostname(),
-    Port: Number(3005),
-    Api: '/api/v1',
-    Url: '/led',
-    HealthUri: '/health',
-    HelpUri: '/help',
-    InfoUri: '/info',
-    StatusUri: '/status',
-    EndpointsUri: '/endpoints',
-    Description: 'Drive LEDs'
-  };
+// http and rest api endpoint for the tag db interface
+var ledServiceEndpoint = {
+  AppName: 'LED Service',
+  Protocol: 'http',
+  Host: os.hostname(),
+  Port: Number(3005),
+  Api: '/api/v1',
+  Url: '/led',
+  HealthUri: '/health',
+  HelpUri: '/help',
+  WelcomeUri: '/welcome',
+  InfoUri: '/info',
+  StatusUri: '/status',
+  EndpointsUri: '/endpoints',
+  Description: 'Drive LEDs'
+};
 
   var directories = {
     // the path to the file system where the nfc tags and Media Files are stored

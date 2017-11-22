@@ -12,6 +12,7 @@ const nfcReaderUrl = config.nfcReaderEndpoint.Url;
 const nfcReaderHealthUri = config.nfcReaderEndpoint.HealthUri;
 const nfcReaderHelpUri = config.nfcReaderEndpoint.HelpUri;
 const nfcReaderInfoUri = config.nfcReaderEndpoint.InfoUri;
+const nfcReaderWelcomeUri = config.nfcReaderEndpoint.WelcomeUri;
 const nfcReaderStatusUri = config.nfcReaderEndpoint.StatusUri;
 const nfcReaderEndpointsUri = config.nfcReaderEndpoint.EndpointsUri;
 const nfcReaderDescription = config.nfcReaderEndpoint.Description;

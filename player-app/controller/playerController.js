@@ -5,18 +5,20 @@ var jsonfile = require('jsonfile');
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the MP3 Player
-const playerAppName = config.playerEndpoint.AppName;
-const playerProtocol = config.playerEndpoint.Protocol;
-const playerHost = config.playerEndpoint.Host;
-const playerPort = Number(config.playerEndpoint.Port);
-const playerApi = config.playerEndpoint.Api;
-const playerUrl = config.playerEndpoint.Url;
-const playerHealthUri = config.playerEndpoint.HealthUri;
-const playerHelpUri = config.playerEndpoint.HelpUri;
-const playerInfoUri = config.playerEndpoint.InfoUri;
-const playerStatusUri = config.playerEndpoint.StatusUri;
-const playerEndpointsUri = config.playerEndpoint.EndpointsUri;
-const playerDescription = config.playerEndpoint.Description;
+const svrAppName = config.playerEndpoint.AppName;
+const svrProtocol = config.playerEndpoint.Protocol;
+const svrHost = config.playerEndpoint.Host;
+const svrPort = Number(config.playerEndpoint.Port);
+const svrApi = config.playerEndpoint.Api;
+const svrUrl = config.playerEndpoint.Url;
+const svrHealthUri = config.playerEndpoint.HealthUri;
+const svrHelpUri = config.playerEndpoint.HelpUri;
+const svrInfoUri = config.playerEndpoint.InfoUri;
+const svrWelcomeUri = confi.playerEndpoint.WelcomeUri;
+const svrStatusUri = config.playerEndpoint.StatusUri;
+const svrEndpointsUri = config.playerEndpoint.EndpointsUri;
+const svrDescription = config.playerEndpoint.Description;
+const svrFullUrl = svrProtocol + '://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -30,50 +32,100 @@ var getEndpoints = function() {
   const theEndpoints = {
     endpoints: [
       {
-        AppName: 'info',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/endpoints',
+        AppName: 'endpoints',
+        endpoint: svrFullUrl+svrEndpointsUri,
         description: 'Endpoints of the Player API',
         alive: 'true'
       },
       {
+        AppName: 'info',
+        endpoint: svrFullUrl+svrInfoUri,
+        description: 'Info Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'welcome',
+        endpoint: svrFullUrl+svrWelcomeUri,
+        description: 'Welcome Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'help',
+        endpoint: svrFullUrl+svrHelpUri,
+        description: 'Help Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'health',
+        endpoint: svrFullUrl+svrHealthUri,
+        description: 'Health Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'status',
+        endpoint: svrFullUrl+svrStatusUri,
+        description: 'Statu Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
         AppName: 'play',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/play',
+        endpoint: svrFullUrl+'/play/:id/',
         description: 'play a given mp3 file'
       },
       {
         AppName: 'stop',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/stop',
+        endpoint: svrFullUrl+'/stop',
         description: 'stop playing'
       },
       {
         AppName: 'pause',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/pause',
+        endpoint: svrFullUrl+'/pause',
         description: 'pause playback'
       },
       {
         AppName: 'skip',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/skip',
-        description: 'skip 10 seconds in playback'
+        endpoint: svrFullUrl+'/skip/:seconds',
+        description: 'skip seconds in playback (default 30)'
       },
       {
         AppName: 'forward',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/forward',
-        description: 'fast forward in playback'
+        endpoint: svrFullUrl+'/forward/:duration',
+        description: 'fast forward in playback (default 5 seconds)'
       },
       {
         AppName: 'rewind',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/rewind',
-        description: 'rewind in playback'
+        endpoint: svrFullUrl+'/rewind/:duration',
+        description: 'rewind in playback (default 5 seconds)'
       },
       {
         AppName: 'next',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/next',
+        endpoint: svrFullUrl+'/next',
         description: 'jump to next file in album'
       },
       {
         AppName: 'previous',
-        endpoint: playerProtocol + '://' + playerHost+':'+playerPort+playerApi+playerUrl+'/:id/prev',
+        endpoint: svrFullUrl+'/prev',
         description: 'jump to previous file in album'
+      },
+      {
+        AppName: 'get current volume',
+        endpoint: svrFullUrl+'/volume',
+        description: 'return current volume level'
+      },
+      {
+        AppName: 'volume  up',
+        endpoint: svrFullUrl+'/volume/up/:level',
+        description: 'increase volume by level (default 1)'
+      },
+      {
+        AppName: 'volume down',
+        endpoint: svrFullUrl+'/volume/down/:level',
+        description: 'decrease volume by level (default 1)'
+      },
+      {
+        AppName: 'get current volume',
+        endpoint: svrFullUrl+'/volume',
+        description: 'return current volume level'
       }
     ]
   };
