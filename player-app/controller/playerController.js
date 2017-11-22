@@ -110,7 +110,7 @@ function httpRequest(params, postData) {
           var responseJson = {
             response: 'Error',
             message: 'Could not retrieve data for tag ' + tagId,
-            status: 500
+            status: 500,
             status_text: '500 - internal server error',
             error: errObj
           };
@@ -125,8 +125,8 @@ function httpRequest(params, postData) {
       var responseJson = {
         response: 'Error',
         message: 'Could not retrieve data for tag ' + tagId,
-        status: '500 - internal server error',
-        http_code: '500',
+        status: 500,
+        status_text: '500 - internal server error',
         error: errObj
       };
       console.error(responseJson);

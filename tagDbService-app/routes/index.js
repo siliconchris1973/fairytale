@@ -114,7 +114,7 @@ routes.get("/tags/tag/create", function(req, res){
     res.json({
       response: 'unavailable',
       status: 415,
-      status_text: '415 - unavailable'
+      status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests',
       redirect: tagDbServiceFullUrl+'/tag'
     });
