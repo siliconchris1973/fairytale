@@ -37,6 +37,7 @@ appRoutes.get("/", (req, res) => {
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: svrFullUrl+'/welcome'
     });

@@ -49,6 +49,7 @@ routes.get("/led", function(req, res){
     res.json({
       response: 'unavailable',
       status: 415,
+      status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests',
       redirect: ledServiceFullUrl
     });
@@ -68,6 +69,7 @@ routes.get("/led/info", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: ledServiceFullUrl+'/info'
     });

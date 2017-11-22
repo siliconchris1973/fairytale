@@ -98,6 +98,7 @@ app.get('/', function(req, res) {
     res.status(415).json({
       response: 'unavailable',
       status: 415,
+      status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests'
     });
   }
@@ -117,6 +118,7 @@ app.get(svrApi+'/', function(req, res) {
     res.status(415).json({
       response: 'unavailable',
       status: 415,
+      status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests'
     });
   }
@@ -136,6 +138,7 @@ app.get(svrApi+'/file', function(req, res) {
     res.status(415).json({
       response: 'unavailable',
       status: 415,
+      status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests'
     });
   }
@@ -177,6 +180,7 @@ app.post(svrApi+'/file', function(req, res) {
               responseContent = {
                 response: 'error',
                 status: 500,
+                status_text: '500 - internal server error',
                 message: 'could not upload file ' + filename + ' to directory ' + targetTmpDir,
                 error: err.toString()
               };
@@ -219,6 +223,7 @@ app.post(svrApi+'/file', function(req, res) {
           responseContent = {
             response: 'error',
             status: 500,
+            status_text: '500 - internal server error',
             message: 'exception while uploading file ' + filename + ' to directory ' + targetTmpDir,
             error: ex.toString()
           };
@@ -241,6 +246,7 @@ app.post(svrApi+'/file', function(req, res) {
         responseContent = {
           response: 'warning',
           status: 400,
+          status_text: '400 - client error',
           message: 'file ' + filename + ' is not an image - not uploaded'
         };
         return(responseContent);

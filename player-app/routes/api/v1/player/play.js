@@ -33,7 +33,8 @@ playerRoutes.get("/play/:id", (req, res) => {
     var responseJson = {
       response: 'Warning',
       message: 'No ID provided, so nothing to play',
-      status: '400 - Bad Request',
+      status: 400,
+      status_text: '400 - Bad Request',
       error: 'Missing ID'
     };
 

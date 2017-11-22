@@ -49,6 +49,7 @@ routes.use(tagDbServiceApi+tagDbServiceUrl, tags);
      res.json({
        response: 'redirect',
        status: 302,
+       status_text: '302 - redirect',
        message: 'this endpoint is not available for json requests',
        redirect: tagDbServiceFullUrl
      });
@@ -68,6 +69,7 @@ routes.get("/tags", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: tagDbServiceFullUrl
     });
@@ -92,6 +94,7 @@ routes.get("/tags/tag/:id", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: tagDbServiceFullUrl+'/tag/'+id
     });
@@ -111,6 +114,7 @@ routes.get("/tags/tag/create", function(req, res){
     res.json({
       response: 'unavailable',
       status: 415,
+      status_text: '415 - unavailable'
       message: 'this endpoint is not available for json requests',
       redirect: tagDbServiceFullUrl+'/tag'
     });
@@ -130,6 +134,7 @@ routes.get("/tags/info", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: tagDbServiceFullUrl+'/info'
     });
@@ -149,6 +154,7 @@ if (acceptsHTML) {
   res.json({
     response: 'redirect',
     status: 302,
+    status_text: '302 - redirect',
     message: 'this endpoint is not available for json requests',
     redirect: tagDbServiceFullUrl+'/endpoints'
   });
@@ -168,6 +174,7 @@ if (acceptsHTML) {
   res.json({
     response: 'redirect',
     status: 302,
+    status_text: '302 - redirect',
     message: 'this endpoint is not available for json requests',
     redirect: tagDbServiceFullUrl+'/status'
   });

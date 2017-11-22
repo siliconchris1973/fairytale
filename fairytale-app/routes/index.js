@@ -52,6 +52,7 @@ routes.get("/", function(req, res) {
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: svrFullUrl+'/welcome'
     });
@@ -71,6 +72,7 @@ routes.get("/status", function(req, res) {
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: svrFullUrl+'/status'
     });
@@ -90,6 +92,7 @@ routes.get("/endpoints", function(req, res) {
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: svrFullUrl+'/endpoints'
     });

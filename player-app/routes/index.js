@@ -52,6 +52,7 @@ routes.get("/", function(req, res){
    res.status(302).json({
      response: 'redirect',
      status: 302,
+     status_text: '302 - redirect',
      message: 'this endpoint is not available for json requests',
      redirect: playerFullUrl
    });
@@ -71,6 +72,7 @@ routes.get("/player", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl
     });
@@ -90,6 +92,7 @@ routes.get("/player/help", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl+'/help'
     });
@@ -109,6 +112,7 @@ routes.get("/player/health", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl+'/health'
     });
@@ -128,6 +132,7 @@ routes.get("/player/info", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl+'/info'
     });
@@ -147,6 +152,7 @@ routes.get("/player/status", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl+'/status'
     });
@@ -166,6 +172,7 @@ routes.get("/player/endpoints", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl+'/endpoints'
     });
@@ -185,6 +192,7 @@ routes.get("/player/welcome", function(req, res){
     res.status(302).json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: playerFullUrl+'/welcome'
     });

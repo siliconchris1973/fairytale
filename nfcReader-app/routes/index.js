@@ -49,6 +49,7 @@ routes.get("/nfc", function(req, res){
     res.json({
       response: 'unavailable',
       status: 415,
+      status_text: '415 - unavailable',
       message: 'this endpoint is not available for json requests',
       redirect: nfcReaderFullUrl
     });
@@ -68,6 +69,7 @@ routes.get("/nfc/info", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: nfcReaderFullUrl+'/info'
     });
@@ -87,6 +89,7 @@ routes.get("/nfc/endpoints", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: nfcReaderFullUrl+'/endpoints'
     });
@@ -106,6 +109,7 @@ routes.get("/nfc/status", function(req, res){
     res.json({
       response: 'redirect',
       status: 302,
+      status_text: '302 - redirect',
       message: 'this endpoint is not available for json requests',
       redirect: nfcReaderFullUrl+'/status'
     });
