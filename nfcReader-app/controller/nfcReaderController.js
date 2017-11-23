@@ -26,18 +26,40 @@ var getEndpoints = function() {
   const theEndpoints = {
     endpoints: [
       {
-        shortcut: 'help',
-        endpoint: nfcReaderProtocol + '://' + nfcReaderHost+':'+nfcReaderPort+nfcReaderApi+nfcReaderUrl+nfcReaderHelpUri,
-        method: 'GET',
-        description: 'returns a help page',
-        alive: 'false'
+        AppName: 'endpoints',
+        endpoint: svrFullUrl+svrEndpointsUri,
+        description: 'Endpoints of the Player API',
+        alive: 'true'
       },
       {
-        shortcut: 'health',
-        endpoint: nfcReaderProtocol + '://' + nfcReaderHost+':'+nfcReaderPort+nfcReaderApi+nfcReaderUrl+nfcReaderHealthUri,
-        method: 'GET',
-        description: 'health status interface',
-        alive: 'false'
+        AppName: 'info',
+        endpoint: svrFullUrl+svrInfoUri,
+        description: 'Info Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'welcome',
+        endpoint: svrFullUrl+svrWelcomeUri,
+        description: 'Welcome Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'help',
+        endpoint: svrFullUrl+svrHelpUri,
+        description: 'Help Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'health',
+        endpoint: svrFullUrl+svrHealthUri,
+        description: 'Health Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'status',
+        endpoint: svrFullUrl+svrStatusUri,
+        description: 'Statu Endpoint of the Player API',
+        alive: 'true'
       }
     ]
   };

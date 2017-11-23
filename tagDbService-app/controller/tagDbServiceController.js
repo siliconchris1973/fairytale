@@ -7,18 +7,20 @@ var request = require('request');
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the RFID/NFC Tag DB Service
-const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
-const tagDbServiceProtocol = config.tagDbServiceEndpoint.Protocol;
-const tagDbServiceHost = config.tagDbServiceEndpoint.Host;
-const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
-const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
-const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
-const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
-const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
-const tagDbServiceInfoUri = config.tagDbServiceEndpoint.InfoUri;
-const tagDbServiceStatusUri = config.tagDbServiceEndpoint.StatusUri;
-const tagDbServiceEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
-const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
+const svrAppName = config.tagDbServiceEndpoint.AppName;
+const svrProtocol = config.tagDbServiceEndpoint.Protocol;
+const svrHost = config.tagDbServiceEndpoint.Host;
+const svrPort = Number(config.tagDbServiceEndpoint.Port);
+const svrApi = config.tagDbServiceEndpoint.Api;
+const svrUrl = config.tagDbServiceEndpoint.Url;
+const svrHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const svrWelcomeUri = config.tagDbServiceEndpoint.WelcomeUri;
+const svrHelpUri = config.tagDbServiceEndpoint.HelpUri;
+const svrInfoUri = config.tagDbServiceEndpoint.InfoUri;
+const svrStatusUri = config.tagDbServiceEndpoint.StatusUri;
+const svrEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
+const svrDescription = config.tagDbServiceEndpoint.Description;
+const svrFullUrl = svrProtocol + '://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -35,49 +37,64 @@ var getEndpoints = function() {
     endpoints: [
       {
         AppName: 'endpoints',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/endpoints',
-        method: 'GET',
-        description: 'Endpoints of the tagDbService API',
+        endpoint: svrFullUrl+svrEndpointsUri,
+        description: 'Endpoints of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'info',
+        endpoint: svrFullUrl+svrInfoUri,
+        description: 'Info Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'welcome',
+        endpoint: svrFullUrl+svrWelcomeUri,
+        description: 'Welcome Endpoint of the Player API',
         alive: 'true'
       },
       {
         AppName: 'help',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+tagDbServiceHelpUri,
-        method: 'GET',
-        description: 'Get Help',
-        alive: 'false'
+        endpoint: svrFullUrl+svrHelpUri,
+        description: 'Help Endpoint of the Player API',
+        alive: 'true'
       },
       {
         AppName: 'health',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+tagDbServiceHealthUri,
-        method: 'GET',
-        description: 'Health status interface',
-        alive: 'false'
+        endpoint: svrFullUrl+svrHealthUri,
+        description: 'Health Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'status',
+        endpoint: svrFullUrl+svrStatusUri,
+        description: 'Statu Endpoint of the Player API',
+        alive: 'true'
       },
       {
         AppName: 'tags',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl,
+        endpoint: svrFullUrl,
         method: 'GET',
         description: 'List of available tags',
         alive: 'true'
       },
       {
         AppName: 'tag',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
+        endpoint: svrFullUrl+'/tag/:id',
         method: 'GET',
         description: 'A specific tag',
         alive: 'true'
       },
       {
         AppName: 'tag',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/:id',
+        endpoint: svrFullUrl+'/tag/:id',
         method: 'POST',
         description: 'POST API to create new tag',
         alive: 'true'
       },
       {
         AppName: 'create',
-        endpoint: tagDbServiceProtocol + '://' + tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl+'/tag/create',
+        endpoint: svrFullUrl+'/tag/create',
         method: 'GET',
         description: 'Form to create new tag',
         alive: 'true'

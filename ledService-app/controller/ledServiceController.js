@@ -4,18 +4,19 @@
 var config = require('../modules/configuration.js');
 
 // CONFIG data on the led Service
-const ledServiceAppName = config.ledServiceEndpoint.AppName;
-const ledServiceProtocol = config.ledServiceEndpoint.Protocol;
-const ledServiceHost = config.ledServiceEndpoint.Host;
-const ledServicePort = Number(config.ledServiceEndpoint.Port);
-const ledServiceApi = config.ledServiceEndpoint.Api;
-const ledServiceUrl = config.ledServiceEndpoint.Url;
-const ledServiceHealthUri = config.ledServiceEndpoint.HealthUri;
-const ledServiceHelpUri = config.ledServiceEndpoint.HelpUri;
-const ledServiceInfoUri = config.ledServiceEndpoint.InfoUri;
-const ledServiceStatusUri = config.ledServiceEndpoint.StatusUri;
-const ledServiceEndpointsUri = config.ledServiceEndpoint.EndpointsUri;
-const ledServiceDescription = config.ledServiceEndpoint.Description;
+const svrAppName = config.ledServiceEndpoint.AppName;
+const svrProtocol = config.ledServiceEndpoint.Protocol;
+const svrHost = config.ledServiceEndpoint.Host;
+const svrPort = Number(config.ledServiceEndpoint.Port);
+const svrApi = config.ledServiceEndpoint.Api;
+const svrUrl = config.ledServiceEndpoint.Url;
+const svrHealthUri = config.ledServiceEndpoint.HealthUri;
+const svrHelpUri = config.ledServiceEndpoint.HelpUri;
+const svrInfoUri = config.ledServiceEndpoint.InfoUri;
+const svrStatusUri = config.ledServiceEndpoint.StatusUri;
+const svrEndpointsUri = config.ledServiceEndpoint.EndpointsUri;
+const svrDescription = config.ledServiceEndpoint.Description;
+const svrFullUrl = svrProtocol + '://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const REDLED = Number(config.leds.trippLED.REDLED);
 const GREENLED = Number(config.leds.trippLED.GREENLED);
@@ -33,45 +34,53 @@ var getEndpoints = function() {
   const theEndpoints = {
     endpoints: [
       {
+        AppName: 'endpoints',
+        endpoint: svrFullUrl+svrEndpointsUri,
+        description: 'Endpoints of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'info',
+        endpoint: svrFullUrl+svrInfoUri,
+        description: 'Info Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'welcome',
+        endpoint: svrFullUrl+svrWelcomeUri,
+        description: 'Welcome Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'help',
+        endpoint: svrFullUrl+svrHelpUri,
+        description: 'Help Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'health',
+        endpoint: svrFullUrl+svrHealthUri,
+        description: 'Health Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
+        AppName: 'status',
+        endpoint: svrFullUrl+svrStatusUri,
+        description: 'Statu Endpoint of the Player API',
+        alive: 'true'
+      },
+      {
         shortcut: 'cycle',
-        endpoint: ledServiceProtocol + '://' + ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl+'/cycle',
+        endpoint: svrFullUrl+'/cycle',
         method: 'GET',
         description: 'issue a cycle command',
         alive: 'false'
       },
       {
         shortcut: 'blink',
-        endpoint: ledServiceProtocol + '://' + ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl+'/blink/:led',
+        endpoint: svrFullUrl'/blink/:led',
         method: 'GET',
         description: 'set blink command on an led',
-        alive: 'false'
-      },
-      {
-        shortcut: 'status',
-        endpoint: ledServiceProtocol + '://' + ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl+ledServiceStatusUri,
-        method: 'GET',
-        description: 'returns a status page',
-        alive: 'false'
-      },
-      {
-        shortcut: 'info',
-        endpoint: ledServiceProtocol + '://' + ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl+ledServiceInfoUri,
-        method: 'GET',
-        description: 'returns an info page',
-        alive: 'false'
-      },
-      {
-        shortcut: 'help',
-        endpoint: ledServiceProtocol + '://' + ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl+ledServiceHelpUri,
-        method: 'GET',
-        description: 'returns a help page',
-        alive: 'false'
-      },
-      {
-        shortcut: 'health',
-        endpoint: ledServiceProtocol + '://' + ledServiceHost+':'+ledServicePort+ledServiceApi+ledServiceUrl+ledServiceHealthUri,
-        method: 'GET',
-        description: 'health status interface',
         alive: 'false'
       }
     ]

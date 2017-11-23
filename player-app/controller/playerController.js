@@ -4,6 +4,9 @@ var jsonfile = require('jsonfile');
 
 var config = require('../modules/configuration.js');
 
+// this is the wrapper class for the MPlayer intergration
+var thePlayer = require('../modules/thePlayer');
+
 // CONFIG data on the MP3 Player
 const svrAppName = config.playerEndpoint.AppName;
 const svrProtocol = config.playerEndpoint.Protocol;
@@ -14,7 +17,7 @@ const svrUrl = config.playerEndpoint.Url;
 const svrHealthUri = config.playerEndpoint.HealthUri;
 const svrHelpUri = config.playerEndpoint.HelpUri;
 const svrInfoUri = config.playerEndpoint.InfoUri;
-const svrWelcomeUri = confi.playerEndpoint.WelcomeUri;
+const svrWelcomeUri = config.playerEndpoint.WelcomeUri;
 const svrStatusUri = config.playerEndpoint.StatusUri;
 const svrEndpointsUri = config.playerEndpoint.EndpointsUri;
 const svrDescription = config.playerEndpoint.Description;
@@ -230,14 +233,7 @@ class theOuterPlayer {
 }
 
 
-var instantiatePlayer = function(app) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
+var instantiatePlayer = function() {
   var f = soundDir + '/' + 'hello.mp3';
   if (DEBUG) console.log('instantiating new player with welcome sound ' + f);
   var myPlrStatus = new theOuterPlayer(f, 0);
@@ -245,7 +241,7 @@ var instantiatePlayer = function(app) {
   myPlr.playTrack();
 }
 
-var playTrack = function(app, tagId) {
+var playTrack = function(tagId) {
   const DEBUG = app.get('DEBUG');
   const TRACE = app.get('TRACE');
 
@@ -317,89 +313,45 @@ var playTrack = function(app, tagId) {
       */
 }
 
-var rewind = function(app, seconds) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
+var rewind = function(seconds) {
   if (!seconds) seconds = 5;
   if (DEBUG) console.log('thePlayer rewind called - rewinding for ' + seconds + ' seconds');
 
 }
 
 var fastForward = function(app, seconds) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
   if (!seconds) seconds = 5;
   if (DEBUG) console.log('thePlayer fastForward called - forwarding for ' + seconds + ' seconds');
 
 }
 
 var clear = function(app) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
   if (DEBUG) console.log('thePlayer clear called - clearing state of player');
 }
 
 var updatePosition = function(app) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
   if (DEBUG) console.log('thePlayer updatePosition called ');
 }
 
 var getPosition = function(app) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
   if (DEBUG) console.log('thePlayer getPosition called ');
 }
 
 var quit = function() {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
-  const soundDir = app.get('SoundDir');
-  const mediaDir = app.get('MediaDir');
-  const tagDB = app.get('TagDB');
-
   if (DEBUG) console.log('thePlayer quit called ');
 }
 
 var stop = function() {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
   if (DEBUG) console.log('thePlayer stop called ');
 }
 
 var togglePause = function() {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
   if (DEBUG) console.log('thePlayer togglePause called ');
   if (false) {
+    if (TRACE) console.log('   resuming');
     // resume playback
   } else {
+    if (TRACE) console.log('   pausing');
     // update position and pause player
   }
 }
@@ -420,5 +372,10 @@ module.exports = {
   init: instantiatePlayer,
   play: playTrack,
   stop: stop,
-  pause: togglePause
+  pause: togglePause,
+  forward: fastForward,
+  rewind: rewind,
+  position: getPosition,
+  volumeUp: volumeUp,
+  volumeDown: volumeDown
 };
