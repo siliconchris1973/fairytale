@@ -263,9 +263,11 @@ app.post(svrApi+'/file', function(req, res) {
 
 // start the server
 var server = app.listen(svrPort, function () {
-  var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
-  var app_ascii = fs.readFileSync('static/ascii/file.txt').toString();
-  console.log(fairytale_ascii);
-  console.log(app_ascii);
+  try {
+    var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
+    var app_ascii = fs.readFileSync('static/ascii/file.txt').toString();
+    console.log(fairytale_ascii);
+    console.log(app_ascii);
+  } catch (ex) {console.error('could not read ascii art')}
   console.log("%s listening on %s://%s:%s with API on %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

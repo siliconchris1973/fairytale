@@ -51,9 +51,11 @@ var svrApi = led.get('svrApi');
 var svrUrl = led.get('svrUrl');
 
 var server = led.listen(svrPort, function () {
-  var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
-  var app_ascii = fs.readFileSync('static/ascii/led.txt').toString();
-  console.log(fairytale_ascii);
-  console.log(app_ascii);
-    console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
+  try {
+    var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
+    var app_ascii = fs.readFileSync('static/ascii/led.txt').toString();
+    console.log(fairytale_ascii);
+    console.log(app_ascii);
+  } catch (ex) {console.error('could not read ascii art')}
+  console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });

@@ -50,10 +50,14 @@ var svrPort = app.get('playerPort');
 var svrApi = app.get('playerApi');
 var svrUrl = app.get('playerUrl');
 
+var thePlayer = appController.instantiatePlayer();
+
 var server = app.listen(svrPort, function () {
-  var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
-  var app_ascii = fs.readFileSync('static/ascii/player.txt').toString();
-  console.log(fairytale_ascii);
-  console.log(app_ascii);
+  try {
+    var fairytale_ascii = fs.readFileSync('static/ascii/fairytale.txt').toString();
+    var app_ascii = fs.readFileSync('static/ascii/player.txt').toString();
+    console.log(fairytale_ascii);
+    console.log(app_ascii);
+  } catch (ex) {console.error('could not read ascii art')}
   console.log("%s listening on %s://%s:%s API Endpoint is %s%s...", AppName, svrProto, svrAddr, svrPort, svrApi, svrUrl);
 });
