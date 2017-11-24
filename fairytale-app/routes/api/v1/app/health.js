@@ -3,7 +3,7 @@ const appRoutes = require('express').Router();
 var config = require('../../../../modules/configuration.js');
 var appController = require('../../../../controller/appController.js');
 
-// CONFIG data on the MP3 Player
+// CONFIG data on the app
 const svrAppName = config.appEndpoint.AppName;
 const svrProtocol = config.appEndpoint.Protocol;
 const svrHost = config.appEndpoint.Host;
@@ -14,6 +14,7 @@ const svrHealthUri = config.appEndpoint.HealthUri;
 const svrHelpUri = config.appEndpoint.HelpUri;
 const svrInfoUri = config.appEndpoint.InfoUri;
 const svrStatusUri = config.appEndpoint.StatusUri;
+const svrWelcomeUri = config.appEndpoint.WelcomeUri;
 const svrEndpointsUri = config.appEndpoint.EndpointsUri;
 const svrDescription = config.appEndpoint.Description;
 const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;

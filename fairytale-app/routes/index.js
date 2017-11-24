@@ -21,6 +21,7 @@ const svrHealthUri = config.appEndpoint.HealthUri;
 const svrHelpUri = config.appEndpoint.HelpUri;
 const svrInfoUri = config.appEndpoint.InfoUri;
 const svrStatusUri = config.appEndpoint.StatusUri;
+const svrWelcomeUri = config.appEndpoint.WelcomeUri;
 const svrEndpointsUri = config.appEndpoint.EndpointsUri;
 const svrDescription = config.appEndpoint.Description;
 const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
