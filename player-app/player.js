@@ -50,7 +50,9 @@ var svrPort = app.get('playerPort');
 var svrApi = app.get('playerApi');
 var svrUrl = app.get('playerUrl');
 
-var thePlayer = appController.instantiatePlayer();
+var appController = require('./controller/playerController');
+var myPlayer = new appController.thePlayer();
+myPlayer.init();
 
 var server = app.listen(svrPort, function () {
   try {
