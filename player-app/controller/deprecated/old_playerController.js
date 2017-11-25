@@ -1,3 +1,6 @@
+
+
+
 var fs = require('fs');
 var path = require('path');
 var jsonfile = require('jsonfile');
@@ -7,7 +10,7 @@ var config = require('../modules/configuration.js');
 // this is the wrapper class for the MPlayer intergration
 //var thePlayer = require('../modules/thePlayer');
 // this is the wrapper class for the MPlayer intergration
-var thePlayer = require('../modules/thePlayer');
+var theRealPlayer = require('../modules/thePlayer');
 
 // CONFIG data on the MP3 Player
 const svrAppName = config.playerEndpoint.AppName;
@@ -24,22 +27,6 @@ const svrStatusUri = config.playerEndpoint.StatusUri;
 const svrEndpointsUri = config.playerEndpoint.EndpointsUri;
 const svrDescription = config.playerEndpoint.Description;
 const svrFullUrl = svrProtocol + '://'+svrHost+':'+svrPort+svrApi+svrUrl;
-
-// CONFIG data on the tagDB Service
-const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
-const tagDbServiceProtocol = config.tagDbServiceEndpoint.Protocol;
-const tagDbServiceHost = config.tagDbServiceEndpoint.Host;
-const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
-const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
-const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
-const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
-const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
-const tagDbServiceInfoUri = config.tagDbServiceEndpoint.InfoUri;
-const tagDbServiceWelcomeUri = config.tagDbServiceEndpoint.WelcomeUri;
-const tagDbServiceStatusUri = config.tagDbServiceEndpoint.StatusUri;
-const tagDbServiceEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
-const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
-const tagDbServiceFullUrl = tagDbServiceProtocol + '://'+tagDbServiceHost+':'+tagDbServicePort+tagDbServiceApi+tagDbServiceUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -214,175 +201,190 @@ function httpRequest(params, postData) {
   })
 }
 
-var instantiatePlayer = function() {
-  var f = soundDir + '/' + 'hello.mp3';
-  if (DEBUG) console.log('instantiating new player with welcome sound ' + f);
-  var myPlr = new thePlayer(f,0,'HELLO','HELLO','HELLO','HELLO','NONE','NONE');
-  myPlr.playTrack();
-}
 
-var playAlbum = function(tagId) {
-  if (DEBUG) console.log('thePlayer playAlbum called ');
+// a wrapper class around the class thePlayer from file thePlayer.js
+class theOuterPlayer {
+  constructor(name, position, trackId, nextTrackId, prevTrackId) {
+    if (DEBUG) console.log('theOuterPlayer constructor called');
+    if (TRACE) console.log('   file to play ' + name + ' / position ' + position);
 
-  // what to do when called without a tagId
-  if (!tagId) {
-    var responseJson = {
-      response: 'Error',
-      message: 'No Tag Id provided',
-      status: 400,
-      status_text: '400 - client error'
+    this.state = {
+      paused: false,
+      volume: 50,
+      filename: name,
+      progress: 0,
+      position: position || 0,
+      duration: 0,
+      trackId: trackId || 'UNDEF',
+      nextTrackId: nextTrackId || 'UNDEF',
+      prevTrackId: prevTrackId || 'UNDEF'
     };
-    console.error(responseJson);
-    return reject(responseJson);
+    if (TRACE) console.log(this.state);
+    if (DEBUG) console.log('now instantiating theRealPlayer');
+    var myPlr = new theRealPlayer(this.state.filename, this.state.position);
+  }
+  setState(stateConf) {
+    var obj = stateConf;
+    this.state = {
+      paused: obj.pause || false,
+      volume: obj.volume || 50,
+      filename: obj.filename,
+      progress: obj.progress || 0,
+      position: obj.position || 0,
+      duration: obj.duration || 0,
+      trackId: obj.trackId || 'UNDEF',
+      nextTrackId: obj.nextTrackId || 'UNDEF',
+      prevTrackId: obj.prevTrackId || 'UNDEF'
+    };
   }
 
-  var playerState = {
-    paused: obj.pause || false,
-    volume: obj.volume || 50,
-    filename: obj.filename || 'UNDEF',
-    albumId: obj.tagId || 'UNDEF',
-    albumName: obj.albumName || 'UNDEF',
-    progress: obj.progress || 0,
-    position: obj.position || 0,
-    duration: obj.duration || 0,
-    trackId: obj.trackId || 'UNDEF',
-    trackName: obj.trackName || 'UNDEF',
-    nextTrackId: obj.nextTrackId || 'UNDEF',
-    prevTrackId: obj.prevTrackId || 'UNDEF'
-  };
-
-  var httpParams = {
-    protocol: tagDbServiceProto + ':',
-    host: tagDbServiceAddr,
-    port: Number(tagDbServicePort),
-    path: tagDbServiceApi+tagDbServiceUrl+'/playdata/' + tagId,
-    family: 4,
-    headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
-    method: 'GET'
-  };
-
-  if (DEBUG) console.log('sending http request to tagDbService REST api for tag ' + tagId);
-  httpRequest(httpParams).then(function(body) {
-    if (TRACE) console.log(body);
-    // and so on
-    var fbResponse = JSON.parse(body);
-    var obj = fbResponse;
-    if (DEBUG) console.log('providing data to player play site');
-    // from here on we provide the data for the response object
-    var responseJson = {
-      response: 'info',
-      message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
-      status: 200,
-      status_text: '200 - ok',
-      playerdata: {
-        tagId: obj.tagId,
-        trackId: obj.trackId,
-        albumName: obj.mediaTitle,
-        trackName: obj.trackName,
-        trackPath: obj.trackPath,
-        lastPosition: obj.lastPosition,
-        playCount: obj.playCount,
-        trackNo: obj.trackNo,
-        diskNo: obj.diskNo,
-        nextTrackId: obj.nextTrackId,
-        prevTrackId: obj.prevTrackId
-      }
-    };
-  }).then(function(body) {
-    console.log(body);
-    // play the requested file
-    var f = path.join(mediaDir,obj.tagId,obj.trackPath);
-    if (TRACE) console.log(' file to play: ' + f);
-    var myPlr = new thePlayer(f,lastPosition,trackId,trackName,tagId,albumName,nextTrackId,prevTrackId);
-    myPlr.playTrack();
-  });
-}
-
-var playFile = function(file) {
-  if (DEBUG) console.log('thePlayer playFile called ');
-
-  // what to do when called without a tagId
-  if (!file) {
-    var responseJson = {
-      response: 'Error',
-      message: 'No file to play provided',
-      status: 400,
-      status_text: '400 - client error'
-    };
-    console.error(responseJson);
-    return reject(responseJson);
+  // Methods of theOuterPlayer always work on the real player
+  instantiatePlayer(filename, position) {
+    if (!filename) filename = soundDir + '/' + 'hello.mp3';
+    if (!position) position = 0;
+    if (DEBUG) console.log('instantiating new OuterPlayer with welcome sound ' + filename);
+    this.state.filename = filename;
+    this.state.position = position;
+    this.playTrack();
   }
 
-  // play the requested file
-  var f = path.join(file);
-  if (TRACE) console.log(' file to play: ' + f);
-  var myPlr = new thePlayer(f,0,'HELLO','HELLO','HELLO','NONE','NONE');
-  myPlr.playTrack();
-}
+  playTrack (tagId) {
+    const DEBUG = app.get('DEBUG');
+    const TRACE = app.get('TRACE');
 
-var rewind = function(seconds) {
-  if (!seconds) seconds = 5;
-  if (DEBUG) console.log('thePlayer rewind called - rewinding for ' + seconds + ' seconds');
+    if (DEBUG) console.log('thePlayer playTrack called ');
+    /*
+    // what to do when called without a tagId
+    if (!tagId) {
+      var errObj = e;
+      var responseJson = {
+        response: 'Error',
+        message: 'No Tag Id provided',
+        status: '400 - client error',
+        http_code: '400',
+        error: errObj
+      };
+      console.error(responseJson);
+      return reject(responseJson);
+    }
+    */
+    var httpParams = {
+      protocol: tagDbServiceProto + ':',
+      host: tagDbServiceAddr,
+      port: Number(tagDbServicePort),
+      path: tagDbServiceApi+tagDbServiceUrl+'/playdata/' + tagId,
+      family: 4,
+      headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
+      method: 'GET'
+    };
 
-}
+    if (DEBUG) console.log('sending http request to tagDbService REST api for tag ' + tagId);
+    httpRequest(httpParams).then(function(body) {
+      if (TRACE) console.log(body);
+      // and so on
+      var fbResponse = JSON.parse(body);
+      var obj = fbResponse;
+      if (DEBUG) console.log('providing data to player play site');
+    }).then(function(body) {
+      console.log(body);
+      // play the requested file
+      var f = path.join(mediaDir,obj.tagId,obj.trackPath);
+      if (TRACE) console.log(' file to play: ' + f);
+      myPlrStatus.setState(obj);
+      myPlr.state.filename = f;
+      myPlr.state.position = obj.lastPosition;
+      myPlr.playTrack();
+    });
 
-var fastForward = function(app, seconds) {
-  if (!seconds) seconds = 5;
-  if (DEBUG) console.log('thePlayer fastForward called - forwarding for ' + seconds + ' seconds');
+        /*
+        // from here on we provide the data for the response object
+        var responseJson = {
+          response: 'info',
+          message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
+          status: '200 - ok',
+          http_code: '200',
+          playerdata: {
+            tagId: obj.tagId,
+            trackId: obj.trackId,
+            mediaTitle: obj.mediaTitle,
+            trackName: obj.trackName,
+            trackPath: obj.trackPath,
+            lastPosition: obj.lastPosition,
+            playCount: obj.playCount,
+            trackNo: obj.trackNo,
+            diskNo: obj.diskNo,
+            nextTrackId: obj.nextTrackId,
+            prevTrackId: obj.prevTrackId
+          }
+        };
+        */
+  }
 
-}
+  rewind(seconds) {
+    if (!seconds) seconds = 5;
+    if (DEBUG) console.log('thePlayer rewind called - rewinding for ' + seconds + ' seconds');
 
-var clear = function(app) {
-  if (DEBUG) console.log('thePlayer clear called - clearing state of player');
-}
+  }
 
-var updatePosition = function(app) {
-  if (DEBUG) console.log('thePlayer updatePosition called ');
-}
+  fastForward(seconds) {
+    if (!seconds) seconds = 5;
+    if (DEBUG) console.log('thePlayer fastForward called - forwarding for ' + seconds + ' seconds');
 
-var getPosition = function(app) {
-  if (DEBUG) console.log('thePlayer getPosition called ');
-}
+  }
 
-var quit = function() {
-  if (DEBUG) console.log('thePlayer quit called ');
-}
+  clear() {
+    if (DEBUG) console.log('thePlayer clear called - clearing state of player');
+  }
 
-var stop = function() {
-  if (DEBUG) console.log('thePlayer stop called ');
-}
+  updatePosition() {
+    if (DEBUG) console.log('thePlayer updatePosition called ');
+  }
 
-var togglePause = function() {
-  if (DEBUG) console.log('thePlayer togglePause called ');
-  if (false) {
-    if (TRACE) console.log('   resuming');
-    // resume playback
-  } else {
-    if (TRACE) console.log('   pausing');
-    // update position and pause player
+  getPosition() {
+    if (DEBUG) console.log('thePlayer getPosition called ');
+  }
+
+  quit() {
+    if (DEBUG) console.log('thePlayer quit called ');
+  }
+
+  stop() {
+    if (DEBUG) console.log('thePlayer stop called ');
+  }
+
+  togglePause() {
+    if (DEBUG) console.log('thePlayer togglePause called ');
+    if (false) {
+      if (TRACE) console.log('   resuming');
+      // resume playback
+    } else {
+      if (TRACE) console.log('   pausing');
+      // update position and pause player
+    }
+  }
+
+  volumeDown(volumeFactor) {
+    if (!volumeFactor) volumeFactor = 5;
+    if (DEBUG) console.log('thePlayer volumeDown called - reducing volume by ' + volumeFactor);
+  }
+
+  volumeUp(volumeFactor) {
+    if (!volumeFactor) volumeFactor = 5;
+    if (DEBUG) console.log('thePlayer volumeUp called - increasing volume by ' + volumeFactor);
   }
 }
 
-var volumeDown = function(volumeFactor) {
-  if (!volumeFactor) volumeFactor = 5;
-  if (DEBUG) console.log('thePlayer volumeDown called - reducing volume by ' + volumeFactor);
-}
-
-var volumeUp = function(volumeFactor) {
-  if (!volumeFactor) volumeFactor = 5;
-  if (DEBUG) console.log('thePlayer volumeUp called - increasing volume by ' + volumeFactor);
-}
 
 module.exports = {
-  getEndpoints: getEndpoints,
-  init: instantiatePlayer,
-  play: playFile,
-  playAlbum: playAlbum,
-  stop: stop,
-  pause: togglePause,
-  forward: fastForward,
-  rewind: rewind,
-  position: getPosition,
-  volumeUp: volumeUp,
-  volumeDown: volumeDown
+  thePlayer: theOuterPlayer,
+  getEndpoints: theOuterPlayer.getEndpoints,
+  init: theOuterPlayer.instantiatePlayer,
+  play: theOuterPlayer.playTrack,
+  stop: theOuterPlayer.stop,
+  pause: theOuterPlayer.togglePause,
+  forward: theOuterPlayer.fastForward,
+  rewind: theOuterPlayer.rewind,
+  position: theOuterPlayer.getPosition,
+  volumeUp: theOuterPlayer.volumeUp,
+  volumeDown: theOuterPlayer.volumeDown
 };
