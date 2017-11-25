@@ -236,24 +236,9 @@ var playAlbum = function(tagId) {
     return reject(responseJson);
   }
 
-  var playerState = {
-    paused: obj.pause || false,
-    volume: obj.volume || 50,
-    filename: obj.filename || 'UNDEF',
-    albumId: obj.tagId || 'UNDEF',
-    albumName: obj.albumName || 'UNDEF',
-    progress: obj.progress || 0,
-    position: obj.position || 0,
-    duration: obj.duration || 0,
-    trackId: obj.trackId || 'UNDEF',
-    trackName: obj.trackName || 'UNDEF',
-    nextTrackId: obj.nextTrackId || 'UNDEF',
-    prevTrackId: obj.prevTrackId || 'UNDEF'
-  };
-
   var httpParams = {
-    protocol: tagDbServiceProto + ':',
-    host: tagDbServiceAddr,
+    protocol: tagDbServiceProtocol + ':',
+    host: tagDbServiceHost,
     port: Number(tagDbServicePort),
     path: tagDbServiceApi+tagDbServiceUrl+'/playdata/' + tagId,
     family: 4,
@@ -269,24 +254,25 @@ var playAlbum = function(tagId) {
     var obj = fbResponse;
     if (DEBUG) console.log('providing data to player play site');
     // from here on we provide the data for the response object
+    var playerStet = {
+      tagId: obj.tagId,
+      trackId: obj.trackId,
+      albumName: obj.mediaTitle,
+      trackName: obj.trackName,
+      file: obj.trackPath,
+      lastPosition: obj.lastPosition,
+      playCount: obj.playCount,
+      trackNo: obj.trackNo,
+      diskNo: obj.diskNo,
+      nextTrackId: obj.nextTrackId,
+      prevTrackId: obj.prevTrackId
+    };
     var responseJson = {
       response: 'info',
       message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
       status: 200,
       status_text: '200 - ok',
-      playerdata: {
-        tagId: obj.tagId,
-        trackId: obj.trackId,
-        albumName: obj.mediaTitle,
-        trackName: obj.trackName,
-        trackPath: obj.trackPath,
-        lastPosition: obj.lastPosition,
-        playCount: obj.playCount,
-        trackNo: obj.trackNo,
-        diskNo: obj.diskNo,
-        nextTrackId: obj.nextTrackId,
-        prevTrackId: obj.prevTrackId
-      }
+      playerData: playerState
     };
   }).then(function(body) {
     console.log(body);
