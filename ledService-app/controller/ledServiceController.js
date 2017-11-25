@@ -78,7 +78,7 @@ var getEndpoints = function() {
       },
       {
         shortcut: 'blink',
-        endpoint: svrFullUrl'/blink/:led',
+        endpoint: svrFullUrl+'/blink/:led',
         method: 'GET',
         description: 'set blink command on an led',
         alive: 'false'
