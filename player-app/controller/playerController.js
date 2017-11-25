@@ -201,7 +201,7 @@ function httpRequest(params, postData) {
 
 // a wrapper class around the class thePlayer from file thePlayer.js
 class theOuterPlayer {
-  constructor (name, position, trackId, nextTrackId, prevTrackId) {
+  constructor(name, position, trackId, nextTrackId, prevTrackId) {
     if (DEBUG) console.log('theOuterPlayer constructor called');
     if (TRACE) console.log('   file to play ' + name + ' / position ' + position);
 
@@ -220,7 +220,7 @@ class theOuterPlayer {
     if (DEBUG) console.log('now instantiating theRealPlayer');
     var myPlr = new theRealPlayer(this.state.filename, this.state.position);
   }
-  setState (stateConf) {
+  setState(stateConf) {
     var obj = stateConf;
     this.state = {
       paused: obj.pause || false,
@@ -234,172 +234,29 @@ class theOuterPlayer {
       prevTrackId: obj.prevTrackId || 'UNDEF'
     };
   }
-
-  // Methods of theOuterPlayer always work on the real player
-  instantiatePlayer = function(filename, position) {
-    if (!filename) filename = soundDir + '/' + 'hello.mp3';
-    if (!position) position = 0;
-    if (DEBUG) console.log('instantiating new OuterPlayer with welcome sound ' + filename);
-    this.state.filename = filename;
-    this.state.position = position;
-    this.playTrack();
-  }
-
-  var playTrack = function(tagId) {
-    const DEBUG = app.get('DEBUG');
-    const TRACE = app.get('TRACE');
-
-    if (DEBUG) console.log('thePlayer playTrack called ');
-    /*
-    // what to do when called without a tagId
-    if (!tagId) {
-      var errObj = e;
-      var responseJson = {
-        response: 'Error',
-        message: 'No Tag Id provided',
-        status: '400 - client error',
-        http_code: '400',
-        error: errObj
-      };
-      console.error(responseJson);
-      return reject(responseJson);
-    }
-    */
-    var httpParams = {
-      protocol: tagDbServiceProto + ':',
-      host: tagDbServiceAddr,
-      port: Number(tagDbServicePort),
-      path: tagDbServiceApi+tagDbServiceUrl+'/playdata/' + tagId,
-      family: 4,
-      headers: {'User-Agent': 'request', 'Content-Type': 'application/json', 'Accept': 'application/json'},
-      method: 'GET'
-    };
-
-    if (DEBUG) console.log('sending http request to tagDbService REST api for tag ' + tagId);
-    httpRequest(httpParams).then(function(body) {
-      if (TRACE) console.log(body);
-      // and so on
-      var fbResponse = JSON.parse(body);
-      var obj = fbResponse;
-      if (DEBUG) console.log('providing data to player play site');
-    }).then(function(body) {
-      console.log(body);
-      // play the requested file
-      var f = path.join(mediaDir,obj.tagId,obj.trackPath);
-      if (TRACE) console.log(' file to play: ' + f);
-      myPlrStatus.setState(obj);
-      myPlr.state.filename = f;
-      myPlr.state.position = obj.lastPosition;
-      myPlr.playTrack();
-    });
-
-        /*
-        // from here on we provide the data for the response object
-        var responseJson = {
-          response: 'info',
-          message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
-          status: '200 - ok',
-          http_code: '200',
-          playerdata: {
-            tagId: obj.tagId,
-            trackId: obj.trackId,
-            mediaTitle: obj.mediaTitle,
-            trackName: obj.trackName,
-            trackPath: obj.trackPath,
-            lastPosition: obj.lastPosition,
-            playCount: obj.playCount,
-            trackNo: obj.trackNo,
-            diskNo: obj.diskNo,
-            nextTrackId: obj.nextTrackId,
-            prevTrackId: obj.prevTrackId
-          }
-        };
-        */
-  }
-
-  var rewind = function(seconds) {
-    if (!seconds) seconds = 5;
-    if (DEBUG) console.log('thePlayer rewind called - rewinding for ' + seconds + ' seconds');
-
-  }
-
-  var fastForward = function(app, seconds) {
-    if (!seconds) seconds = 5;
-    if (DEBUG) console.log('thePlayer fastForward called - forwarding for ' + seconds + ' seconds');
-
-  }
-
-  var clear = function(app) {
-    if (DEBUG) console.log('thePlayer clear called - clearing state of player');
-  }
-
-  var updatePosition = function(app) {
-    if (DEBUG) console.log('thePlayer updatePosition called ');
-  }
-
-  var getPosition = function(app) {
-    if (DEBUG) console.log('thePlayer getPosition called ');
-  }
-
-  var quit = function() {
-    if (DEBUG) console.log('thePlayer quit called ');
-  }
-
-  var stop = function() {
-    if (DEBUG) console.log('thePlayer stop called ');
-  }
-
-  var togglePause = function() {
-    if (DEBUG) console.log('thePlayer togglePause called ');
-    if (false) {
-      if (TRACE) console.log('   resuming');
-      // resume playback
-    } else {
-      if (TRACE) console.log('   pausing');
-      // update position and pause player
-    }
-  }
-
-  var volumeDown = function(volumeFactor) {
-    if (!volumeFactor) volumeFactor = 5;
-    if (DEBUG) console.log('thePlayer volumeDown called - reducing volume by ' + volumeFactor);
-  }
-
-  var volumeUp = function(volumeFactor) {
-    if (!volumeFactor) volumeFactor = 5;
-    if (DEBUG) console.log('thePlayer volumeUp called - increasing volume by ' + volumeFactor);
-  }
 }
 
-/*
 var instantiatePlayer = function() {
   var f = soundDir + '/' + 'hello.mp3';
   if (DEBUG) console.log('instantiating new player with welcome sound ' + f);
-  var myPlrStatus = new theOuterPlayer(f, 0);
-  var myPlr = new thePlayer(f, 0);
-  myPlr.playTrack();
+  playFile(f);
 }
 
 var playTrack = function(tagId) {
-  const DEBUG = app.get('DEBUG');
-  const TRACE = app.get('TRACE');
-
   if (DEBUG) console.log('thePlayer playTrack called ');
-  /*
+
   // what to do when called without a tagId
   if (!tagId) {
-    var errObj = e;
     var responseJson = {
       response: 'Error',
       message: 'No Tag Id provided',
-      status: '400 - client error',
-      http_code: '400',
-      error: errObj
+      status: 400,
+      status_text: '400 - client error'
     };
     console.error(responseJson);
     return reject(responseJson);
   }
-  */
+
   var httpParams = {
     protocol: tagDbServiceProto + ':',
     host: tagDbServiceAddr,
@@ -417,6 +274,26 @@ var playTrack = function(tagId) {
     var fbResponse = JSON.parse(body);
     var obj = fbResponse;
     if (DEBUG) console.log('providing data to player play site');
+    // from here on we provide the data for the response object
+    var responseJson = {
+      response: 'info',
+      message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
+      status: 200,
+      status_text: '200 - ok',
+      playerdata: {
+        tagId: obj.tagId,
+        trackId: obj.trackId,
+        mediaTitle: obj.mediaTitle,
+        trackName: obj.trackName,
+        trackPath: obj.trackPath,
+        lastPosition: obj.lastPosition,
+        playCount: obj.playCount,
+        trackNo: obj.trackNo,
+        diskNo: obj.diskNo,
+        nextTrackId: obj.nextTrackId,
+        prevTrackId: obj.prevTrackId
+      }
+    };
   }).then(function(body) {
     console.log(body);
     // play the requested file
@@ -427,29 +304,31 @@ var playTrack = function(tagId) {
     myPlr.state.position = obj.lastPosition;
     myPlr.playTrack();
   });
+}
 
-      /*
-      // from here on we provide the data for the response object
-      var responseJson = {
-        response: 'info',
-        message: 'Spiele '+obj.trackName + ' aus ' + obj.mediaTitle,
-        status: '200 - ok',
-        http_code: '200',
-        playerdata: {
-          tagId: obj.tagId,
-          trackId: obj.trackId,
-          mediaTitle: obj.mediaTitle,
-          trackName: obj.trackName,
-          trackPath: obj.trackPath,
-          lastPosition: obj.lastPosition,
-          playCount: obj.playCount,
-          trackNo: obj.trackNo,
-          diskNo: obj.diskNo,
-          nextTrackId: obj.nextTrackId,
-          prevTrackId: obj.prevTrackId
-        }
-      };
-      */
+var playFile = function(file) {
+  if (DEBUG) console.log('thePlayer playFile called ');
+
+  // what to do when called without a tagId
+  if (!file) {
+    var responseJson = {
+      response: 'Error',
+      message: 'No file to play provided',
+      status: 400,
+      status_text: '400 - client error'
+    };
+    console.error(responseJson);
+    return reject(responseJson);
+  }
+
+  // play the requested file
+  var f = path.join(file);
+  if (TRACE) console.log(' file to play: ' + f);
+  myPlrStatus = new theOuterPlayer();
+  myPlrStatus.state.filename = f;
+  myPlr = new theRealPlayer();
+  myPlr.state.filename = f;
+  myPlr.playTrack();
 }
 
 var rewind = function(seconds) {
@@ -504,10 +383,9 @@ var volumeUp = function(volumeFactor) {
   if (!volumeFactor) volumeFactor = 5;
   if (DEBUG) console.log('thePlayer volumeUp called - increasing volume by ' + volumeFactor);
 }
-*/
 
 module.exports = {
-  theOuterPlayer: thePlayer/*,
+  thePlayer: theOuterPlayer,
   getEndpoints: getEndpoints,
   init: instantiatePlayer,
   play: playTrack,
@@ -517,5 +395,5 @@ module.exports = {
   rewind: rewind,
   position: getPosition,
   volumeUp: volumeUp,
-  volumeDown: volumeDown*/
+  volumeDown: volumeDown
 };
