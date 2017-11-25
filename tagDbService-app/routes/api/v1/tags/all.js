@@ -1,21 +1,23 @@
-const tagRoutes = require('express').Router();
+const appRoutes = require('express').Router();
 
 var config = require('../../../../modules/configuration.js');
-var tagDbServiceController = require('../../../../controller/tagDbServiceController.js');
+var appController = require('../../../../controller/tagDbServiceController.js');
 
 // CONFIG data on the RFID/NFC Tag DB Service
-const tagDbServiceAppName = config.tagDbServiceEndpoint.AppName;
-const tagDbServiceProtocol = config.tagDbServiceEndpoint.Protocol;
-const tagDbServiceHost = config.tagDbServiceEndpoint.Host;
-const tagDbServicePort = Number(config.tagDbServiceEndpoint.Port);
-const tagDbServiceApi = config.tagDbServiceEndpoint.Api;
-const tagDbServiceUrl = config.tagDbServiceEndpoint.Url;
-const tagDbServiceHealthUri = config.tagDbServiceEndpoint.HealthUri;
-const tagDbServiceHelpUri = config.tagDbServiceEndpoint.HelpUri;
-const tagDbServiceDescription = config.tagDbServiceEndpoint.Description;
-
-var tagDbServiceFullUrl = tagDbServiceProtocol + '://' + tagDbServiceHost + ':' + tagDbServicePort + tagDbServiceApi;
-//var genPlayerUrl = playerProtocol + '://' + playerHost + ':' + playerPort + playerApi + playerUrl;
+const svrAppName = config.tagDbServiceEndpoint.AppName;
+const svrProtocol = config.tagDbServiceEndpoint.Protocol;
+const svrHost = config.tagDbServiceEndpoint.Host;
+const svrPort = Number(config.tagDbServiceEndpoint.Port);
+const svrApi = config.tagDbServiceEndpoint.Api;
+const svrUrl = config.tagDbServiceEndpoint.Url;
+const svrHealthUri = config.tagDbServiceEndpoint.HealthUri;
+const svrHelpUri = config.tagDbServiceEndpoint.HelpUri;
+const svrDescription = config.tagDbServiceEndpoint.Description;
+const svrInfoUri = config.tagDbServiceEndpoint.InfoUri;
+const svrWelcomeUri = config.tagDbServiceEndpoint.WelcomeUri;
+const svrStatusUri = config.tagDbServiceEndpoint.StatusUri;
+const svrEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
+const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
 const TRACE = config.debugging.TRACE;
@@ -27,17 +29,16 @@ var nfcTagDir = tagDB;
 
 // GET ALL Tags Endpoint
 // get the listing of all stored nfc tags
-tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
-  if (DEBUG) console.log('get::'+tagDbServiceApi+tagDbServiceUrl+' called');
+appRoutes.get('/', (req, res) => {
+  if (DEBUG) console.log('get::'+svrApi+svrUrl+' called');
 
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
-  /* promise call
   var result = function(app) {
-    tagDbServiceController.getTagList
+    appController.getTagList
     .then(function (result){
       var obj = result;
       if (acceptsHTML) {
@@ -45,8 +46,8 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
         if (DEBUG) console.log("request to render tag list");
         if (TRACE) console.log(obj.tags);
         res.status(200).render('tags', {
-          title: 'RFID Tag Startseite',
-          headline: 'RFID Tag Startseite',
+          title: 'NFC Tag Startseite',
+          headline: 'NFC Tag Liste',
           subheadline: 'Verf&uuml;gbare Tags',
           messagetext: 'Bitte ein RFID Tag ausw&auml;hlen, um mehr Daten angezeigt zu bekommen',
           varTags: obj.tags
@@ -57,7 +58,7 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
           info: {
             response: 'info',
             status: 200,
-            status_text: '200 - ok'
+            status_text: '200 - ok',
             message: 'endpoint to tags API',
             endpoints: result
           }
@@ -89,7 +90,50 @@ tagRoutes.get(tagDbServiceApi+tagDbServiceUrl, function(req, res) {
       };
     });
   };
-*/
 });
 
-module.exports = tagRoutes;
+/*
+ *      TAG DB SERVICE ROUTES FOR REDIRECTION
+ */
+ appRoutes.get("/all", (req, res) => {
+   if (DEBUG) console.log('GET::'+svrFullUrl+'/all');
+   // the server checks whether the client accepts html (browser) or
+   // json machine to machine communication
+   var acceptsHTML = req.accepts('html');
+   var acceptsJSON = req.accepts('json');
+
+   if (acceptsHTML) {
+     if (TRACE) console.log('   redirecting to '+svrFullUrl);
+     res.status(302).redirect(svrFullUrl);
+   } else {
+     res.json({
+       response: 'redirect',
+       status: 302,
+       status_text: '302 - redirect',
+       message: 'this endpoint is not available for json requests',
+       redirect: svrFullUrl
+     });
+   }
+ });
+appRoutes.get("/list", (req, res) => {
+  if (DEBUG) console.log('GET::'+svrFullUrl+'/list');
+  // the server checks whether the client accepts html (browser) or
+  // json machine to machine communication
+  var acceptsHTML = req.accepts('html');
+  var acceptsJSON = req.accepts('json');
+
+  if (acceptsHTML) {
+    if (TRACE) console.log('   redirecting to '+svrFullUrl);
+    res.status(302).redirect(svrFullUrl);
+  } else {
+    res.json({
+      response: 'redirect',
+      status: 302,
+      status_text: '302 - redirect',
+      message: 'this endpoint is not available for json requests',
+      redirect: svrFullUrl
+    });
+  }
+});
+
+module.exports = appRoutes;

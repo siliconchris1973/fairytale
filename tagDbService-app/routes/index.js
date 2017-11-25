@@ -21,9 +21,9 @@ const svrHealthUri = config.tagDbServiceEndpoint.HealthUri;
 const svrHelpUri = config.tagDbServiceEndpoint.HelpUri;
 const svrDescription = config.tagDbServiceEndpoint.Description;
 const svrInfoUri = config.tagDbServiceEndpoint.InfoUri;
+const svrWelcomeUri = config.tagDbServiceEndpoint.WelcomeUri;
 const svrStatusUri = config.tagDbServiceEndpoint.StatusUri;
 const svrEndpointsUri = config.tagDbServiceEndpoint.EndpointsUri;
-
 const svrFullUrl = svrProtocol+'://'+svrHost+':'+svrPort+svrApi+svrUrl;
 
 const DEBUG = config.debugging.DEBUG;
@@ -39,7 +39,7 @@ routes.use('/api/v1/tags', tags);
 /*
  *      TAG DB SERVICE ROUTES FOR REDIRECTION
  */
- routes.get("/", function(req, res){
+ routes.get("/", (req, res) => {
    if (DEBUG) console.log("GET::/");
    // the server checks whether the client accepts html (browser) or
    // json machine to machine communication
@@ -59,7 +59,7 @@ routes.use('/api/v1/tags', tags);
      });
    }
  });
-routes.get("/tags", function(req, res){
+routes.get("/tags", (req, res) => {
   if (DEBUG) console.log("GET::/tags");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
@@ -79,7 +79,7 @@ routes.get("/tags", function(req, res){
     });
   }
 });
-routes.get("/tags/tag/:id", function(req, res){
+routes.get("/tags/tag/:id", (req, res) => {
   if (DEBUG) console.log("GET::/tags/tag/:id");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
@@ -104,7 +104,7 @@ routes.get("/tags/tag/:id", function(req, res){
     });
   }
 });
-routes.get("/tags/tag/create", function(req, res){
+routes.get("/tags/tag/create", (req, res) => {
   if (DEBUG) console.log("GET::/tags/tag/create");
   // the server checks whether the client accepts html (browser) or
   // json machine to machine communication
@@ -124,7 +124,7 @@ routes.get("/tags/tag/create", function(req, res){
     });
   }
 });
-routes.get("/tags/info", function(req, res){
+routes.get("/tags/info", (req, res) => {
   if (DEBUG) console.log("GET::/tags/info");
  // the server checks whether the client accepts html (browser) or
  // json machine to machine communication
@@ -144,7 +144,7 @@ routes.get("/tags/info", function(req, res){
     });
   }
 });
-routes.get("/tags/endpoints", function(req, res){
+routes.get("/tags/endpoints", (req, res) => {
   if (DEBUG) console.log("GET::/tags/endpoints");
  // the server checks whether the client accepts html (browser) or
  // json machine to machine communication
@@ -164,7 +164,7 @@ if (acceptsHTML) {
   });
 }
 });
-routes.get("/tags/status", function(req, res){
+routes.get("/tags/status", (req, res) => {
   if (DEBUG) console.log("GET::/tags/status");
  // the server checks whether the client accepts html (browser) or
  // json machine to machine communication

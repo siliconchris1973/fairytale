@@ -9,6 +9,7 @@ const endpoints = require('./endpoints');
 const all = require('./all');
 
 tagRoutes.get('/', all);
+tagRoutes.get('/all', all);
 tagRoutes.get('/list', all);
 tagRoutes.get('/welcome', welcome);
 tagRoutes.get('/info', info);
