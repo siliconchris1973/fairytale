@@ -103,19 +103,70 @@ var getEndpoints = function() {
   return theEndpoints;
 };
 
+// inline function (promised) that provides a filename and it's content
+function readFiles(dirname, onFileContent, onError) {
+  fs.readdir(dirname, function(err, filenames) {
+    if (err) {
+      onError(err);
+      return;
+    }
+    filenames.forEach(function(filename) {
+      fs.readFile(dirname + filename, 'utf-8', function(err, content) {
+        if (err) {
+          onError(err);
+          return;
+        }
+        onFileContent(filename, content);
+      });
+    });
+  });
+}
 
 // asynchronous promised function to get a list of tags, together with
 // media title and meta data like number of disks, tracks etc.
 var getTagList = function(){
   return new Promise(function(resolve, reject){
     if (DEBUG) console.log('function getTagList called');
-
-
-
+    var data = {};
+    readFiles(tagDB, function(filename, content) {
+      if (path.extname(filename) == 'json') data[filename] = content;
+      console.log(data);
+      return(data);
+    }, function(err) {
+      throw err;
+    });
   })
 }
+// synchronous function that returns the list of available tags
+var getTagListSync = function(){
+  if (DEBUG) console.log('function getTagListSync called');
 
-var getTagData = function(app, tagId , callback){
+  var glob = require("glob")
+
+  // options is optional
+  glob("**/*.json", options, function (err, files) {
+    // files is an array of filenames.
+    // If the `nonull` option is set, and nothing
+    // was found, then files is ["**/*.js"]
+    // er is an error object or null.
+  })
+  var obj = dirList;
+  var response = {
+    tagId: tagId,
+    trackId: trackId,
+    trackNo: trackNo,
+    diskNo: diskNo,
+    mediaTitle: obj.MediaTitle,
+    trackName: trackName,
+    trackPath: trackPath,
+    lastPosition: lastPosition,
+    playCount: playCount,
+    prevTrackId: prevTrackId,
+    nextTrackId: nextTrackId
+  };
+}
+
+var getTagData = function(tagId , callback){
   if (DEBUG) console.log('function getTagData called');
 
   var obj = null;
@@ -148,7 +199,7 @@ var getTagData = function(app, tagId , callback){
   }
 }
 
-var getTagToPlay = function(app, tagId , callback){
+var getTagToPlay = function(tagId , callback){
   if (DEBUG) console.log('function getTagData called');
 
   var obj = null;
@@ -234,7 +285,7 @@ var getTagToPlay = function(app, tagId , callback){
 }
 
 
-var addPictureData = function(app, tagId , picture, callback){
+var addPictureData = function(tagId, picture, callback){
   if (DEBUG) console.log('function addPictureData called');
 
   var obj = null;
@@ -290,7 +341,8 @@ var addPictureData = function(app, tagId , picture, callback){
 
 module.exports = {
   getEndpoints: getEndpoints,
-  getTagList: getTagList,
+  getTagList: getTagListSync,
+  //getTagList: getTagList,
   getTagData: getTagData,
   getTagToPlay: getTagToPlay,
   addPictureData: addPictureData

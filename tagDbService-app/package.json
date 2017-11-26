@@ -30,6 +30,7 @@
     "fs": "latest",
     "os": "latest",
     "path": "latest",
+    "glob": "latest",
     "jsonfile": "latest",
     "request": "latest"
   },

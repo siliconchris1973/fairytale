@@ -37,7 +37,7 @@ appRoutes.get('/', (req, res) => {
   var acceptsHTML = req.accepts('html');
   var acceptsJSON = req.accepts('json');
 
-  var result = function(app) {
+  var result = function() {
     appController.getTagList
     .then(function (result){
       var obj = result;
