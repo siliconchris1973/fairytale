@@ -31,7 +31,8 @@
     "os": "latest",
     "path": "latest",
     "jsonfile": "latest",
-    "request": "latest"
+    "request": "latest",
+    "seneca": "latest"
   },
   "bugs": {
     "url": "https://github.com/siliconchris1973/fairytale/issues"
