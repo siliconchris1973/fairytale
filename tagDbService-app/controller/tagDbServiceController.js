@@ -28,7 +28,6 @@ const TRACE = config.debugging.TRACE;
 const soundDir = config.directories.SoundDir;
 const mediaDir = config.directories.MediaDir;
 const tagDB = config.directories.TagDB;
-var nfcTagDir = tagDB;
 
 // this is a synchronous function that returns all the endpoints.
 var getEndpoints = function() {
@@ -107,7 +106,7 @@ var getEndpoints = function() {
 
 // asynchronous promised function to get a list of tags, together with
 // media title and meta data like number of disks, tracks etc.
-var getTagList = function(app){
+var getTagList = function(){
   return new Promise(function(resolve, reject){
     if (DEBUG) console.log('function getTagList called');
 
@@ -120,15 +119,15 @@ var getTagData = function(app, tagId , callback){
   if (DEBUG) console.log('function getTagData called');
 
   var obj = null;
-  var tagStorage = path.join(nfcTagDir, tagId .toUpperCase()+'.json');
+  var tagStorage = path.join(tagDb, tagId .toUpperCase()+'.json');
 
   try {
     jsonfile.readFile(tagStorage, function(err, result) {
       if (err) {
-        console.error('error: error getting data of tag '+tagId+' from '+nfcTagDir+' \nerror message: ' +err.toString());
+        console.error('error: error getting data of tag '+tagId+' from '+tagDb+' \nerror message: ' +err.toString());
         var errCallback = {
           response: 'error',
-          message: 'error getting data of tag '+tagId+' from '+nfcTagDir,
+          message: 'error getting data of tag '+tagId+' from '+tagDb,
           error: err.toString()
         };
         callback(errCallback);
@@ -153,15 +152,15 @@ var getTagToPlay = function(app, tagId , callback){
   if (DEBUG) console.log('function getTagData called');
 
   var obj = null;
-  var tagStorage = path.join(nfcTagDir, tagId .toUpperCase()+'.json');
+  var tagStorage = path.join(tagDb, tagId .toUpperCase()+'.json');
 
   try {
     jsonfile.readFile(tagStorage, function(err, result) {
       if (err) {
-        console.error('error: error getting data of tag '+tagId+' from '+nfcTagDir+' \nerror message: ' +err.toString());
+        console.error('error: error getting data of tag '+tagId+' from '+tagDb+' \nerror message: ' +err.toString());
         var errCallback = {
           response: 'error',
-          message: 'error getting data of tag '+tagId+' from '+nfcTagDir,
+          message: 'error getting data of tag '+tagId+' from '+tagDb,
           error: err.toString()
         };
         callback(errCallback);
