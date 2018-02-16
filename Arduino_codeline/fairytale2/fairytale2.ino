@@ -1,3 +1,5 @@
+#define VERSION 2.0
+
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
 __asm volatile ("nop");
@@ -179,7 +181,7 @@ char plrCurrentFile[13]     = "track001.mp3";           // filename of currently
 char plrCurrentFolder[9]    = "system00";               // directory containing the currently played tracks - system00 is the system message directory
 char filename[23]           = "/system00/track001.mp3"; // path and filename of the track to play - we start with the welcome track
 byte firstTrackToPlay       = 1;                        // the track number to play (used for the loop)
-int8_t nextTrackToPlay      = 1;                        // the track number to play next (can also be the previos number)
+char nextTrackToPlay        = 1;                        // the track number to play next (can also be the previos number or a -1 in case of an error)
 
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
 char trackDbDir[10]      = "/trackdb0";              // where do we store the files for each album 
@@ -246,8 +248,8 @@ byte getVolume(void);             // function that returns the volume setting ba
 void plrAdjustVolume(void);       // function to check for changes on the volume control and adjust volume accrodingly
 void plrStop(void);               // stops the player and return 0
 void plrTogglePause(void);        // pause and unpause the player and return 0
-int8_t playAlbum(byte);           // plays the album from plrCurrentFolder: returns -1 for error or a higher 
-int8_t playTrack(byte, char);     // plays a track as defined by the global vars: returns -1 for error, 0 for success and track number to play next
+char playAlbum(byte);           // plays the album from plrCurrentFolder: returns -1 for error or a higher 
+char playTrack(byte, char);     // plays a track as defined by the global vars: returns -1 for error, 0 for success and track number to play next
 
 // prototype for warning
 void issueWarning(byte, const char[], boolean); // show the message provided, activate warning light and voice warning (if boolean is true) 
@@ -386,7 +388,7 @@ void loop() {
           issueWarning(4, "no files in folder", true);
         }
       } else {
-        int8_t retVal = playAlbum(numberOfFiles);
+        char retVal = playAlbum(numberOfFiles);
         retVal = nextTrackToPlay;
         if (retVal < 0) { 
           issueWarning(5, "playback failed", false);
@@ -476,7 +478,7 @@ void plrTogglePause(void) {
   }
 }
 
-int8_t playAlbum(byte numberOfFiles) {
+char playAlbum(byte numberOfFiles) {
   //printDirectory(SD.open(plrCurrentFolder), 1); }
   if (DEBUG) { Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);} 
   
@@ -527,7 +529,7 @@ int8_t playAlbum(byte numberOfFiles) {
   return(0);
 }
 
-int8_t playTrack(byte trackNo, char numberOfTracks) {
+char playTrack(byte trackNo, char numberOfTracks) {
   if (!musicPlayer.startPlayingFile(filename)) {
     nextTrackToPlay = -1;
     return (nextTrackToPlay);
