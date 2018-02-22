@@ -1,3 +1,5 @@
+#define VERSION 2a-working
+
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
 __asm volatile ("nop");

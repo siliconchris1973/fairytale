@@ -1,4 +1,4 @@
-#define VERSION 2.0
+#define VERSION 2_1-broken
 
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
