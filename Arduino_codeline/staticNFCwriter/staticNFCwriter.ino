@@ -57,7 +57,7 @@ void loop() {
     }
     delay(1000);
     // Wait a bit before trying again
-    Serial.println("\n\nSend a character to scan another tag!");
+    Serial.println("\n\nYou may now turn off the Arduino!");
     Serial.flush();
     while (!Serial.available());
     while (Serial.available()) {
@@ -112,50 +112,3 @@ boolean getNfcCardData(void) {
   return (usableContent);
 }
 
-/*
-byte countFiles(File dir) {
-  byte counter = 0;
-  while (true) {
-    File entry = dir.openNextFile();
-    // Skip directories and hidden files.
-    //if (!entry.isSubDir() && !entry.isHidden()) {
-    if (!entry) {
-      // no more files
-      break;
-    }
-    counter++;
-    entry.close();
-    //}
-  }
-  dir.close();
-  //delay(counter*10); // wait number of elements in dir * 10 milliseconds for the console to settle
-  return (counter);
-}
-*/
-// File listing helper
-/*
-void printDirectory(File dir, byte numTabs) {
-  while (true) {
-    File entry =  dir.openNextFile();
-    // no more files
-    if (! entry) {
-      break;
-    }
-
-    for (byte i = 0; i < numTabs; i++) {
-      Serial.print('\t');
-    }
-
-    Serial.print(entry.name());
-    if (entry.isDirectory()) {
-      Serial.println(F("/"));
-      printDirectory(entry, numTabs + 1);
-    } else {
-      // files have sizes, directories do not
-      Serial.print("\t\t");
-      Serial.println(entry.size(), DEC);
-    }
-    entry.close();
-  } // end while
-}
-*/
