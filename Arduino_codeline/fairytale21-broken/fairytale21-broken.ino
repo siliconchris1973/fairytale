@@ -1,4 +1,4 @@
-#define VERSION 2_1-broken
+#define VERSION 21
 
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
@@ -374,7 +374,7 @@ void setup() {
   
   // check our current time, so we know when to stop
   startUpTime = millis();
-  if (DEBUG) Serial.print(F("place tag on reader "));
+  if (DEBUG) Serial.print(F("Fairytale Version "));Serial.print(VERSION);Serial.print(F(" - place tag on reader "));
 }
 
 
