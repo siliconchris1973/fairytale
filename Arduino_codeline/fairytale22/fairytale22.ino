@@ -98,18 +98,37 @@ __asm volatile ("nop");
    - errorLedPin           9  the pin to which the error led is connected to (e.g. used for LBO of powerboost 1000c)
     
 
-   - volPotPin      A0  the analog input pin that we use for the potentiometer
+   - volPotPin         A0  the analog input pin that we use for the potentiometer
    - btnLinePin        A1  pin to which the button line (4 buttons) is connected to
    - batLowPin         A2  the pin on which the powerboost 1000c indicates a low baterry (LBO) - ouput done via errorLedPin
-   - programming       A3  the pin the program button is connected to. The program button changes the functionality
+   - iRRemotePin       A3  the pin on which the powerboost 1000c indicates a low baterry (LBO) - ouput done via errorLedPin
+   - programming       A4  the pin the program button is connected to. The program button changes the functionality
                            of the overall program in that (if pressed) the code will register a new tag for use with 
                            an album directory currently not connected to a tag (functionality yet to come)
 */
 
-// make sure to change this to false before uploading in production as it turns on lots and lots of serial messages
-// you may also do a find and replace    if (DEBUG)    with    // if (DEBUG)    to reduce memory impact on arduino
-boolean DEBUG = true;
+// make sure to change this to comment this out before uploading in production as it turns on lots and lots of serial messages
+#define DEBUG 1
 
+// to enable the IR Remote Control option uncomment the following line
+//#define IRREMOTE 1
+
+// to enable the 4 control buttons uncomment the following line
+#define BUTTONS 1
+
+// to enable the volume potentiometer uncomment the follwing line
+#define VOLUMEPOT 1
+
+// to enable the low battery warning with light and voice uncomment the follwing line
+//#define LOWBAT 1
+
+// to use NDEF to get the album directory (as opposed to the trackDb) uncomment the following line
+// ONLY ONE of the below and this line can be chosen
+#define NFCNDEF 1
+
+// to use the Adafruit NFC library to get the Tag UID and retrieve the directory from the trackDb 
+// uncomment the following line. ONLY ONE of the above and this line can be chosen
+//#define NFCTRACKDB 1
 
 //
 // include SPI and SD libraries
@@ -145,6 +164,8 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 //
 // SETUP NFC ADAPTER
 //
+#ifdef NFCNDEF
+// these includes are sued for the NDEF implementation
 #include <PN532_SPI.h>
 #include <PN532.h>
 #include <NfcAdapter.h>
@@ -154,6 +175,19 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 #define PN532_SS      10    // NFC breakout board chip select pin
 PN532_SPI pn532spi(SPI, PN532_SS);
 NfcAdapter nfc = NfcAdapter(pn532spi);
+#endif
+
+#ifdef NFCTRACKDB
+// INCLUDE Adafruit NFC LIbrary here
+#endif
+
+
+//
+// include IR Remote Control
+//
+#ifdef IRREMOTE
+#include <IRremote.h>
+#endif
 
 
 //       VV       VV   Y       RRRRR
@@ -162,76 +196,64 @@ NfcAdapter nfc = NfcAdapter(pn532spi);
 //          VV VV   AAAAAAA   RR   RR
 //            V    AA     AA  RR   RR
 //
-
-// uptime counters
-unsigned long startUpTime        = 0;         // millis() the Arduino is started
-const unsigned long maxUpTime    = 1800000L;  // how long will the system stay on while nothing is playing - default 1800000 = 30 Minutes
-unsigned long lightStartUpTime   = 0;         // millis() the operations light started
-const unsigned long maxLightTime = 1800000L;  // how long shall the light stay on while nothing is playing - default 900000 = 15 Minutes
-const unsigned long checkInterval= 10000L;    // time in milliseconds between checks for battery status, if the tag ist still present and if the max light time is reached
-
-// booleans to chose whether or not to show continuing warning messages in the loop
-boolean loopWarningMessageNoFilesInDir = true;// make sure   no files in directory found  warning message is shown at least once
-boolean loopWarningMessageFileNotFound = true;// make sure   file not found               warning message is shown at least once
-boolean loopWarningMessageNoAlbumInfos = true;// make sure   no album info on nfc tag     warning message is shown at least once
-
-
 // mp3 player variables
-char plrCurrentFile[]     = "track001.mp3";           // filename of currently played track - we start with the welcome track
-char plrCurrentFolder[]    = "system00";              // directory containing the currently played tracks - system00 is the system message directory
-char filename[]           = "/system00/track001.mp3"; // path and filename of the track to play - we start with the welcome track
-byte firstTrackToPlay       = 1;                      // the track number to play (used for the loop)
-char nextTrackToPlay        = 1;                      // the track number to play next (can also be the previos number or a -1 in case of an error)
+char plrCurrentFolder[]     = "system00";                // directory containing the currently played tracks - system00 is the system message directory
+char filename[]             = "/system00/track001.mp3";  // path and filename of the track to play - we start with the welcome track
+byte firstTrackToPlay       = 1;                         // the track number to play (used for the loop)
+byte nextTrackToPlay        = 1;                         // the track number to play next (can also be the previos number or a -1 in case of an error)
 
 // file to hold the last played album (aka directory) name - from here we may retrieve other data from the trackDb 
 const char lastPlayedSessionFile[] = "/trackdb0/LASTPLAY.TDB";
 
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
-const char trackDbDir[]      = "/trackdb0";              // where do we store the files for each album 
-const char trackDbFile[]     = "/trackdb0/albumnfc.txt"; // path to the file that holds the connection between an NFC tag UID and the corresponding directory / file name
+const char trackDbDir[]     = "/trackdb0";               // where do we store the files for each album 
+const char trackDbFile[]    = "/trackdb0/albumnfc.txt";  // path to the file that holds the connection between an NFC tag UID and the corresponding directory / file name
 char tDirFile[sizeof(trackDbFile)];                      // a char array to hold the path to the file with track and directory infos (name is shared with directory name plus .txt
 char trackDbEntry[35];                                   // will hold a nfc <-> album info connection in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
 
 
 // NFC Tag data
+#ifdef NFCTRACKDB
 byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };    // Buffer to store the returned UID
 char charUid[22];                        // char representation of the UID
 byte uidLength;                          // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
-boolean weHaveATag = false;              // is set to true if a tag is present and false, if not
-
+#endif 
 
 // volume control variables for the analog poti
+#ifdef VOLUMEPOT
 const byte volPotPin     = A0;      // the analog input pin that we use for the potentiometer
-const byte volSensorDrift = 7;      // difference to last received sensor value that must be exceeded to activate a change in the volume
-word volCompareValue     = 0;       // just a convenience variable to make comparison easier
-word volSensorValue      = 0;       // read the value from the potentiometer
 word lastVolSensorValue  = 0;       // keeps the last read sensor value
-byte soundVolume         = 0;       // the sound volume is derived via a map function from the sensor value
-
+#endif
 
 // control buttons definition
+#ifdef BUTTONS
 const byte btnLinePin    = A1;      // pin on which the button line (4 buttons) is connected
-const word btnLightValue = 1021;    // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-const word btnPauseValue = 933;     // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-const word btnNextValue  = 1002;    // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-const word btnPrevValue  = 991;     // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
-const word minBtnValue   = 800;     // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
-word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
-const byte btnValDrift   = 5;       // maximum allowed difference + and - the predefined value for each button we allow
-const word btnPressDelay = 500;     // delay in milliseconds to prevent double press detection
-unsigned long btnPressTime;         // time in millis() when the button was pressed
+#endif
+
+
+// IR remote control 
+#ifdef IRREMOTE
+const byte iRRemotePin   = A4;      // the pin the IR remote control diode (receiver) is connected to
+IRrecv irrecv(iRRemotePin);         // define an object to read infrared sensor on pin A4
+decode_results results;             // make sure decoded values from IR are stored 
+#endif
 
 
 // battery control
-const byte batLowPin     = A2;      // pulled high to BAT but when the charger detects a low voltage (under 3.2V) the pin will drop down to 0V
-boolean batLow           = false;   // this is set to true by the Adafruit PowerBoost 1000c in case the battery is low
+#ifdef LOWBAT
+const byte lowBatPin   = A2;      // pulled high to BAT but when the charger detects a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
+boolean lowBatWarn     = true;    // we use this bool so we may only tell the user every 5 Minite sthat the Battery is low
+#endif
 
 
 // LIGHT EFFECTS
+unsigned long lightStartUpTime = 0; // millis() the operations light started
 const byte infoLedPin    = 5;       // the pin to which the operation led is connected to
 const byte warnLedPin    = 8;       // the pin to which the warning led is connected to
 const byte errorLedPin   = 9;       // the pin to which the error led is connected to
 boolean lightOn          = true;    // if true, the operations light fader is active. is set to false via a button, or after a maxLightTime (see below) is reached
+
+
 
 
 //
@@ -242,33 +264,33 @@ boolean lightOn          = true;    // if true, the operations light fader is ac
 //       PP        RR    RR   OOOOOO      TT      OOOOOO      TT        YY     PP        EEEEEE  SSSSS
 //
 // these are the prototypes to retrieve and set directory and track to play - aka work on the tagdb
-boolean getDirAndTrackToPlay(boolean);  // retrieve the directory and track number either from the Tag (true) or from last played session file (false)
-boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
+static boolean getDirAndTrackToPlay(boolean);  // retrieve the directory and track number either from the Tag (true) or from last played session file (false)
+static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
 
 // these are the prototypes for the mp3 player controller
-byte getVolume(void);             // function that returns the volume setting based on the analog read
-void plrAdjustVolume(void);       // function to check for changes on the volume control and adjust volume accrodingly
-void plrStop(void);               // stops the player and return 0
-void plrTogglePause(void);        // pause and unpause the player and return 0
-char playAlbum(byte);             // plays the album from plrCurrentFolder: returns -1 for error or a higher 
-char playTrack(byte, char);       // plays a track as defined by the global vars: returns -1 for error, 0 for success and track number to play next
+#ifdef VOLUMEPOT
+static void plrAdjustVolume(void);       // function to check for changes on the volume control and adjust volume accrodingly
+#endif
+static void plrStop(void);               // stops the player and return 0
+static void plrTogglePause(void);        // pause and unpause the player and return 0
+static char playAlbum(byte);             // plays the album from plrCurrentFolder: returns -1 for error or a higher 
+static char playTrack(byte, char);       // plays a track as defined by the global vars: returns -1 for error, 0 for success and track number to play next
 
 
 // prototype for warning
-void issueWarning(byte, const char[], boolean); // show the message provided, activate warning light and voice warning (if boolean is true) 
-void issueWarning(const char[], const char[], boolean); // the new warning method
+static void issueWarning(const char[], const char[], boolean); // the new warning method
 
 // these are the prototypes to work on files and general helpers
 //void printDirectory(File, byte);  // print out the content of specified directory on serial console
-byte countFiles(File);              // return the number of files in a directory passed as a File descriptor
+static byte countFiles(File);              // return the number of files in a directory passed as a File descriptor
 
 // helper functions to set global vars
-boolean setFileNameToPlay(byte);    // sets filename of the track to play from global vars plrCurrentFolder and plrCurrentFile and returns true if it exists
-void setTrackDbEntry(void);
+static boolean setFileNameToPlay(byte);    // sets filename of the track to play from global vars plrCurrentFolder and plrCurrentFile and returns true if it exists
+static void setTrackDbEntry(void);
 
 
 // these are the prototypes for the led
-void switchLightState(void);        // switch the boolean var lightOn from true to false and vice versa - in case light is lightOn is set to true, lightStartUpTime is set to millis()
+static void switchLightState(void);        // switch the boolean var lightOn from true to false and vice versa - in case light is lightOn is set to true, lightStartUpTime is set to millis()
 
 
 //
@@ -282,12 +304,21 @@ void setup() {
   Serial.begin(38400);
   
   // set the buttons as input
-  pinMode(volPotPin, INPUT); // connect to the potentiometer
-  pinMode(btnLinePin, INPUT);   // connect to the 4 buttons with different resistors (set the value above in global section)
-  pinMode(batLowPin, INPUT);    // connect to the LBO pin of the Adafruit PowerBoost 1000c
-
+  #ifdef VOLUMEPOT
+  pinMode(volPotPin, INPUT);       // connects to the potentiometer that shall control the volume
+  #endif
+  #ifdef BUTTONS
+  pinMode(btnLinePin, INPUT);      // connects to the 4 buttons with different resistors (set the value down in function playTrack())
+  #endif
+  #ifdef LOWBAT
+  pinMode(lowBatPin, INPUT);     // connects to the LBO pin of the Adafruit PowerBoost 1000c
+  #endif
+  #ifdef IRREMOTE
+  pinMode(iRRemotePin, INPUT);     // connects to the output port of the remote control (decoded values for each button in function playTrack())
+  #endif
+  
   // and the leds as output
-  pinMode(infoLedPin, OUTPUT);      // connect to blue LED
+  pinMode(infoLedPin, OUTPUT);     // connect to blue LED
   pinMode(warnLedPin, OUTPUT);     // connect to orange LED
   pinMode(errorLedPin, OUTPUT);    // connect to a red LED
 
@@ -296,14 +327,14 @@ void setup() {
     Serial.println(F("VS1053 Not found"));
 
     // flash the red light to indicate we have an error
-    while (1) { digitalWrite(errorLedPin, HIGH); }
+    for (;;) { digitalWrite(errorLedPin, HIGH); }
   }
   // initialize the SD card
   if (!SD.begin(CARDCS)) {
     Serial.println(F("SD-Card Not found"));
 
     // flash the red light to indicate we have an error
-    while (1) { digitalWrite(errorLedPin, HIGH); }
+    for (;;) { digitalWrite(errorLedPin, HIGH); }
   }
   
   
@@ -313,19 +344,27 @@ void setup() {
   // See http://arduino.cc/en/Reference/attachInterrupt for other pins
   if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT)) {
     Serial.println(F("No interrupt on DREQ pin"));
-    while (1) { digitalWrite(errorLedPin, HIGH); }
+    for (;;) { digitalWrite(errorLedPin, HIGH); }
   }
 
   // WELCOME SOUND
-  plrAdjustVolume();              // initiallly adjust volume
-  if (playTrack(1, 1) == -1) {       // play the welcome sound
-    issueWarning(3, "Error playing hello", false);
+  #ifdef VOLUMEPOT
+  plrAdjustVolume();            // initiallly adjust volume
+  #endif
+  if (playTrack(1, 1) == -1) {  // play the welcome sound
+    issueWarning("Error playing welcome-sound", "", false);
   }
   
   
-  // now as the last thing, start the nfc reader
+  // now as the last thing, start the nfc reader either the simple one with NDEF support
+  #ifdef NFCNDEF
   nfc.begin();
+  #endif
+
+  // or the one which allows for resume and rescan etc. but needs the trackDB as no NDEF messages are supported
+  #ifdef NFCTRACKDB
   
+  #endif
   
   // ALL DONE
   delay(100); // wait some time for everything to settle
@@ -340,8 +379,10 @@ void setup() {
   digitalWrite(infoLedPin, LOW); // turn off the info led
   
   // check our current time, so we know when to stop
-  startUpTime = millis();
-  if (DEBUG) Serial.print(F("Fairytale Version "));Serial.print(VERSION);Serial.print(F(" - place tag on reader "));
+  //startUpTime = millis();
+  #ifdef DEBUG
+    Serial.print(F("Fairytale V"));Serial.print(VERSION);Serial.print(F(" - waiting "));
+  #endif
 }
 
 
@@ -353,28 +394,30 @@ void setup() {
 //        LLLLLL   OOOOOO    OOOOOO   PP
 //
 void loop() {
-  if (((millis()-lightStartUpTime) > maxLightTime) && lightOn) { 
-    if (DEBUG) Serial.println(F("Max Light Time reached, turn light off")); 
-    switchLightState(); 
-  }
-  if (DEBUG) Serial.print(F("."));
+  boolean weHaveATag = false;              // is set to true if a tag is present and false, if not
+  boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
+  boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
+  
+  #ifdef DEBUG 
+    Serial.print(F("."));
+  #endif
 
   // if a tag is found, we continue
   weHaveATag = nfc.tagPresent(1000);
   if (weHaveATag) {
     // on startup, make sure all leds are off
-    digitalWrite(infoLedPin, LOW); digitalWrite(warnLedPin, LOW); digitalWrite(errorLedPin, LOW);
+    //digitalWrite(infoLedPin, LOW); digitalWrite(warnLedPin, LOW); digitalWrite(errorLedPin, LOW);
                         
-    if (DEBUG) Serial.println(F(" tag found!"));
-    loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
-    loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
+    #ifdef DEBUG
+      Serial.println(F(" tag found!"));
+    #endif
     
     // read data from tag: directory, track number and playing order.
     if (!getDirAndTrackToPlay(weHaveATag)) {
       // if we don't get at least a directory we can't start playback and inform the user
       if (loopWarningMessageNoAlbumInfos) {
         loopWarningMessageNoAlbumInfos = false;
-        issueWarning("no directory on tag", "/system00/nodirtag.mp3", true);
+        issueWarning("no album info", "/system00/nodirtag.mp3", true);
       }
     } else {  // we may start playing as it seems
       // now let's get the number of files in the album directory
@@ -384,7 +427,7 @@ void loop() {
       if (numberOfFiles < 1) {
         if (loopWarningMessageNoFilesInDir) {
           loopWarningMessageNoFilesInDir  = false; // set loop warning message so we don't show this warning in the next loop
-          issueWarning("no files in folder", "/system00/nofilesd.mp3", true);
+          issueWarning("no files found", "/system00/nofilesd.mp3", true);
         }
       } else {
         char retVal = playAlbum(numberOfFiles);
@@ -392,22 +435,30 @@ void loop() {
         if (retVal < 0) { 
           issueWarning("playback failed", "/system00/playfail.mp3", true);
         } else {  
-          if (DEBUG) { Serial.println(F("\nend of playback")); }
+          #ifdef DEBUG
+            Serial.println(F("\nplayback end"));
+          #endif
           digitalWrite(warnLedPin, LOW);
         }
       } // end of check if at least 1 file was found
     } // end of directory plus track retrieved from nfc tag
     
-    // finally turn off the info lec
+    // finally turn off the info led
     if (lightOn) digitalWrite(infoLedPin, LOW);
   } // end of tag is present
   
-  weHaveATag = false;
-  loopWarningMessageNoFilesInDir = true; // reset all loop warning messages so we can reuse it for the next album
-  loopWarningMessageFileNotFound = true;
-  loopWarningMessageNoAlbumInfos = true;
-  
   delay(1000); // throttle the loop for 1 second
+  // check if the battery is still good
+  #ifdef LOWBAT
+    if (digitalRead(lowBatPin == LOW)) {
+      if (lowBatWarn && (millis()-lightStartUpTime > 300000)) {
+        digitalWrite(errorLedPin, HIGH);
+        issueWarning("BATTERY LOW", "/system00/lowbat01.mp3", true);
+        lowBatWarn = false;
+        lightStartUpTime = millis();
+      }
+    }
+  #endif
 } // end of loop
 
 
@@ -422,19 +473,16 @@ void loop() {
 //
 //  BELOW THIS LINE THE MP3 PLAYER CONTROL IS DEFINED
 //
-byte getVolume() {
-  //soundVolume = map(volSensorValue, 0, 1023, 0, 100); // map the sensor value to a sound volume
-  soundVolume = volSensorValue / 10; // map the sensor value to a sound volume
-  if (DEBUG) { Serial.print(F("last sensor: ")); Serial.print(lastVolSensorValue); Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); Serial.print(F(", volume: ")); Serial.println(soundVolume); }
-  lastVolSensorValue = volSensorValue;
-  return (soundVolume);
-}
-
 // included in while loop during playback to check for volume changes
-void plrAdjustVolume() {
+#ifdef VOLUMEPOT
+static void plrAdjustVolume() {
   // volume control functions
+  const byte volSensorDrift = 7;    // difference to last received sensor value that must be exceeded to activate a change in the volume
+  word volCompareValue      = 0;    // just a convenience variable to make comparison easier
+  //byte soundVolume         = 0;    // the sound volume is derived via a map function from the sensor value
+
   // read the input on analog pin 0 and check if we have a change in volume.
-  volSensorValue = analogRead(volPotPin);
+  const word volSensorValue = analogRead(volPotPin);
   if (lastVolSensorValue > volSensorValue) {
     volCompareValue = lastVolSensorValue - volSensorValue;
   } else {
@@ -443,11 +491,18 @@ void plrAdjustVolume() {
   
   // If we have a high enough difference in the sensor reading, calculate it so we may set it on the player
   if (volCompareValue > volSensorDrift) {
-    // if (DEBUG) { Serial.print(F("changing volume: ")); }
-    soundVolume = getVolume();
+    #ifdef DEBUG
+      //Serial.print(F("changing volume: "));
+    #endif
+    const byte soundVolume = volSensorValue / 10; // map the sensor value to a sound volume
+    #ifdef DEBUG
+      Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); Serial.print(F(", vol: ")); Serial.println(soundVolume);
+    #endif
+    lastVolSensorValue = volSensorValue;
     musicPlayer.setVolume(soundVolume, soundVolume);
   } // end of change sound volume
 }
+#endif
 
 //
 //        MM      MM   PPPPPP   33333
@@ -459,30 +514,40 @@ void plrAdjustVolume() {
 //  BELOW THIS LINE THE MP3 PLAYER CONTROL IS DEFINED
 //
 // stop playback
-void plrStop(void) {
-  // if (DEBUG) { Serial.println(F("Stopping playback")); }
+static void plrStop(void) {
+  #ifdef DEBUG
+    //Serial.println(F("Stopping playback"));
+  #endif
   musicPlayer.stopPlaying();
 }
 
 // toggle pause
-void plrTogglePause(void) {
+static void plrTogglePause(void) {
   if (!musicPlayer.paused()) {
-    if (DEBUG) { Serial.println(F("  Pausing playback")); }
+    #ifdef DEBUG
+      Serial.println(F("  playback pause"));
+    #endif
     musicPlayer.pausePlaying(true);
   } else {
-    if (DEBUG) { Serial.println(F("  Resuming playback")); }
+    #ifdef DEBUG
+      Serial.println(F("  playback resume"));
+    #endif
     musicPlayer.pausePlaying(false);
   }
 }
 
-char playAlbum(byte numberOfFiles) {
-  //printDirectory(SD.open(plrCurrentFolder), 1); }
-  if (DEBUG) { Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);} 
+static char playAlbum(byte numberOfFiles) {
+  boolean loopWarningMessageFileNotFound = true;// make sure   file not found               warning message is shown at least once
   
+  #ifdef DEBUG
+    Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);
+  #endif
   lightStartUpTime = millis();          // store the time in millis when the  playback-for-loop started, so we can later check, whether or not the light shall continue to be on
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
     digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
-    if (DEBUG) { Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/")); Serial.print(numberOfFiles);Serial.println(F(": ")); }
+    #ifdef DEBUG
+      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/")); Serial.print(numberOfFiles);Serial.println(F(": "));
+    #endif
     
     if (!setFileNameToPlay(curTrack)) {
       // created filename does not exit on SD card :-(
@@ -498,10 +563,14 @@ char playAlbum(byte numberOfFiles) {
       // in case we are on the last track, write the first track to the tag, so we start playback all from the beginning.
       if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
       
-      //if (DEBUG) { Serial.print(F("Writing ")); Serial.print(firstTrackToPlay); Serial.println(F(" as first track to play on tag")); }
-      if (!writeTrackDbEntry()) {
-        issueWarning("error writing tag", "", false);
-      }
+      #ifdef DEBUG
+        //Serial.print(F("set ")); Serial.print(firstTrackToPlay); Serial.println(F(" as first track to play"));
+      #endif
+      #ifdef NFCTRACKDB
+        if (!writeTrackDbEntry()) {
+          issueWarning("trackdb update error", "", false);
+        }
+      #endif
     }
 
     // play the track on the music maker shield and retrieve a return value 
@@ -511,7 +580,6 @@ char playAlbum(byte numberOfFiles) {
     //            from an album standpoint this can also be a previous track on the album to play next
     playTrack(curTrack, numberOfFiles);
     if (nextTrackToPlay == -1) {
-      loopWarningMessageFileNotFound = false; // set loop warning message so we don't show this warning in the next loop
       issueWarning("playback failed", "/system00/playfail.mp3", false);
       break;
     //} else if (nextTrackToPlay == 0) {
@@ -526,7 +594,44 @@ char playAlbum(byte numberOfFiles) {
   return(0);
 }
 
-char playTrack(byte trackNo, char numberOfTracks) {
+static char playTrack(byte trackNo, char numberOfTracks) {
+  const unsigned long maxLightTime = 1800000L;  // how long shall the light stay on while nothing is playing - default 900000 = 15 Minutes
+  const unsigned int checkInterval = 10000L;    // time in milliseconds between checks for battery status, if the tag ist still present and if the max light time is reached
+  
+  #ifdef BUTTONS
+  // the 4 control buttons
+  word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
+  const byte btnValDrift   = 5;       // maximum allowed difference + and - the predefined value for each button we allow
+  const word btnPressDelay = 500;     // delay in milliseconds to prevent double press detection
+  unsigned long btnPressTime;         // time in millis() when the button was pressed
+  const word btnLightValue = 1021;    // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  const word btnPauseValue = 933;     // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  const word btnNextValue  = 1002;    // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
+  const word btnPrevValue  = 991;     // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
+  const word minBtnValue   = 800;     // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
+  #endif
+
+  #ifdef IRREMOTE
+  // IR Remote control
+  // to reduce PROGMEM size I decided to not use the whole decimal value for each button on the remote control but instead do a calculation 
+  // which reduces the needed size of the variable to hold the value but still creates different values for each button
+  // Function  Original code   Minus         DIV   code I use
+  // right:    2011291898    - 2011000000) / 100 = 2919
+  // left:     2011238650    - 2011000000) / 100 = 2387
+  // Up:       2011287802    - 2011000000) / 100 = 2878
+  // Down:     2011279610    - 2011000000) / 100 = 2796
+  // Middle:   2011282170    - 2011000000) / 100 = 2822
+  // Pause:    2011265786    - 2011000000) / 100 = 2658
+  // Menu:     2011250938    - 2011000000) / 100 = 2509
+  const uint16_t nextVal    = 2919; // decoded value if button  NEXT  is pressed on remote
+  const uint16_t prevVal    = 2387; // decoded value if button  PREV  is pressed on remote
+  const uint16_t volUpVal   = 2878; // decoded value if button  UP    is pressed on remote
+  const uint16_t volDwnVal  = 2796; // decoded value if button  DOWN  is pressed on remote
+  const uint16_t lightVal   = 2822; // decoded value if button  HOME  is pressed on remote
+  const uint16_t pauseVal   = 2658; // decoded value if button  PAUSE is pressed on remote
+  const uint16_t menuVal    = 2509; // decoded value if button  MENU  is pressed on remote
+  #endif
+  
   if (!musicPlayer.startPlayingFile(filename)) {
     nextTrackToPlay = -1;
     return (nextTrackToPlay);
@@ -542,7 +647,9 @@ char playTrack(byte trackNo, char numberOfTracks) {
 
     // check if we shall still fade the info light - depends on max light time and light startup time and also on the light button state
     if (((millis()-lightStartUpTime) > maxLightTime) && lightOn) { 
-      if (DEBUG) Serial.println(F("Max Light Time reached, turn light off")); 
+      #ifdef DEBUG
+        Serial.println(F("light off")); 
+      #endif
       switchLightState(); 
     }
   
@@ -552,32 +659,44 @@ char playTrack(byte trackNo, char numberOfTracks) {
     
     // every ten seconds we do some checks
     if ((millis()-checkTime) > checkInterval) {
-      // if (DEBUG) Serial.print(checkTime);Serial.println(F("ms played - check LIGHT, NFC and BAT"));
+      #ifdef DEBUG
+        //Serial.print(checkTime);Serial.println(F("ms played - check LIGHT, NFC and BAT"));
+      #endif
       
       // check if we shall still fade the info light - depends on max light time and light startup time and also on the light button state
       if (((millis()-lightStartUpTime) > maxLightTime) && lightOn) {
-        if (DEBUG) Serial.println(F("Max Light Time reached, turn light off")); 
+        #ifdef DEBUG
+          //Serial.println(F("Max Light Time reached, turn light off")); 
+        #endif
         switchLightState(); 
       }
       
-      // TODO: check if the battery is still good
-      //checkBattery();
+      // check if the battery is still good
+      #ifdef LOWBAT
+        if (digitalRead(lowBatPin == LOW)) digitalWrite(errorLedPin, HIGH);
+      #endif
       
       // TODO: check if we can read the tag and if not, stop/pause the playback
-      //checkTagPresence();
+      #ifdef NFCTRACKDB
+        // checkTagPresence();
+      #endif
       
       checkTime = millis(); // reset checktime so we can wait another 10 seconds aka 10000 ms
     }
     
     // check for changes to volume and adjust accordingly
+    #ifdef VOLUMEPOT
     plrAdjustVolume();
+    #endif
     
-    // check for button presses to pause, play next or previous track
+    // check for button presses to pause, play next or previous track or turn lights on/off
+    #ifdef BUTTONS
     btnVal = analogRead(btnLinePin);
     if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
       btnPressTime = millis(); 
-      if (DEBUG) Serial.print(F("VALUE: "));Serial.print(btnVal - btnValDrift); Serial.print(F(" < ")); Serial.print(btnVal); Serial.print(F(" < ")); Serial.print(btnVal + btnValDrift);
-      
+      #ifdef DEBUG
+        //Serial.print(F("VALUE: "));Serial.print(btnVal - btnValDrift); Serial.print(F(" < ")); Serial.print(btnVal); Serial.print(F(" < ")); Serial.print(btnVal + btnValDrift);
+      #endif
       //
       //       Button Layout on the box:
       //
@@ -587,7 +706,9 @@ char playTrack(byte trackNo, char numberOfTracks) {
       //
       // PAUSE
       if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
-        if (DEBUG) Serial.println(F(" - Pause Button Pressed"));
+        #ifdef DEBUG
+          Serial.println(F(" - Pause Button Pressed"));
+        #endif
         plrTogglePause();
         //musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
       }
@@ -597,7 +718,9 @@ char playTrack(byte trackNo, char numberOfTracks) {
         plrStop();
         if (trackNo > 2) nextTrackToPlay = trackNo - 2;
         else nextTrackToPlay = 0;
-        if (DEBUG) Serial.print(F(" - Prev  Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+        #ifdef DEBUG
+          Serial.print(F(" - Prev  Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+        #endif
         musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
         return(nextTrackToPlay); 
       }
@@ -606,18 +729,100 @@ char playTrack(byte trackNo, char numberOfTracks) {
       if ( ((btnVal - btnValDrift) < btnNextValue)  && ((btnVal + btnValDrift) > btnNextValue)  ) { 
         plrStop();
         nextTrackToPlay = trackNo;
-        if (DEBUG) Serial.print(F(" - Next  Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+        #ifdef DEBUG
+          Serial.print(F(" - Next  Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+        #endif
         musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
         return(nextTrackToPlay);
       }
       
       // LIGHT
       if ( ((btnVal - btnValDrift) < btnLightValue) && ((btnVal + btnValDrift) > btnLightValue) ) { 
-        if (DEBUG) Serial.println(F(" - Light Button Pressed")); 
+        #ifdef DEBUG
+          Serial.println(F(" - Light Button Pressed")); 
+        #endif
         switchLightState();
         //musicPlayer.sineTest(0x40, 100);    // Make a tone to indicate button press
       }
     }
+    #endif
+
+    #ifdef IRREMOTE
+    // IR Remote Control
+    //               +-------+
+    //               |  UP   |
+    //               +-------+
+    //    +-------+  +-------+  +-------+
+    //    | LEFT  |  | HOME  |  | RIGHT |
+    //    +-------+  +-------+  +-------+
+    //               +-------+
+    //               | DOWN  |
+    //               +-------+
+    //      +-------+        +-------+  
+    //      | PAUSE |        |  MENU |
+    //      +-------+        +-------+
+    // chek for IR Remote Control action
+    if (irrecv.decode(&results)) { // get data from IR Remote
+      switch ((results.value-2011000000)/100) {
+        // PREV
+        case prevVal:
+          #ifdef DEBUG
+            Serial.print(F(" - Prev  Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+          #endif
+          plrStop();
+          musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+          if (trackNo > 2) nextTrackToPlay = trackNo - 2; else nextTrackToPlay = 0;
+          return(nextTrackToPlay); 
+          break;
+        // NEXT
+        case nextVal:
+          #ifdef DEBUG
+            Serial.print(F(" - Next  Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+          #endif
+          plrStop();
+          musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+          nextTrackToPlay = trackNo;
+          return(nextTrackToPlay);
+          break;
+        // PAUSE
+        case pauseVal:
+          #ifdef DEBUG
+            Serial.println(F(" - Pause Button Pressed"));
+          #endif
+          plrTogglePause();
+          break;
+        // LIGHT
+        case lightVal:
+          #ifdef DEBUG
+            Serial.println(F(" - Light Button Pressed")); 
+          #endif
+          switchLightState();
+          break;
+        // VOL UP
+        case volUpVal:
+          #ifdef DEBUG
+            Serial.println(F(" - Volume Up Button Pressed"));
+          #endif
+          break;
+        // VOL DOWN
+        case volDwnVal:
+          #ifdef DEBUG
+            Serial.println(F(" - Volume Down Button Pressed"));
+          #endif
+          break;
+        // MENU
+        case menuVal:
+          #ifdef DEBUG
+            Serial.println(F(" - Menu Button Pressed"));
+          #endif
+          break;
+        default:
+          break;
+      }  
+      delay(50);
+      irrecv.resume(); 
+    }
+    #endif
     
     // check if the player is still playing our sounds and is NOT paused - otherwise we return a 0 to indicate successfull end of playback
     if (!musicPlayer.playingMusic && !musicPlayer.paused()) { nextTrackToPlay = trackNo; return (nextTrackToPlay); }
@@ -635,45 +840,52 @@ char playTrack(byte trackNo, char numberOfTracks) {
 //          TT      RR   RR  AA      AA   CCCCC  KK   KK  DDDDDD    BBBBBB
 //
 // sets the directpry to play (plrCurrentFolder) and the track to start playback with (firstTrackToPlay)
-boolean getDirAndTrackToPlay(boolean readFromTag) {
+static boolean getDirAndTrackToPlay(boolean readFromTag) {
   boolean plrStartPlaying = false;
 
   if (readFromTag) {
-    // GET FROM TAG
-    NfcTag tag = nfc.read();
-    if (DEBUG) { Serial.print(F("Tag Type: ")); Serial.println(tag.getTagType()); Serial.print(F("UID: ")); Serial.println(tag.getUidString()); }
-  
-    if (tag.hasNdefMessage()) {
-      NdefMessage message = tag.getNdefMessage();
-  
-      // If you have more than 1 Message then it will cycle through them
-      for (byte i = 0; i < message.getRecordCount(); i++) {
-        NdefRecord record = message.getRecord(i);
-  
-        byte payloadLength = record.getPayloadLength();   // get length of record
-        byte payload[payloadLength];                // initialise payload variable to store content of record
-        record.getPayload(payload);                 // extract the payload of this record
-        char* p;                                    // this is where we store the result of strtok()
-        
-        p = strtok((char *)payload, " ");           // separate payload on space-delimiter as it's form is like this:  en bluemc99   or equivalent
-        p = strtok(NULL, " ");                      // we only need the second entry and strtok() expects NULL for string on subsequent calls
-        switch (i) {
-          case 0:
-            plrStartPlaying = true;
-            memset(plrCurrentFolder, 0, sizeof(plrCurrentFolder));
-            memcpy(plrCurrentFolder, p, 8);         // copy directory from tag into global player var - so we know which dir to play files from
-            break;
-          case 1:
-            byte i;
-            i = atoi(p);
-            firstTrackToPlay = i;                   // copy track number to firstTrackToPlay - so we know where to start the playback
-            break;
-          default:
-            break;
+    #ifdef NFCNDEF
+      // GET ALBUM DIRECTORY TO PLAY FROM TAG NDEF MESSAGES
+      NfcTag tag = nfc.read();
+      #ifdef DEBUG
+        Serial.print(F("Tag Type: ")); Serial.println(tag.getTagType()); Serial.print(F("UID: ")); Serial.println(tag.getUidString());
+      #endif
+    
+      if (tag.hasNdefMessage()) {
+        NdefMessage message = tag.getNdefMessage();
+    
+        // If you have more than 1 Message then it will cycle through them
+        for (byte i = 0; i < message.getRecordCount(); i++) {
+          NdefRecord record = message.getRecord(i);
+    
+          byte payloadLength = record.getPayloadLength();   // get length of record
+          byte payload[payloadLength];                // initialise payload variable to store content of record
+          record.getPayload(payload);                 // extract the payload of this record
+          char* p;                                    // this is where we store the result of strtok()
+          
+          p = strtok((char *)payload, " ");           // separate payload on space-delimiter as it's form is like this:  en bluemc99   or equivalent
+          p = strtok(NULL, " ");                      // we only need the second entry and strtok() expects NULL for string on subsequent calls
+          switch (i) {
+            case 0:
+              plrStartPlaying = true;
+              memset(plrCurrentFolder, 0, sizeof(plrCurrentFolder));
+              memcpy(plrCurrentFolder, p, 8);         // copy directory from tag into global player var - so we know which dir to play files from
+              break;
+            case 1:
+              byte i;
+              i = atoi(p);
+              firstTrackToPlay = i;                   // copy track number to firstTrackToPlay - so we know where to start the playback
+              break;
+            default:
+              break;
+          }
         }
+        //return (plrStartPlaying);
       }
-      //return (plrStartPlaying);
-    }
+    #endif
+    #ifdef NFCTRACKDB
+      // GET ALBUM DIRECTORY TO PLAY FROM TRACKDB
+    #endif
   } else {
     // GET FROM LAST PLAYED SESSION FILE
   }
@@ -682,18 +894,23 @@ boolean getDirAndTrackToPlay(boolean readFromTag) {
 
 
 // write the created trackDbEntry into the Track DB on SD
-boolean writeTrackDbEntry() {
+#ifdef NFCTRACKDB
+static boolean writeTrackDbEntry() {
   boolean success = true;
   byte bytesWritten;
   
-  if (DEBUG) Serial.print(F("storing nfc <-> album connection: "));Serial.println(trackDbEntry);
+  #ifdef DEBUG
+    Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
+  #endif
   /*
   // FIRST write the trackDbFile --> ALBUMNFC.TXT
   File file = SD.open(trackDbFile, FILE_WRITE);
   bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
   file.close();                                   // and make sure everything is clean and save
   if (bytesWritten == sizeof(trackDbEntry)) {
-    if (DEBUG) Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(trackDbFile);
+    #ifdef DEBUG
+      Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(trackDbFile);
+    #endif
     success = true; 
   } else {
     Serial.print(F("  error writing "));Serial.println(trackDbFile);
@@ -710,7 +927,9 @@ boolean writeTrackDbEntry() {
   bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
   file.close();                                   // and make sure everything is clean and save
   if (bytesWritten == sizeof(trackDbEntry)) {
-    if (DEBUG) Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(tDirFile);
+    #ifdef DEBUG
+      Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(tDirFile);
+    #endif
     success = false;
   } else {
     Serial.print(F("  error writing "));Serial.println(tDirFile);
@@ -719,7 +938,7 @@ boolean writeTrackDbEntry() {
   */
   return (success);
 }
-
+#endif 
 
 // 
 //      HH    HH  EEEEEE  LL      PPPPPP    EEEEEE  RRRRRR
@@ -728,24 +947,28 @@ boolean writeTrackDbEntry() {
 //      HH    HH  EE      LL      PP        EE      RR   RR
 //      HH    HH  EEEEEE  LLLLLL  PP        EEEEEE  RR   RR
 //
-// stores the file to play in the global var filename - it is created from the gloal vars plrCurrentFolder and plrCurrentFile
-boolean setFileNameToPlay(byte trackNo) {
+// stores the file to play in the global var filename - it is created from the gloal vars plrCurrentFolder and current track
+static boolean setFileNameToPlay(byte trackNo) {
   // convert the trackNo to a char array - we need it next to create the global var plrCurrentFile
   char curTrackCharNumber[4];
   sprintf(curTrackCharNumber, "%03d", trackNo);
   
   // create the name of the track to play from the curTrack
-  strcpy(plrCurrentFile, "");
-  strcat(plrCurrentFile, "track");
-  strcat(plrCurrentFile, curTrackCharNumber);
-  strcat(plrCurrentFile, ".mp3");
+  //strcpy(plrCurrentFile, "");
+  //strcat(plrCurrentFile, "track");
+  //strcat(plrCurrentFile, curTrackCharNumber);
+  //strcat(plrCurrentFile, ".mp3");
 
   // create the filename of the track to play, including path, so we can feed it to the music player
   strcpy(filename, "");
   strcat(filename, "/");
   strcat(filename, plrCurrentFolder);
   strcat(filename, "/");
-  strcat(filename, plrCurrentFile);
+  //strcat(filename, plrCurrentFile);
+  strcat(filename, "track");
+  strcat(filename, curTrackCharNumber);
+  strcat(filename, ".mp3");
+
 
   // return true or false for the filename created - this is checked
   return (SD.exists(filename));
@@ -754,7 +977,8 @@ boolean setFileNameToPlay(byte trackNo) {
 
 // store uid, plrCurrentFolder and firstTrackToPlay in the char trackDbEntry
 // so we may write it to the track Db file
-void setTrackDbEntry() {
+#ifdef NFCTRACKDB
+static void setTrackDbEntry() {
   char tmpbuf[4];                                 // temp buffer for one number of the uid
   memset(trackDbEntry, 0, sizeof(trackDbEntry));
     
@@ -774,6 +998,7 @@ void setTrackDbEntry() {
   strcat(trackDbEntry, cstr);                     // and the number of the track
   strcat(trackDbEntry, "\n");                     // and a newline :-)
 }
+#endif
 
 //
 //        FFFFFF  II  LL      EEEEEE
@@ -785,7 +1010,7 @@ void setTrackDbEntry() {
 // BELOW THIS LINE THE FILE HELPER FUNCTIONS CAN BE FOUND
 //
 // counts the number of files in directory
-byte countFiles(File dir) {
+static byte countFiles(File dir) {
   byte counter = 0;
   while (true) {
     File entry = dir.openNextFile();
@@ -811,24 +1036,10 @@ byte countFiles(File dir) {
 //           WWWW  WWWW    AAAAAAAA   RRRRRRR   NN   NN NN
 //            WW    WW    AA      AA  RR    RR  NN    NNNN
 //
-void issueWarning(byte errorcode, const char msg[20], boolean voiceOutput) {
-  Serial.println(msg);
-  if (voiceOutput) {
-    /*
-    strcpy(plrCurrentFolder, "system00");         // make sure we have the no album found track set in case we don't get information on the album to play
-    firstTrackToPlay = errorcode;                 // that means track 2 in the system folder
-    if (setFileNameToPlay(errorcode)) {        // and finally create the filenam that playTrack() ought to play
-      playTrack(firstTrackToPlay, firstTrackToPlay);
-    }
-    */
-  } else {
-    // we may want to do something else
-  }
-  digitalWrite(warnLedPin, HIGH);
-}
-
-void issueWarning(const char msg[20], const char filename[23], boolean voiceOutput) {
-  Serial.println(msg);
+static void issueWarning(const char msg[20], const char filename[23], boolean voiceOutput) {
+  #ifdef DEBUG
+    Serial.println(msg);
+  #endif
   if (voiceOutput && SD.exists(filename)) {
     musicPlayer.playFullFile(filename);
   } /*else {
@@ -845,13 +1056,17 @@ void issueWarning(const char msg[20], const char filename[23], boolean voiceOutp
 //  LLLLLL  EEEEEE  DDDDDD
 //
 // switches the value of lightOn between true and false
-void switchLightState(void) {
+static void switchLightState(void) {
   if (!lightOn) {
-    if (DEBUG) Serial.println(F("Switching light off -> ON"));
+    #ifdef DEBUG
+      Serial.println(F("Switching light off -> ON"));
+    #endif
     lightOn = true;
     lightStartUpTime = millis(); // also sets the lightStartUpTime
   } else {
-    if (DEBUG) Serial.println(F("Switching light on -> OFF"));
+    #ifdef DEBUG
+      Serial.println(F("Switching light on -> OFF"));
+    #endif
     lightOn = false;
     digitalWrite(infoLedPin, LOW);   // also turns off the info led
   }
