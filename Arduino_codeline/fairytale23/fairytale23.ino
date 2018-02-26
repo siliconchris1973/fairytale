@@ -217,6 +217,9 @@ __asm volatile ("nop");
       
       #define NFCTRACKDB   enables the use of the TrackDB to get the directiry for a tag
 
+      #define ALBUMNFC     enables a special file albumnfc.tdb in which all album <-> nfc
+                           connections are stored - additional to the TrackDb files
+
       #define RESUMELAST   enables the option to resume last played album upon startup.
                            This is achieved via a file in the TrackDB and works without 
                            a tag but uses the pause/resume button instead 
@@ -256,6 +259,10 @@ __asm volatile ("nop");
 // to use the Adafruit NFC library to get the Tag UID and retrieve the directory from the trackDb 
 // uncomment the following line. 
 #define NFCTRACKDB 1
+
+// uncomment to enable a special file albumnfc.tdb in which all album <-> nfc
+// connections are stored - additional to the TrackDb files
+//define ALBUMNFC 1
 
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
@@ -350,10 +357,10 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 //            V    AA     AA  RR   RR
 //
 // mp3 player variables
-char plrCurrentFolder[]     = "system00";                // directory containing the currently played tracks - system00 is the system message directory
-char filename[]             = "/system00/track001.mp3";  // path and filename of the track to play - we start with the welcome track
+char plrCurrentFolder[]     = "system00";                // directory containing the currently played tracks
+char filename[]             = "/system00/track001.mp3";  // path and filename of the track to play
 byte firstTrackToPlay       = 1;                         // the track number to play (used for the loop)
-char nextTrackToPlay        = 1;                         // the track number to play next (can also be the previos number or a -1 in case of an error)
+char nextTrackToPlay        = 1;                         // the track number to play next (or -1 in case of an error)
 
 
 // file to hold the last played album (aka directory) name - from here we may retrieve other data from the trackDb 
@@ -364,10 +371,13 @@ char nextTrackToPlay        = 1;                         // the track number to 
 
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
 #ifdef NFCTRACKDB
-  const char trackDbDir[]   = "/trackdb0";               // where do we store the files for each album 
-  const char trackDbFile[]  = "/trackdb0/albumnfc.txt";  // path to the file that holds the connection between an NFC tag UID and the corresponding directory / file name
-  char tDirFile[sizeof(trackDbFile)];                      // a char array to hold the path to the file with track and directory infos (name is shared with directory name plus .txt
-  char trackDbEntry[35];                                   // will hold a nfc <-> album info connection in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
+  const char trackDbDir[]   = "/trackdb0";     // where do we store the files for each album 
+  #ifdef ALBUMNFC
+    // a special file that additionally holds the connection between an NFC tag UID and the corresponding directory
+    const char albumNfcFile[]  = "/trackdb0/albumnfc.tdb";  
+  #endif
+  char trackDbFile[23];                      // holds the path to the file with track and directory infos - name is shared with directory name plus .txt
+  char trackDbEntry[35];                  // will hold a nfc <-> album info connection in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
   
   // NFC Tag data
   byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };    // Buffer to store the returned UID
@@ -1181,41 +1191,49 @@ static boolean writeTrackDbEntry() {
   #ifdef DEBUG
     Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
   #endif
-  /*
-  // FIRST write the trackDbFile --> ALBUMNFC.TXT
-  File file = SD.open(trackDbFile, FILE_WRITE);
+  #ifdef ALBUMNFC
+    // FIRST write the AlbumNFC file  --> ALBUMNFC.TDB
+    File file = SD.open(albumNfcFile, FILE_WRITE);
+    bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
+    file.close();                                   // and make sure everything is clean and save
+    if (bytesWritten == sizeof(trackDbEntry)) {
+      #ifdef DEBUG
+        Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(albumNfcFile);
+      #endif
+      success = true; 
+    } else {
+      #ifdef DEBUG
+        Serial.print(F("  error writing "));Serial.println(albumNfcFile);
+      #endif
+      digitalWrite(warnLedPin, HIGH);
+    }
+  #endif
+  
+  // SECOND write the TrackDb-File --> e.g. larsrent.txt
+  memset(trackDbFile, 0, sizeof(trackDbFile));          // make sure var to hold path to track db file is empty
+  strcat(trackDbFile, trackDbDir);                   // add the trackDb Directory to the 
+  strcat(trackDbFile, "/");                          // a / 
+  strcat(trackDbFile, plrCurrentFolder);             // and the filename
+  strcat(trackDbFile, ".txt");                       // plus of course a txt extension
+  SD.remove(trackDbFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
+  
+  #ifdef ALBUMNFC
+    file = SD.open(trackDbFile, FILE_WRITE);         // used in case the albumnfc.tdb file is written first
+  #endif
+  #ifndef ALBUMNFC
+    File file = SD.open(trackDbFile, FILE_WRITE);    // used in case we only write the TrackDB files
+  #endif
+  
   bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
   file.close();                                   // and make sure everything is clean and save
   if (bytesWritten == sizeof(trackDbEntry)) {
     #ifdef DEBUG
       Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(trackDbFile);
     #endif
-    success = true; 
-  } else {
-    #ifdef DEBUG
-      Serial.print(F("  error writing "));Serial.println(trackDbFile);
-    #endif
-    digitalWrite(warnLedPin, HIGH);
-  }
-  */
-  // SECOND write the tDirFile --> e.g. larsrent.txt
-  memset(tDirFile, 0, sizeof(tDirFile));          // make sure var to hold path to track db file is empty
-  strcat(tDirFile, trackDbDir);                   // add the trackDb Directory to the 
-  strcat(tDirFile, "/");                          // a / 
-  strcat(tDirFile, plrCurrentFolder);             // and the filename
-  strcat(tDirFile, ".txt");                       // plus of course a txt extension
-  SD.remove(tDirFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
-  File file = SD.open(tDirFile, FILE_WRITE);      // and now we open / create it
-  bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-  file.close();                                   // and make sure everything is clean and save
-  if (bytesWritten == sizeof(trackDbEntry)) {
-    #ifdef DEBUG
-      Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(tDirFile);
-    #endif
     success = false;
   } else {
     #ifdef DEBUG
-      Serial.print(F("  error writing "));Serial.println(tDirFile);
+      Serial.print(F("  error writing "));Serial.println(trackDbFile);
     #endif
     digitalWrite(warnLedPin, HIGH);
     success = false;
