@@ -6,16 +6,56 @@ __asm volatile ("nop");
 #endif
 /*
    Fairytale Main program
-
+   ---------------------------------------------------------------------------------------
    This programm will play albums (audiobooks or music) stored on the SD card inserted into
    the Adafruit Music Maker Shield. Selection of the album/audiobook to play is done by 
    placing corresponding NFC Tags on the NFC Reader.
+
+   There are two pissibilities on how the connection between an NFC Tag and the corresponding 
+   album on the SD card can be setup:
+   1. An NDEF Message written to the tag in the form of:  en [directory name]
+   2. Via the so called TrackDB - txt-files for each album in the directory trackdb0
+
    
+   NDEF Implementation
+   ---------------------------------------------------------------------------------------
+   This implementation is based on the Speedmaster PN532 and Don's NDEF Library. Upon 
+   detection of an NFC Tag at the reader it will check if there is at least one NDEF Message 
+   on the tag. This message must be of the form 
+
+      en [directory name]
+
+   for example, the audiobook "Finding Nemo", stored in files in the directory
+   
+      /findnemo
+      
+   would have an NDEF message on the tag which reads as
+
+      en findnemo
+   
+   There may also be a second NDEF message for the track to start playback with and this 
+   would be in the form of
+
+      en 1
+
+   for the first track. To use this implementation you have to activate the configuration 
+   option     NFCNDEF     below and you will have to write the NDEF Messages with the 
+   directory name. This can bedone with the program staticNFCWriter.ino from this repository.
+   
+   The downside of this implementation is it's lack for an usable update of the track to 
+   start playback with - I simply could not get it to work. Secondly the implementation
+   lacks a reliable way of detecting the absence of a tag. Therefore the playback can only be 
+   stopped by turning the box off. The third problem is with the used progmem. The two libraries 
+   also consume way more progmem than the Adafruit PN532 library due to which I switched to:
+   
+   
+   TrackDB-Implementation:
+   ---------------------------------------------------------------------------------------
    Upon detection of an NFC Tag, the program will retrieve the tag's UID and use this to scan 
    what I call the TrackDB to find a matching directory to play.
    
-   The TrackDB is a list of files in a special directory (SYSTEM00) on the SD card. The TrackDB
-   files are named after the directory of the album and of the form:
+   The TrackDB is a list of files in a special directory (TRACKDB0) on the SD card. The TrackDB
+   files are named after the directory of the album and their respective content is of the form:
    
       taguid:directory:track
    
@@ -25,7 +65,7 @@ __asm volatile ("nop");
       
    on the SD Card. The corresponding TrackDB file is stored at
       
-      /system00/findorie.txt
+      /trackdb0/findorie.txt
 
    It contains exactly one line:
 
@@ -34,23 +74,36 @@ __asm volatile ("nop");
    This line connects the Tag UID with the aformentioned directory plus the number of the track
    with which to start playback:
    
-      46722634231761290   is the UID of the NFC Tag
-      findorie            is the directory from which to play the files
-      1                   is the number of the track with which to start playback - here the 1st track
+      46722634231761290   the UID of the NFC Tag
+      findorie            the directory from which to play the files
+      1                   the number of the track with which to start playback - here the 1st 
 
-  
-   The program will take the retrieved information and then start a for-loop beginning with 
-   the provided first track until all consecutive numbered tracks are played - for this it counts the 
-   number of files in the given dierctory. 
+   To use this implementation you need to activate the configuration   NFCTRACKDB   
+   You will also need to create the necessary TrackDb files. This can be done with the program
+   createTrackDb.ino from this repository.
    
-   After playback of all files is finished, the program will resume it's main loop, delay operation 
-   for roughly 15 seconds (to give the user the chance to remove the just used Tag from the reader) 
-   and then wait until it detects the next tag.
    
-   While advancing through the files in the directory, the program will update the TrackDB-File with  
-   the number of the currently played track. Doing so allows for interrupted playbacks - tag is   
-   removed and later put back on when the playback will start with the last track in playback. 
+   Playback and controls
+   ---------------------------------------------------------------------------------------
+   Regardless of the way the program retrieved the information on which directory to play 
+   (NDEF message or TrackDB), it will store this in the global var plrCurrentFolder and then 
+   start a for-loop beginning with the provided first track until all consecutive numbered 
+   tracks are played - for this it counts the number of files in the given dierctory. 
    
+   While the album (or file) is played an operations light is fading up and down in intensity. 
+   
+   After playback of all files is finished, the program will resume it's main loop, delay 
+   operation for roughly 15 seconds (to give the user the chance to remove the just used Tag 
+   from the reader) and then wait until it detects the next tag.
+   
+   While advancing through the files in the directory, the program will update the TrackDB-File 
+   with  the number of the currently played track. Doing so allows for interrupted playbacks - 
+   tag is removed and later put back on when the playback will start with the last track in 
+   playback. 
+   
+   
+   Restrictions
+   ---------------------------------------------------------------------------------------
    For this to work, a couple of restrictions are in place:
    1. All filenames must be in the format  trackXXX.mp3, where XXX is a numbering from 001 to 127
    2. Follows from 1: You can have a maximum of 127 files per directory. I use a char to count the
@@ -60,23 +113,24 @@ __asm volatile ("nop");
    4. if a file is missing in a consecutive order, you may get a glitch in the sound 
    5. As the Adafruit Music Maker Shield library does not support to jump to a specific 
       position within a file, the box can always only start from the beginning of a track.
-
-   While the album (or file) is played an operations light is fading up and down in intensity. 
    
-   On warnings or errors a warning or error light is lit up respectively. There are 3 different  
-   warning or error conditions:
+   
+   Warnings and errors
+   ---------------------------------------------------------------------------------------
+   On warnings or errors a warning or error light is lit up respectively. There are 3 
+   different warning or error conditions:
    1) Missing information for playback warning
    2) Low Battery warning
    2) Missing hardware error
    
-   Errors shown via the error light (also cause the system to halt and the arduino must be turned off):
+   Errors shown via the error light (also cause the system to halt):
    - Music Maker Shield not found
    - Music Maker shield not on an interrupt enabled pin
    - SD card not found
    - NFC Reader not found
 
    Warnings shown via a light (Arduino can stay turned on):
-   - Low battery warning (surely the arduino will turn off but until then it will continue to operate)
+   - Low battery warning (surely the arduino will turn off but until then it will operate)
    - no directory found for the NFC Tag (aka TrackDB is missing an entry for the Tag)
    - no directory found on the SD card that match the NFC Tag TrackDB record
    - no files in the provided directory
@@ -91,7 +145,9 @@ __asm volatile ("nop");
    - no directory found on the SD card that match the NFC Tag TrackDB record
    - no file(s) in the directory on the SD card
 
-   
+
+   Controls
+   ---------------------------------------------------------------------------------------
    4 buttons are included:
    - Previous Track       - play the previous track in a consecurtive list of ordered files
    - Next Track           - play the next track in a consecurtive list of ordered files
@@ -106,12 +162,10 @@ __asm volatile ("nop");
    - Next Track           - play the next track in a consecurtive list of ordered files
    - Pause / Resume       - pauses the playback or unpauses a paused playback
    - Light on / off       - turn the operations light fader on or off
-
-
-   Some features (as e.g. Remote Control, Buttons or operation LED etc.) can be turned off 
-   or on via #define switches in the code below.
    
+    
    Used Pins:
+   ---------------------------------------------------------------------------------------
      NAME             PIN  USAGE
    - CLK / PN532_SCK   13  SPI Clock shared with VS1053, SD card and NFC breakout board 
    - MISO / PN532_MISO 12  Input data from VS1053, SD card and NFC breakout board 
@@ -127,16 +181,46 @@ __asm volatile ("nop");
 
    - infoLedPin         5  the pin to which the operation led is connected to
    - warnLedPin         8  the pin to which the warning led is connected to
-   - errorLedPin        9  the pin to which the error led is connected to (e.g. used for LBO of powerboost 1000c)
+   - errorLedPin        9  the pin to which the error led is connected to 
+                           e.g. used for LBO of powerboost 1000c
     
 
    - volPotPin         A0  the analog input pin that we use for the potentiometer
    - btnLinePin        A1  pin to which the button line (4 buttons) is connected to
-   - batLowPin         A2  the pin on which the powerboost 1000c indicates a low baterry (LBO) - ouput done via errorLedPin
-   - iRRemotePin       A3  the pin on which the powerboost 1000c indicates a low baterry (LBO) - ouput done via errorLedPin
-   - programming       A4  the pin the program button is connected to. The program button changes the functionality
-                           of the overall program in that (if pressed) the code will register a new tag for use with 
-                           an album directory currently not connected to a tag (functionality yet to come)
+   - batLowPin         A2  the pin on which the powerboost 1000c indicates a low baterry 
+   - iRRemotePin       A3  the pin on which the IR Remote Receiver is connected to
+   - programming       A4  the pin the program button is connected to. The program 
+                           button changes the functionality of the overall program in 
+                           that (if pressed) the code will register a new tag for use with 
+                           an album directory currently not connected to a tag 
+                           Functionality yet to come!
+   
+   
+   Configuration
+   ---------------------------------------------------------------------------------------
+   Some features (as e.g. Remote Control, Buttons or operation LED etc.) can be turned off 
+   or on via #define switches in the code below.
+   
+      #define IRREMOTE     enables the IR Remote Control option
+      
+      #define BUTTONS      enables the 4 control buttons
+      
+      #define VOLUMEPOT    enables the volume potentiometer
+      
+      #define LOWBAT       enables the low battery warning with light and voice
+
+      #define OPRLIGHT     enables the operations light on the front of the box
+      
+      #define OPRLIGHTTIME enables time based operations light - turns off the light after 30 Minutes
+
+      #define NFCNDEF      enables the use of NDEF messages to get the directory for a tag
+      
+      #define NFCTRACKDB   enables the use of the TrackDB to get the directiry for a tag
+
+      #define RESUMELAST   enables the option to resume last played album upon startup.
+                           This is achieved via a file in the TrackDB and works without 
+                           a tag but uses the pause/resume button instead 
+
 */
 
 // make sure to comment this out before uploading in production as it turns on lots and lots of serial messages
