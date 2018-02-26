@@ -890,9 +890,9 @@ static char playAlbum(char numberOfFiles) {
 // play a single track within an album - is called by playAlbum() or by issueWarning()
 static char playTrack(char trackNo) {
   #ifdef OPRLIGHTTIME
-    const unsigned long maxLightTime = 1800000L;  // how long shall the light stay on while nothing is playing - default 900000 = 15 Minutes
+    const unsigned long maxLightTime = 1800000L;// how long shall the light stay on while nothing is playing - 1800000L = 30 Minutes
   #endif
-  const unsigned int checkInterval = 10000L;    // time in milliseconds between checks for battery status, if the tag ist still present and if the max light time is reached
+  const unsigned int checkInterval = 10000L;    // time in milliseconds between checks for battery status, tag presence and max light time
   /*
   #ifdef BUTTONS
     // the 4 control buttons  - defined in global section
@@ -1056,7 +1056,7 @@ static char playTrack(char trackNo) {
       //      +-------+        +-------+  
       //      | PAUSE |        |  MENU |
       //      +-------+        +-------+
-      // chek for IR Remote Control action
+      // check for IR Remote Control action
       if (irrecv.decode(&results)) { // get data from IR Remote
         switch ((results.value-2011000000)/100) {
           // PREV
