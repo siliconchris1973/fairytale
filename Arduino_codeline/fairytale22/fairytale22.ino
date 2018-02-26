@@ -467,6 +467,7 @@ void setup() {
 //
 void loop() {
   boolean weHaveATag = false;              // is set to true if a tag is present and false, if not
+  boolean resumeLast = false;              // is set to true if the pause button is pressed without a tag
   boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
   boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
 
