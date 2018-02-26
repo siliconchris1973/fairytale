@@ -15,11 +15,24 @@ __asm volatile ("nop");
    what I call the TrackDB to find a matching directory to play.
    
    The TrackDB is a list of files in a special directory (SYSTEM00) on the SD card. The TrackDB
-   files are of the form:
-
-      taguid:directory:track    e.g.:    46722634231761290:findorie:1
+   files are named after the directory of the album and of the form:
    
-   In the given example:
+      taguid:directory:track
+   
+   For example, the audiobook "findet dorie" is in the directory    
+   
+      findorie    
+      
+   it's corresponding TrackDB file 
+      
+      /system00/findorie.txt
+
+   contains a line
+
+      46722634231761290:findorie:1
+
+   where
+   
       46722634231761290   is the UID of the NFC Tag
       findorie            is the directory from which to play the files
       1                   is the number of the track with which to start playback
@@ -30,21 +43,22 @@ __asm volatile ("nop");
    (to give the user the chance to remove the just used Tag from the reader) and then wait until 
    it detects the next tag.
    
-   While advancing through the files in th diectory, the program will update the TrackDB-File with the 
-   number of the currently played track. Doing so allows for interrupted playbacks - tag is removed and 
-   later put back on when the playback will start with the last track in playback. 
+   While advancing through the files in th diectory, the program will update the TrackDB-File with  
+   the number of the currently played track. Doing so allows for interrupted playbacks - tag is   
+   removed and later put back on when the playback will start with the last track in playback. 
    
    For this to work, a couple of restrictions are in place:
    1. All filenames must be in the format  trackXXX.mp3  - where XXX is a numbering from 001 to 127
-   2. You can have a maximum of 127 files per directory - as I use a char to count the files to preserve memory
-   3. All directory names must be exactly 8 chars long - use any combination of a-z and 0-9 chars for the name
+   2. You can have a maximum of 127 files per directory - as I use a char to count the files to 
+      preserve memory and need the ability to return -1
+   3. All directory names must be exactly 8 chars long - use any combination of a-z and 0-9 chars for 
+      the name
    4. if a file is missing in a consecutive order, you may get a glitch in the sound 
-   5. There is a slight delay when one file is played and before the next one starts
-
 
    While the album (or file) is played an operations light is fading up and down in intensity. 
-   On warnings or errors a warning or error light is lit up respectively. There are 3 different warning 
-   or error conditions:
+   
+   On warnings or errors a warning or error light is lit up respectively. There are 3 different  
+   warning or error conditions:
    1) Missing information for playback warning
    2) Low Battery warning
    2) Missing hardware error
@@ -64,8 +78,8 @@ __asm volatile ("nop");
      this may happen in case the files are not numerically ordered without a gap: 
      track001.mp3 exist, track002.mp3 is missing but track003.mp3 exists again
 
-   Additionally to the warning or error lights certain messages are spoken through the music maker shield. 
-   Voiced errors and warnings are:
+   Additionally to the warning or error lights certain messages are spoken through the music . 
+   maker shield. Voiced errors and warnings are:
    - Low Battery warning
    - no directory found for the NFC Tag (aka TrackDB is missing an entry for the Tag)
    - no directory found on the SD card that match the NFC Tag TrackDB record
@@ -73,20 +87,23 @@ __asm volatile ("nop");
 
    
    4 buttons are included:
-   - pause / unpause     - pauses the playback or unpauses a paused playback
-   - next                - play the next track in a consecurtive list of ordered files
-   - previous            - play the previous track in a consecurtive list of ordered files
-   - light on / off      - turn the operations light fader on or off
+   - Previous Track       - play the previous track in a consecurtive list of ordered files
+   - Next Track           - play the next track in a consecurtive list of ordered files
+   - Pause / Resume       - pauses the playback or unpauses a paused playback
+   - Light on / off       - turn the operations light fader on or off
 
    
    The box is capable of being controlled by a remote control with the following functions
-   - Volume Up
-   - Volume Down
-   - Previos Track
-   - Next Track
-   - Pause/Resume
-   - Light effect on / off
+   - Volume Up            - increase volume by 5 per click
+   - Volume Down          - decrease volume by 5 per click
+   - Previous Track       - play the previous track in a consecurtive list of ordered files
+   - Next Track           - play the next track in a consecurtive list of ordered files
+   - Pause / Resume       - pauses the playback or unpauses a paused playback
+   - Light on / off       - turn the operations light fader on or off
 
+
+   Some features (as e.g. Remote Control, Buttons or operation LED etc.) can be turned off 
+   or on via #define switches in the code below.
    
    Used Pins:
      NAME             PIN  USAGE
