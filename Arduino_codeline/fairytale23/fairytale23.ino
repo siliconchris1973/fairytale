@@ -260,9 +260,9 @@ __asm volatile ("nop");
 // uncomment the following line. 
 #define NFCTRACKDB 1
 
-// uncomment to enable a special file albumnfc.tdb in which all album <-> nfc
-// connections are stored - additional to the TrackDb files
-define ALBUMNFC 1
+// uncomment to enable a special file albumnfc.tdb in which all album <-> nfc connections are stored 
+// this is an additional storage to the individual TrackDb files and requires NFCTRACKDB 
+//#define ALBUMNFC 1
 
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
@@ -370,42 +370,45 @@ char nextTrackToPlay        = 1;                         // the track number to 
 
 
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
+// and is the complementary implementation to the NDEF messages on the NFC Tag - see option NFCNDEF
 #ifdef NFCTRACKDB
-  const char trackDbDir[]   = "/trackdb0";     // where do we store the files for each album 
+  const char trackDbDir[]   = "/trackdb0";// where do we store the TrackDB files for each album 
+  char trackDbFile[23];                   // path to the file with uid, directory and track
+  char trackDbEntry[35];                  // will hold a nfc <-> album info connection 
+                                          // in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
+
   #ifdef ALBUMNFC
     // a special file that additionally holds the connection between an NFC tag UID and the corresponding directory
     const char albumNfcFile[]  = "/trackdb0/albumnfc.tdb";  
   #endif
-  char trackDbFile[23];                      // holds the path to the file with track and directory infos - name is shared with directory name plus .txt
-  char trackDbEntry[35];                  // will hold a nfc <-> album info connection in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
   
   // NFC Tag data
-  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };    // Buffer to store the returned UID
-  char charUid[22];                        // char representation of the UID
-  byte uidLength;                          // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 }; // Buffer to store the returned UID
+  char charUid[22];                     // char representation of the UID
+  byte uidLength;                       // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 #endif 
 
 
 // volume control variables for the analog poti
 #ifdef VOLUMEPOT
-  const byte volPotPin      = A0;      // the analog input pin that we use for the potentiometer
-  word lastVolSensorValue   = 0;       // keeps the last read sensor value
+  const byte volPotPin      = A0;     // the analog input pin that we use for the potentiometer
+  word lastVolSensorValue   = 0;      // keeps the last read sensor value
 #endif
 
 
 // control buttons definition
 #ifdef BUTTONS
-  const byte btnLinePin     = A1;      // pin on which the button line (4 buttons) is connected
+  const byte btnLinePin     = A1;     // pin on which the button line (4 buttons) is connected
   
   word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
-  const byte btnValDrift    = 5;       // maximum allowed difference + and - the predefined value for each button we allow
-  const word btnPressDelay  = 500;     // delay in milliseconds to prevent double press detection
+  const byte btnValDrift    = 5;      // maximum allowed difference + and - the predefined value for each button we allow
+  const word btnPressDelay  = 500;    // delay in milliseconds to prevent double press detection
   unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-  const word btnLightValue  = 1021;    // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  const word btnPauseValue  = 933;     // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-  const word btnNextValue   = 1002;    // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-  const word btnPrevValue   = 991;     // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
-  const word minBtnValue    = 800;     // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
+  const word btnLightValue  = 1021;   // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  const word btnPauseValue  = 933;    // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  const word btnNextValue   = 1002;   // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
+  const word btnPrevValue   = 991;    // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
+  const word minBtnValue    = 800;    // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
 #endif
 
 
@@ -439,8 +442,10 @@ char nextTrackToPlay        = 1;                         // the track number to 
 
 // battery control
 #ifdef LOWBAT
-  const byte lowBatPin      = A2;      // pulled high to BAT but when the charger detects a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
-  boolean lowBatWarn        = true;    // we use this bool so we may only tell the user every 5 Minite sthat the Battery is low
+  const byte lowBatPin      = A2;      // pin on which the Adafruit PowerBoost will indicate a low battery
+                                       // this pin will usually be pulled high but when the charger detects 
+                                       // a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
+  boolean lowBatWarn        = true;    // used to throttle low battery messages to every 5 minutes
 #endif
 
 
@@ -450,7 +455,8 @@ char nextTrackToPlay        = 1;                         // the track number to 
     unsigned long lightStartUpTime = 0; // millis() the operations light started
   #endif
   const byte infoLedPin     = 5;       // the pin to which the operation led is connected to
-  boolean lightOn           = true;    // if true, the operations light fader is active. is set to false via a button, or after a maxLightTime (see below) is reached
+  boolean lightOn           = true;    // if true, the operations light fader is active. switched via a button, 
+                                       // set to false after a maxLightTime (in case of OPRLIGHTTIME) is reached
 #endif
 const byte warnLedPin       = 8;       // the pin to which the warning led is connected to
 const byte errorLedPin      = 9;       // the pin to which the error led is connected to
@@ -465,7 +471,7 @@ const byte errorLedPin      = 9;       // the pin to which the error led is conn
 //       PP        RR    RR   OOOOOO      TT      OOOOOO      TT        YY     PP        EEEEEE  SSSSS
 //
 // these are the prototypes to retrieve and set directory and track to play - aka work on the tagdb
-static boolean getDirAndTrackToPlay(boolean);  // retrieve the directory and track number either from the Tag (true) or from last played session file (false)
+static boolean getDirAndTrackToPlay(boolean);  // retrieves the directory and track number 
 static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
 
 
@@ -481,10 +487,14 @@ static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolde
 
 
 // these are the prototypes for the mp3 player controller
-static void plrStop(void);              // stops the player and return 0
-static void plrTogglePause(void);       // pause and unpause the player and return 0
-static char playAlbum(byte);            // plays the album from plrCurrentFolder: returns -1 for error or a higher 
-static char playTrack(byte);            // plays a track as defined by the global vars: returns -1 for error, 0 for success and track number to play next
+static void plrStop(void);              // stops the player
+static void plrTogglePause(void);       // pause and unpause the player
+static char playAlbum(char);            // plays the album from plrCurrentFolder: returns -1 for error or a higher 
+                                        // calls playTrack to actually play a track and check if that was successful and which 
+                                        // track number to play next
+static char playTrack(char);            // plays a track as defined by the global var filename.
+                                        // returns -1 for error, 0 for success and track number to play next
+                                        // this can either be provided char+1 or char-1
 
 
 // prototype for warning
@@ -691,7 +701,7 @@ void loop() {
       }
     } else {  // we may start playing as it seems
       // now let's get the number of files in the album directory
-      const byte numberOfFiles = countFiles(SD.open(plrCurrentFolder));
+      const char numberOfFiles = countFiles(SD.open(plrCurrentFolder));
       
       // there is no file in the folder indicate this as a minor error
       if (numberOfFiles < 1) {
@@ -812,7 +822,7 @@ static void plrTogglePause(void) {
 
 
 // iterates through al files in an album directory and calls playTrack for each track number iteratively
-static char playAlbum(byte numberOfFiles) {
+static char playAlbum(char numberOfFiles) {
   boolean loopWarningMessageFileNotFound = true;// make sure   file not found               warning message is shown at least once
   
   #ifdef DEBUG
@@ -878,7 +888,7 @@ static char playAlbum(byte numberOfFiles) {
 
 
 // play a single track within an album - is called by playAlbum() or by issueWarning()
-static char playTrack(byte trackNo) {
+static char playTrack(char trackNo) {
   #ifdef OPRLIGHTTIME
     const unsigned long maxLightTime = 1800000L;  // how long shall the light stay on while nothing is playing - default 900000 = 15 Minutes
   #endif
