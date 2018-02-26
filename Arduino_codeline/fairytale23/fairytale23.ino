@@ -262,7 +262,7 @@ __asm volatile ("nop");
 
 // uncomment to enable a special file albumnfc.tdb in which all album <-> nfc
 // connections are stored - additional to the TrackDb files
-//define ALBUMNFC 1
+define ALBUMNFC 1
 
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
