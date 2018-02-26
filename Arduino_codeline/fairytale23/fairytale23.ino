@@ -52,14 +52,14 @@ __asm volatile ("nop");
    removed and later put back on when the playback will start with the last track in playback. 
    
    For this to work, a couple of restrictions are in place:
-   1. All filenames must be in the format  trackXXX.mp3  - where XXX is a numbering from 001 to 127
-   2. You can have a maximum of 127 files per directory - as I use a char to count the files to 
-      preserve memory and need the ability to return -1
-   3. All directory names must be exactly 8 chars long - use any combination of a-z and 0-9 chars for 
-      the name
+   1. All filenames must be in the format  trackXXX.mp3, where XXX is a numbering from 001 to 127
+   2. Follows from 1: You can have a maximum of 127 files per directory. I use a char to count the
+      files in a directory to preserve memory and need the ability to return -1 in case of an error
+   3. All directory names must be exactly 8 chars long. You may use any combination of a-z 
+      and 0-9 chars for the directory name though
    4. if a file is missing in a consecutive order, you may get a glitch in the sound 
-   5. As the Adafruit Music Maker Shield library does not support positions within a file we can always 
-      only start from the beginning of teh track.
+   5. As the Adafruit Music Maker Shield library does not support to jump to a specific 
+      position within a file, the box can always only start from the beginning of a track.
 
    While the album (or file) is played an operations light is fading up and down in intensity. 
    
