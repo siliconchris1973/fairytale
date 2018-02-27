@@ -667,7 +667,7 @@ void loop() {
       if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
         if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
           #ifdef DEBUG
-            Serial.println(F("Resuming last album"));
+            Serial.println(F("BUTTON: resume album"));
           #endif
         }
       }
@@ -677,7 +677,7 @@ void loop() {
       if (irrecv.decode(&results)) { // get data from IR Remote
         if ((results.value-2011000000)/100) == pauseVal) {
           #ifdef DEBUG
-            Serial.println(F("Resuming last album"));
+            Serial.println(F("IR Remote: resume album"));
           #endif
         }
       }
