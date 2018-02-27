@@ -1,4 +1,4 @@
-#define VERSION 23
+#define VERSION 22
 
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
@@ -6,131 +6,57 @@ __asm volatile ("nop");
 #endif
 /*
    Fairytale Main program
-   ---------------------------------------------------------------------------------------
+
    This programm will play albums (audiobooks or music) stored on the SD card inserted into
    the Adafruit Music Maker Shield. Selection of the album/audiobook to play is done by 
    placing corresponding NFC Tags on the NFC Reader.
-
-   There are two pissibilities on how the connection between an NFC Tag and the corresponding 
-   album on the SD card can be setup:
-   1. An NDEF Message written to the tag in the form of:  en [directory name]
-   2. Via the so called TrackDB - txt-files for each album in the directory trackdb0
-
    
-   NDEF Implementation
-   ---------------------------------------------------------------------------------------
-   This implementation is based on the Speedmaster PN532 and Don's NDEF Library. Upon 
-   detection of an NFC Tag at the reader it will check if there is at least one NDEF Message 
-   on the tag. This message must be of the form 
-
-      en [directory name]
-
-   for example, the audiobook "Finding Nemo", stored in files in the directory
-   
-      /findnemo
-      
-   would have an NDEF message on the tag which reads as
-
-      en findnemo
-   
-   There may also be a second NDEF message for the track to start playback with and this 
-   would be in the form of
-
-      en 1
-
-   for the first track. To use this implementation you have to activate the configuration 
-   option     NFCNDEF     below and you will have to write the NDEF Messages with the 
-   directory name. This can bedone with the program staticNFCWriter.ino from this repository.
-   
-   The downside of this implementation is it's lack for an usable update of the track to 
-   start playback with - I simply could not get it to work. Secondly the implementation
-   lacks a reliable way of detecting the absence of a tag. Therefore the playback can only be 
-   stopped by turning the box off. The third problem is with the used progmem. The two libraries 
-   also consume way more progmem than the Adafruit PN532 library due to which I switched to:
-   
-   
-   TrackDB-Implementation:
-   ---------------------------------------------------------------------------------------
    Upon detection of an NFC Tag, the program will retrieve the tag's UID and use this to scan 
    what I call the TrackDB to find a matching directory to play.
    
-   The TrackDB is a list of files in a special directory (TRACKDB0) on the SD card. The TrackDB
-   files are named after the directory of the album and their respective content is of the form:
-   
-      taguid:directory:track
-   
-   For example, the audiobook "Finding Dorie" is stored in the directory    
-   
-      /findorie
-      
-   on the SD Card. The corresponding TrackDB file is stored at
-      
-      /trackdb0/findorie.txt
+   The TrackDB is a list of files in a special directory (SYSTEM00) on the SD card. The TrackDB
+   files are of the form:
 
-   It contains exactly one line:
+      taguid:directory:track    e.g.:    46722634231761290:findorie:1
+   
+   In the given example:
+      46722634231761290   is the UID of the NFC Tag
+      findorie            is the directory from which to play the files
+      1                   is the number of the track with which to start playback
 
-      46722634231761290:findorie:1
-
-   This line connects the Tag UID with the aformentioned directory plus the number of the track
-   with which to start playback:
+   The program will take the retrieved information and then start a for-loop beginning with 
+   the provided first track until all consecutive numbered tracks are played. After playback of all
+   files is finished, the program will resume it's main loop, delay operation for roughly 15 seconds
+   (to give the user the chance to remove the just used Tag from the reader) and then wait until 
+   it detects the next tag.
    
-      46722634231761290   the UID of the NFC Tag
-      findorie            the directory from which to play the files
-      1                   the number of the track with which to start playback - here the 1st 
-
-   To use this implementation you need to activate the configuration   NFCTRACKDB   
-   You will also need to create the necessary TrackDb files. This can be done with the program
-   createTrackDb.ino from this repository.
+   While advancing through the files in th diectory, the program will update the TrackDB-File with the 
+   number of the currently played track. Doing so allows for interrupted playbacks - tag is removed and 
+   later put back on when the playback will start with the last track in playback. 
    
-   
-   Playback and controls
-   ---------------------------------------------------------------------------------------
-   Regardless of the way the program retrieved the information on which directory to play 
-   (NDEF message or TrackDB), it will store this in the global var plrCurrentFolder and then 
-   start a for-loop beginning with the provided first track until all consecutive numbered 
-   tracks are played - for this it counts the number of files in the given dierctory. 
-   
-   While the album (or file) is played an operations light is fading up and down in intensity. 
-   
-   After playback of all files is finished, the program will resume it's main loop, delay 
-   operation for roughly 15 seconds (to give the user the chance to remove the just used Tag 
-   from the reader) and then wait until it detects the next tag.
-   
-   While advancing through the files in the directory, the program will update the TrackDB-File 
-   with  the number of the currently played track. Doing so allows for interrupted playbacks - 
-   tag is removed and later put back on when the playback will start with the last track in 
-   playback. 
-   
-   
-   Restrictions
-   ---------------------------------------------------------------------------------------
    For this to work, a couple of restrictions are in place:
-   1. All filenames must be in the format  trackXXX.mp3, where XXX is a numbering from 001 to 127
-   2. Follows from 1: You can have a maximum of 127 files per directory. I use a char to count the
-      files in a directory to preserve memory and need the ability to return -1 in case of an error
-   3. All directory names must be exactly 8 chars long. You may use any combination of a-z 
-      and 0-9 chars for the directory name though
+   1. All filenames must be in the format  trackXXX.mp3  - where XXX is a numbering from 001 to 127
+   2. You can have a maximum of 127 files per directory - as I use a char to count the files to preserve memory
+   3. All directory names must be exactly 8 chars long - use any combination of a-z and 0-9 chars for the name
    4. if a file is missing in a consecutive order, you may get a glitch in the sound 
-   5. As the Adafruit Music Maker Shield library does not support to jump to a specific 
-      position within a file, the box can always only start from the beginning of a track.
-   
-   
-   Warnings and errors
-   ---------------------------------------------------------------------------------------
-   On warnings or errors a warning or error light is lit up respectively. There are 3 
-   different warning or error conditions:
+   5. There is a slight delay when one file is played and before the next one starts
+
+
+   While the album (or file) is played an operations light is fading up and down in intensity. 
+   On warnings or errors a warning or error light is lit up respectively. There are 3 different warning 
+   or error conditions:
    1) Missing information for playback warning
    2) Low Battery warning
    2) Missing hardware error
    
-   Errors shown via the error light (also cause the system to halt):
+   Errors shown via the error light (also cause the system to halt and the arduino must be turned off):
    - Music Maker Shield not found
    - Music Maker shield not on an interrupt enabled pin
    - SD card not found
    - NFC Reader not found
 
    Warnings shown via a light (Arduino can stay turned on):
-   - Low battery warning (surely the arduino will turn off but until then it will operate)
+   - Low battery warning (surely the arduino will turn off but until then it will continue to operate)
    - no directory found for the NFC Tag (aka TrackDB is missing an entry for the Tag)
    - no directory found on the SD card that match the NFC Tag TrackDB record
    - no files in the provided directory
@@ -138,34 +64,31 @@ __asm volatile ("nop");
      this may happen in case the files are not numerically ordered without a gap: 
      track001.mp3 exist, track002.mp3 is missing but track003.mp3 exists again
 
-   Additionally to the warning or error lights certain messages are spoken through the music . 
-   maker shield. Voiced errors and warnings are:
+   Additionally to the warning or error lights certain messages are spoken through the music maker shield. 
+   Voiced errors and warnings are:
    - Low Battery warning
    - no directory found for the NFC Tag (aka TrackDB is missing an entry for the Tag)
    - no directory found on the SD card that match the NFC Tag TrackDB record
    - no file(s) in the directory on the SD card
 
-
-   Controls
-   ---------------------------------------------------------------------------------------
+   
    4 buttons are included:
-   - Previous Track       - play the previous track in a consecurtive list of ordered files
-   - Next Track           - play the next track in a consecurtive list of ordered files
-   - Pause / Resume       - pauses the playback or unpauses a paused playback
-   - Light on / off       - turn the operations light fader on or off
+   - pause / unpause     - pauses the playback or unpauses a paused playback
+   - next                - play the next track in a consecurtive list of ordered files
+   - previous            - play the previous track in a consecurtive list of ordered files
+   - light on / off      - turn the operations light fader on or off
 
    
    The box is capable of being controlled by a remote control with the following functions
-   - Volume Up            - increase volume by 5 per click
-   - Volume Down          - decrease volume by 5 per click
-   - Previous Track       - play the previous track in a consecurtive list of ordered files
-   - Next Track           - play the next track in a consecurtive list of ordered files
-   - Pause / Resume       - pauses the playback or unpauses a paused playback
-   - Light on / off       - turn the operations light fader on or off
+   - Volume Up
+   - Volume Down
+   - Previos Track
+   - Next Track
+   - Pause/Resume
+   - Light effect on / off
+
    
-    
    Used Pins:
-   ---------------------------------------------------------------------------------------
      NAME             PIN  USAGE
    - CLK / PN532_SCK   13  SPI Clock shared with VS1053, SD card and NFC breakout board 
    - MISO / PN532_MISO 12  Input data from VS1053, SD card and NFC breakout board 
@@ -181,62 +104,28 @@ __asm volatile ("nop");
 
    - infoLedPin         5  the pin to which the operation led is connected to
    - warnLedPin         8  the pin to which the warning led is connected to
-   - errorLedPin        9  the pin to which the error led is connected to 
-                           e.g. used for LBO of powerboost 1000c
+   - errorLedPin        9  the pin to which the error led is connected to (e.g. used for LBO of powerboost 1000c)
     
 
    - volPotPin         A0  the analog input pin that we use for the potentiometer
    - btnLinePin        A1  pin to which the button line (4 buttons) is connected to
-   - lowBatPin         A2  the pin on which the powerboost 1000c indicates a low baterry - not functional
-   - iRRemotePin       A3  the pin on which the IR Remote Receiver is connected to
-   - programming       A4  the pin the program button is connected to. The program 
-                           button changes the functionality of the overall program in 
-                           that (if pressed) the code will register a new tag for use with 
-                           an album directory currently not connected to a tag 
-                           Functionality yet to come!
-   
-   
-   Configuration
-   ---------------------------------------------------------------------------------------
-   Some features (as e.g. Remote Control, Buttons or operation LED etc.) can be turned off 
-   or on via #define switches in the code below.
-   
-      #define IRREMOTE     enables the IR Remote Control option
-      
-      #define BUTTONS      enables the 4 control buttons
-      
-      #define VOLUMEPOT    enables the volume potentiometer
-      
-      #define LOWBAT       enables the low battery warning with light and voice
-
-      #define OPRLIGHT     enables the operations light on the front of the box
-      
-      #define OPRLIGHTTIME enables time based operations light - turns off the light after 30 Minutes
-
-      #define NFCNDEF      enables the use of NDEF messages to get the directory for a tag
-      
-      #define NFCTRACKDB   enables the use of the TrackDB to get the directiry for a tag
-
-      #define ALBUMNFC     enables a special file albumnfc.tdb in which all album <-> nfc
-                           connections are stored - additional to the TrackDb files
-
-      #define RESUMELAST   enables the option to resume last played album upon startup.
-                           This is achieved via a file in the TrackDB and works without 
-                           a tag but uses the pause/resume button instead 
-
+   - batLowPin         A2  the pin on which the powerboost 1000c indicates a low baterry (LBO) - ouput done via errorLedPin
+   - iRRemotePin       A3  the pin on which the powerboost 1000c indicates a low baterry (LBO) - ouput done via errorLedPin
+   - programming       A4  the pin the program button is connected to. The program button changes the functionality
+                           of the overall program in that (if pressed) the code will register a new tag for use with 
+                           an album directory currently not connected to a tag (functionality yet to come)
 */
 
-// make sure to comment this out before uploading in production as it turns on lots and lots of serial messages
-// if it is not define, no Serial.print is possible, as also Serial.begin() is omitted
-#define DEBUG 1
-// to enable periodic output of free RAM during playBack, uncomment the following line.
-//#define RAMCHECK 1
+// make sure to change this to comment this out before uploading in production as it turns on lots and lots of serial messages
+//#define DEBUG 1
+
 
 
 //
-// turn ON / OFF certain hardware/software features
+// turn ON / OFF certain hardware features
 //
-// to enable the IR Remote Control option uncomment the following line - does not work currently
+
+// to enable the IR Remote Control option uncomment the following line
 //#define IRREMOTE 1
 
 // to enable the 4 control buttons uncomment the following line
@@ -261,15 +150,9 @@ __asm volatile ("nop");
 // uncomment the following line. 
 //#define NFCTRACKDB 1
 
-// uncomment to enable a special file albumnfc.tdb in which all album <-> nfc connections are stored 
-// this is an additional storage to the individual TrackDb files and requires NFCTRACKDB 
-//#define ALBUMNFC 1
-
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
 //#define RESUMELAST 1
-
-
 
 //
 // include SPI and SD libraries
@@ -277,30 +160,27 @@ __asm volatile ("nop");
 #include <SPI.h>
 #include <SD.h>
 
-
 // These are the SPI pins shared among all components
-#define CLK             13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-#define MISO            12    // Input data from VS1053, SD card and NFC breakout board 
-#define MOSI            11    // Output data to VS1053, SD card and NFC breakout board 
-
+#define CLK           13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
+#define MISO          12    // Input data from VS1053, SD card and NFC breakout board 
+#define MOSI          11    // Output data to VS1053, SD card and NFC breakout board 
 
 //
 // SETUP MUSIC MAKER SHIELD
 // 
 #include <Adafruit_VS1053.h>
 // These are the pins used for the music maker shield
-#define SHIELD_RESET     -1    // VS1053 reset pin (unused!)
-#define SHIELD_CS         7    // VS1053 chip select pin (output)
-#define SHIELD_DCS        6    // VS1053 Data/command select pin (output)
-
+#define SHIELD_RESET  -1    // VS1053 reset pin (unused!)
+#define SHIELD_CS      7    // VS1053 chip select pin (output)
+#define SHIELD_DCS     6    // VS1053 Data/command select pin (output)
 
 //
 // SETUP SD CARD
 //
 // These are common pins between breakout and shield
-#define CARDCS            4    // Card chip select pin
+#define CARDCS         4    // Card chip select pin
 // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
-#define DREQ              3    // VS1053 Data request, ideally an Interrupt pin
+#define DREQ           3    // VS1053 Data request, ideally an Interrupt pin
 // Create shield object
 Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS);
 
@@ -308,38 +188,21 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 //
 // SETUP NFC ADAPTER
 //
-// this implementation uses the Speedmaster Library and Don's NDEF library to read NFC Tags and
-// get the album directory that is stored as an NDEF Message on the tag. That means, it does NOT
-// use the decribed TrackDB. It is also much heavier (in Progmem size than the Adafruit PN532
-// implementation below and does NOT support recognition of a removed track. Furthermore the user
-// has to turn off the box before she can listen to the next album :-(
 #ifdef NFCNDEF
   // these includes are sued for the NDEF implementation
   #include <PN532_SPI.h>
   #include <PN532.h>
   #include <NfcAdapter.h>
-  #define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-  #define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
-  #define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
-  #define PN532_SS          10    // NFC breakout board chip select pin
+  #define PN532_SCK     13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
+  #define PN532_MISO    12    // Input data from VS1053, SD card and NFC breakout board 
+  #define PN532_MOSI    11    // Output data to VS1053, SD card and NFC breakout board 
+  #define PN532_SS      10    // NFC breakout board chip select pin
   PN532_SPI pn532spi(SPI, PN532_SS);
   NfcAdapter nfc = NfcAdapter(pn532spi);
 #endif
 
-
-// this implementation uses the Adafruit PN532 library alone - it is way smaller and preferrable
-// as it allows for tag removal recognition and does not enforce the user to turn off the box
-// after an album was played, as the above implementation does.
 #ifdef NFCTRACKDB
   // INCLUDE Adafruit NFC LIbrary here
-  #include <Wire.h>
-  #include <Adafruit_PN532.h>
-  //#define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-  //#define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
-  //#define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
-  #define PN532_SS          10    // NFC breakout board chip select pin
-  //Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-  Adafruit_PN532 nfc(SCK, MISO, MOSI, PN532_SS);
 #endif
 
 
@@ -358,64 +221,53 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 //            V    AA     AA  RR   RR
 //
 // mp3 player variables
-char plrCurrentFolder[]     = "system00";                // directory containing the currently played tracks
-char filename[]             = "/system00/track001.mp3";  // path and filename of the track to play
+char plrCurrentFolder[]     = "system00";                // directory containing the currently played tracks - system00 is the system message directory
+char filename[]             = "/system00/track001.mp3";  // path and filename of the track to play - we start with the welcome track
 byte firstTrackToPlay       = 1;                         // the track number to play (used for the loop)
-char nextTrackToPlay        = 1;                         // the track number to play next (or -1 in case of an error)
-
+char nextTrackToPlay        = 1;                         // the track number to play next (can also be the previos number or a -1 in case of an error)
 
 // file to hold the last played album (aka directory) name - from here we may retrieve other data from the trackDb 
 #ifdef RESUMELAST
-  const char resumeLastFile[] = "/trackdb0/LASTPLAY.TDB";
+  const char lastPlayedSessionFile[] = "/trackdb0/LASTPLAY.TDB";
 #endif
 
-
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
-// and is the complementary implementation to the NDEF messages on the NFC Tag - see option NFCNDEF
 #ifdef NFCTRACKDB
-  const char trackDbDir[]   = "/trackdb0"; // where do we store the TrackDB files for each album 
-  char trackDbFile[23];                    // path to the file with uid, directory and track
-  char trackDbEntry[35];                   // will hold a nfc <-> album info connection 
-                                           // in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
-
-  #ifdef ALBUMNFC
-    // a special file that additionally holds the connection between an NFC tag UID and the corresponding directory
-    const char albumNfcFile[]  = "/trackdb0/albumnfc.tdb";  
-  #endif
+  const char trackDbDir[]     = "/trackdb0";               // where do we store the files for each album 
+  const char trackDbFile[]    = "/trackdb0/albumnfc.txt";  // path to the file that holds the connection between an NFC tag UID and the corresponding directory / file name
+  char tDirFile[sizeof(trackDbFile)];                      // a char array to hold the path to the file with track and directory infos (name is shared with directory name plus .txt
+  char trackDbEntry[35];                                   // will hold a nfc <-> album info connection in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
   
   // NFC Tag data
-  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };// Buffer to store the returned UID
-  char charUid[22];                    // char representation of the UID
-  byte uidLength;                      // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };    // Buffer to store the returned UID
+  char charUid[22];                        // char representation of the UID
+  byte uidLength;                          // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 #endif 
-
 
 // volume control variables for the analog poti
 #ifdef VOLUMEPOT
-  const byte volPotPin       = A0;    // the analog input pin that we use for the potentiometer
-  word lastVolSensorValue    = 0;     // keeps the last read sensor value
+  const byte volPotPin     = A0;      // the analog input pin that we use for the potentiometer
+  word lastVolSensorValue  = 0;       // keeps the last read sensor value
 #endif
-
 
 // control buttons definition
 #ifdef BUTTONS
-  const byte btnLinePin      = A1;    // pin on which the button line (4 buttons) is connected
+  const byte btnLinePin    = A1;      // pin on which the button line (4 buttons) is connected
   
   word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
-  const byte btnValDrift     = 5;     // maximum allowed difference + and - the predefined value for each button we allow
-  const word btnPressDelay   = 500;   // delay in milliseconds to prevent double press detection
+  const byte btnValDrift   = 5;       // maximum allowed difference + and - the predefined value for each button we allow
+  const word btnPressDelay = 500;     // delay in milliseconds to prevent double press detection
   unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-  const word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  const word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-  const word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-  const word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
-  const word minBtnValue     = 800;   // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
+  const word btnLightValue = 1021;    // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  const word btnPauseValue = 933;     // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  const word btnNextValue  = 1002;    // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
+  const word btnPrevValue  = 991;     // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
+  const word minBtnValue   = 800;     // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
 #endif
-
 
 // IR remote control 
 #ifdef IRREMOTE
-  const byte iRRemotePin    = A3;      // the pin the IR remote control diode (receiver) is connected to
+  const byte iRRemotePin   = A4;      // the pin the IR remote control diode (receiver) is connected to
   
   // IR Remote control
   // to reduce PROGMEM size I decided to not use the whole decimal value for each button on the remote control but instead do a calculation 
@@ -443,10 +295,8 @@ char nextTrackToPlay        = 1;                         // the track number to 
 
 // battery control
 #ifdef LOWBAT
-  const byte lowBatPin      = A2;      // pin on which the Adafruit PowerBoost will indicate a low battery
-                                       // this pin will usually be pulled high but when the charger detects 
-                                       // a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
-  unsigned long lowBatCheckTime = 0;   // used to throttle low battery messages to every 5 minutes
+  const byte lowBatPin   = A2;      // pulled high to BAT but when the charger detects a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
+  boolean lowBatWarn     = true;    // we use this bool so we may only tell the user every 5 Minite sthat the Battery is low
 #endif
 
 
@@ -455,12 +305,11 @@ char nextTrackToPlay        = 1;                         // the track number to 
   #ifdef OPRLIGHTTIME
     unsigned long lightStartUpTime = 0; // millis() the operations light started
   #endif
-  const byte infoLedPin     = 5;       // the pin to which the operation led is connected to
-  boolean lightOn           = true;    // if true, the operations light fader is active. switched via a button, 
-                                       // set to false after a maxLightTime (in case of OPRLIGHTTIME) is reached
+  const byte infoLedPin    = 5;       // the pin to which the operation led is connected to
+  boolean lightOn          = true;    // if true, the operations light fader is active. is set to false via a button, or after a maxLightTime (see below) is reached
 #endif
-const byte warnLedPin       = 8;       // the pin to which the warning led is connected to
-const byte errorLedPin      = 9;       // the pin to which the error led is connected to
+const byte warnLedPin    = 8;       // the pin to which the warning led is connected to
+const byte errorLedPin   = 9;       // the pin to which the error led is connected to
 
 
 
@@ -472,7 +321,7 @@ const byte errorLedPin      = 9;       // the pin to which the error led is conn
 //       PP        RR    RR   OOOOOO      TT      OOOOOO      TT        YY     PP        EEEEEE  SSSSS
 //
 // these are the prototypes to retrieve and set directory and track to play - aka work on the tagdb
-static boolean getDirAndTrackToPlay(boolean);  // retrieves the directory and track number 
+static boolean getDirAndTrackToPlay(boolean);  // retrieve the directory and track number either from the Tag (true) or from last played session file (false)
 static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
 
 
@@ -488,14 +337,10 @@ static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolde
 
 
 // these are the prototypes for the mp3 player controller
-static void plrStop(void);              // stops the player
-static void plrTogglePause(void);       // pause and unpause the player
-static char playAlbum(uint8_t);         // plays the album from plrCurrentFolder: returns -1 for error or a higher 
-                                        // calls playTrack to actually play a track and check if that was successful and which 
-                                        // track number to play next
-static char playTrack(uint8_t);         // plays a track as defined by the global var filename.
-                                        // returns -1 for error, 0 for success and track number to play next
-                                        // this can either be provided char+1 or char-1
+static void plrStop(void);              // stops the player and return 0
+static void plrTogglePause(void);       // pause and unpause the player and return 0
+static char playAlbum(byte);            // plays the album from plrCurrentFolder: returns -1 for error or a higher 
+static char playTrack(byte);            // plays a track as defined by the global vars: returns -1 for error, 0 for success and track number to play next
 
 
 // prototype for warning
@@ -503,7 +348,7 @@ static void issueWarning(const char[], const char[], boolean); // the new warnin
 
 
 // these are the prototypes to work on files and general helpers
-static uint8_t countFiles(File);        // return the number of files in a directory passed as a File descriptor
+static byte countFiles(File);           // return the number of files in a directory passed as a File descriptor
 
 
 // helper functions to set global vars
@@ -516,8 +361,6 @@ static void setTrackDbEntry(void);
   static void switchLightState(void);   // switch the boolean var lightOn from true to false and vice versa - in case light is lightOn is set to true, lightStartUpTime is set to millis()
 #endif
 
-
-
 //
 //       SSSSSS  EEEEEE  TTTTTTTT  UU   UU   PPPPP
 //      SS       EE         TT     UU   UU  PP   PP
@@ -526,18 +369,9 @@ static void setTrackDbEntry(void);
 //      SSSSSS   EEEEEE     TT      UUUUU   PP
 //
 void setup() {
-  // SETUP SERIAL CONSOLE
-  #ifdef DEBUG
-    // in case we want debug output
-    Serial.begin(38400);
-  #endif
-  #ifdef RAMCHECK
-    // or at least print out available RAM
-    Serial.begin(38400);
-  #endif
-
+  Serial.begin(38400);
   
-  // DEFINE INPUT PINs
+  // set the buttons as input
   #ifdef VOLUMEPOT
     pinMode(volPotPin, INPUT);       // connects to the potentiometer that shall control the volume
   #endif
@@ -551,46 +385,39 @@ void setup() {
     pinMode(iRRemotePin, INPUT);     // connects to the output port of the remote control (decoded values for each button in function playTrack())
   #endif
   
-    
-  // DEFINE OUPUT PINs
+  // and the leds as output
   #ifdef OPRLIGHT
     pinMode(infoLedPin, OUTPUT);     // connect to blue LED
   #endif
   pinMode(warnLedPin, OUTPUT);     // connect to orange LED
   pinMode(errorLedPin, OUTPUT);    // connect to a red LED
 
-  
-  // INITIALIZE THE MUSIC PLAYER
-  if (!musicPlayer.begin()) {
-    #ifdef DEBUG
-      Serial.println(F("VS1053 Not found"));
-    #endif
+  // initialize the music player
+  if (! musicPlayer.begin()) {
+    Serial.println(F("VS1053 Not found"));
+
     // flash the red light to indicate we have an error
     for (;;) { digitalWrite(errorLedPin, HIGH); }
   }
+  // initialize the SD card
+  if (!SD.begin(CARDCS)) {
+    Serial.println(F("SD-Card Not found"));
+
+    // flash the red light to indicate we have an error
+    for (;;) { digitalWrite(errorLedPin, HIGH); }
+  }
+  
+  
   // This option uses a pin interrupt. No timers required! But DREQ
   // must be on an interrupt pin. For Uno/Duemilanove/Diecimilla
   // that's Digital #2 or #3
   // See http://arduino.cc/en/Reference/attachInterrupt for other pins
   if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT)) {
-    #ifdef DEBUG
-      Serial.println(F("No interrupt on DREQ pin"));
-    #endif
+    Serial.println(F("No interrupt on DREQ pin"));
     for (;;) { digitalWrite(errorLedPin, HIGH); }
   }
 
-  
-  // INITIALIZE THE SD CARD
-  if (!SD.begin(CARDCS)) {
-    #ifdef DEBUG
-      Serial.println(F("SD-Card Not found"));
-    #endif
-    // flash the red light to indicate we have an error
-    for (;;) { digitalWrite(errorLedPin, HIGH); }
-  }
-  
-  
-  // PLAY THE WELCOME SOUND
+  // WELCOME SOUND
   #ifdef VOLUMEPOT
     plrAdjustVolume();            // initiallly adjust volume
   #endif
@@ -599,35 +426,15 @@ void setup() {
   }
   
   
-  // START THE NFC READER
+  // now as the last thing, start the nfc reader either the simple one with NDEF support
   #ifdef NFCNDEF
-    // either use the simple one with NDEF support to get the   tag <-> album directory  connection
     nfc.begin();
-  #endif
-  
-  #ifdef NFCTRACKDB
-    // or use the Adafruit implementation, which allows for resume and rescan etc. 
-    //   but needs the trackDB to get the album directory for a tag as no NDEF messages are supported
-    nfc.begin();
-    // make sure to comment this out after PN532 is working as it takes approx 290 bytes from progmem
-    uint32_t versiondata = nfc.getFirmwareVersion();
-    if (! versiondata) {
-      #ifdef DEBUG
-        Serial.print("Didn't find PN53x board");
-      #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
-    }
-    #ifdef DEBUG
-      // Got ok data, print it out!
-      Serial.print(F("Found chip PN5")); Serial.println((versiondata>>24) & 0xFF, HEX); 
-      Serial.print(F("Firmware ver. ")); Serial.print((versiondata>>16) & 0xFF, DEC); 
-      Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
-    #endif
-    // configure board to read RFID tags
-    
-    nfc.SAMConfig();
   #endif
 
+  // or the one which allows for resume and rescan etc. but needs the trackDB as no NDEF messages are supported
+  #ifdef NFCTRACKDB
+  
+  #endif
   
   // ALL DONE
   delay(100); // wait some time for everything to settle
@@ -659,46 +466,35 @@ void setup() {
 //        LLLLLL   OOOOOO    OOOOOO   PP
 //
 void loop() {
-  boolean weHaveATag = false;                     // set true if a tag is present and false
-  boolean resumeLast = false;                     // set true when pause button (also on IR Remote) is pressed
+  boolean weHaveATag = false;              // is set to true if a tag is present and false, if not
+  boolean resumeLast = false;              // is set to true if the pause button is pressed without a tag
   boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
   boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
+
+  // this allows for the pause/resume button to be pressed without a tag being present
+  // in this case the last played album is resumed
+  #ifdef RESUMELAST
+    #ifdef BUTTONS
+      btnVal = analogRead(btnLinePin);
+      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
+        if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
+          #ifdef DEBUG
+            Serial.println(F("Pause Button Pressed"));
+          #endif
+        }
+      }
+    #endif
+  #endif
   
   #ifdef DEBUG 
     Serial.print(F("."));
   #endif
 
-  
-  // check for tag presence
-  #ifdef NFCNDEF
-    // this implementation uses the Speedmaster Library and Don's NDEF lib
-    weHaveATag = nfc.tagPresent(1000);
-  #endif
-  #ifdef NFCTRACKDB
-    // this implementation uses the Adafruit PN532 library alone
-    weHaveATag = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
-  #endif
-
-  
-  // this allows for the pause/resume button to be pressed without a tag being present
-  // in this case the last played album is resumed - given there was one. 
-  #ifdef RESUMELAST
-    // Of course works only when we have the Buttons 
-    #ifdef BUTTONS
-      btnVal = analogRead(btnLinePin);
-      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
-    #endif
-    // ... or the IR Remote Control implementation
-    #ifdef IRREMOTE
-      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal ) resumeLast = true;
-    #endif
-  #endif
-
-  
-  // if a tag is found or the pause button is pressed without a tag, we continue
-  if (weHaveATag || resumeLast) {
+  // if a tag is found, we continue
+  weHaveATag = nfc.tagPresent(1000);
+  if (weHaveATag) {
     #ifdef DEBUG
-      if (weHaveATag) Serial.println(F(" tag found!")); else Serial.println(F(" resume last album"));
+      Serial.println(F(" tag found!"));
     #endif
     
     // read data from tag: directory, track number and playing order.
@@ -710,7 +506,7 @@ void loop() {
       }
     } else {  // we may start playing as it seems
       // now let's get the number of files in the album directory
-      uint8_t numberOfFiles = countFiles(SD.open(plrCurrentFolder));
+      const byte numberOfFiles = countFiles(SD.open(plrCurrentFolder));
       
       // there is no file in the folder indicate this as a minor error
       if (numberOfFiles < 1) {
@@ -739,14 +535,14 @@ void loop() {
   } // end of tag is present
   
   delay(1000); // throttle the loop for 1 second
-  
   // check if the battery is still good
   #ifdef LOWBAT
     if (digitalRead(lowBatPin == LOW)) {
-      if ((millis()-lowBatCheckTime > 300000)) {
+      if (lowBatWarn && (millis()-lightStartUpTime > 300000)) {
         digitalWrite(errorLedPin, HIGH);
         issueWarning("BATTERY LOW", "/system00/lowbat01.mp3", true);
-        lowBatCheckTime = millis();
+        lowBatWarn = false;
+        lightStartUpTime = millis();
       }
     }
   #endif
@@ -764,13 +560,14 @@ void loop() {
 //
 //  BELOW THIS LINE THE MP3 PLAYER CONTROL IS DEFINED
 //
-// included in while loop of playTrack() for checks for volume changes
+// included in while loop during playback to check for volume changes
 #ifdef VOLUMEPOT
 static void plrAdjustVolume() {
   // volume control functions
   const byte volSensorDrift = 7;    // difference to last received sensor value that must be exceeded to activate a change in the volume
   word volCompareValue      = 0;    // just a convenience variable to make comparison easier
-  
+  //byte soundVolume         = 0;    // the sound volume is derived via a map function from the sensor value
+
   // read the input on analog pin 0 and check if we have a change in volume.
   const word volSensorValue = analogRead(volPotPin);
   if (lastVolSensorValue > volSensorValue) {
@@ -781,6 +578,9 @@ static void plrAdjustVolume() {
   
   // If we have a high enough difference in the sensor reading, calculate it so we may set it on the player
   if (volCompareValue > volSensorDrift) {
+    #ifdef DEBUG
+      //Serial.print(F("changing volume: "));
+    #endif
     const byte soundVolume = volSensorValue / 10; // map the sensor value to a sound volume
     #ifdef DEBUG
       Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); Serial.print(F(", vol: ")); Serial.println(soundVolume);
@@ -790,7 +590,6 @@ static void plrAdjustVolume() {
   } // end of change sound volume
 }
 #endif
-
 
 //
 //        MM      MM   PPPPPP   33333
@@ -803,29 +602,29 @@ static void plrAdjustVolume() {
 //
 // stop playback
 static void plrStop(void) {
+  #ifdef DEBUG
+    //Serial.println(F("Stopping playback"));
+  #endif
   musicPlayer.stopPlaying();
 }
-
 
 // toggle pause
 static void plrTogglePause(void) {
   if (!musicPlayer.paused()) {
     #ifdef DEBUG
-      Serial.println(F("Playback pause"));
+      Serial.println(F("  playback pause"));
     #endif
     musicPlayer.pausePlaying(true);
   } else {
     #ifdef DEBUG
-      Serial.println(F("Playback resume"));
+      Serial.println(F("  playback resume"));
     #endif
     musicPlayer.pausePlaying(false);
   }
 }
 
-
-// iterates through al files in an album directory and calls playTrack for each track number iteratively
-static char playAlbum(uint8_t numberOfFiles) {
-  boolean loopWarningMessageFileNotFound = true;// make sure   file not found     warning message is shown at least once
+static char playAlbum(byte numberOfFiles) {
+  boolean loopWarningMessageFileNotFound = true;// make sure   file not found               warning message is shown at least once
   
   #ifdef DEBUG
     Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);
@@ -835,38 +634,35 @@ static char playAlbum(uint8_t numberOfFiles) {
   #endif
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
     digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
+    #ifdef DEBUG
+      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/")); Serial.print(numberOfFiles);Serial.println(F(": "));
+    #endif
     
-    // set the filename we want to play in the global variable so the playTrack() function knows what to play
     if (!setFileNameToPlay(curTrack)) {
-      // set filename does not exit on SD card :-(
+      // created filename does not exit on SD card :-(
       if (loopWarningMessageFileNotFound) {
         loopWarningMessageFileNotFound = false; // set loop warning message so we don't show this warning in the next loop
         issueWarning("file not found", "/system00/filnotfn.mp3", true);
       }
-      break;  // try the filename - we break the for loop and skip to next number
+      break;
     }
-    #ifdef DEBUG
-      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/"));Serial.print(numberOfFiles);Serial.print(F(": "));Serial.println(filename);
-    #endif
-
-    // make sure we remember the just started track to be the new track, in case player is stopped 
-    // this works only with the NFC TrackDb and not with the NFC NDEF implementation
-    #ifdef NFCTRACKDB
-      if (curTrack != firstTrackToPlay) {
-        // in case we are on the last track, choose the first track, so we start playback all from the beginning.
-        if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
-        
-        // now store this new first track in the TrackDB
-        // first create the new trackDb entry:
-        setTrackDbEntry();
-        // second store this entry in the TrackDb files, plus optional in the albumnfc.tdb file
+    
+    // make sure we remember the just started track to be the new track, in case player is stopped
+    if (curTrack != firstTrackToPlay) {
+      // in case we are on the last track, write the first track to the tag, so we start playback all from the beginning.
+      if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
+      
+      #ifdef DEBUG
+        //Serial.print(F("set ")); Serial.print(firstTrackToPlay); Serial.println(F(" as first track to play"));
+      #endif
+      #ifdef NFCTRACKDB
         if (!writeTrackDbEntry()) {
           issueWarning("trackdb update error", "", false);
         }
-      }
-    #endif
-    
-    // play the track on the music maker shield and retrieve the nextTrackToPlay from global variable (it is set by playTrack())
+      #endif
+    }
+
+    // play the track on the music maker shield and retrieve a return value 
     //        -1  errors trying to play the file (like file not found)
     //         0  success - the file was played
     //     1-127  any positive number for the next track to play
@@ -885,16 +681,14 @@ static char playAlbum(uint8_t numberOfFiles) {
   return(0);
 }
 
-
-// play a single track within an album - is called by playAlbum() or by issueWarning()
-static char playTrack(uint8_t trackNo) {
+static char playTrack(byte trackNo) {
   #ifdef OPRLIGHTTIME
-    const unsigned long maxLightTime = 1800000L;// how long shall the light stay on while nothing is playing - 1800000L = 30 Minutes
+    const unsigned long maxLightTime = 1800000L;  // how long shall the light stay on while nothing is playing - default 900000 = 15 Minutes
   #endif
-  const unsigned int checkInterval = 10000L;    // time in milliseconds between checks for battery status, tag presence and max light time
+  const unsigned int checkInterval = 10000L;    // time in milliseconds between checks for battery status, if the tag ist still present and if the max light time is reached
   /*
   #ifdef BUTTONS
-    // the 4 control buttons  - defined in global section
+    // the 4 control buttons
     word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
     const byte btnValDrift   = 5;       // maximum allowed difference + and - the predefined value for each button we allow
     const word btnPressDelay = 500;     // delay in milliseconds to prevent double press detection
@@ -907,7 +701,7 @@ static char playTrack(uint8_t trackNo) {
   #endif
   
   #ifdef IRREMOTE
-    // IR Remote control      - defined in global section
+    // IR Remote control
     // to reduce PROGMEM size I decided to not use the whole decimal value for each button on the remote control but instead do a calculation 
     // which reduces the needed size of the variable to hold the value but still creates different values for each button
     // Function  Original code   Minus         DIV   code I use
@@ -948,8 +742,8 @@ static char playTrack(uint8_t trackNo) {
     
     // every ten seconds we do some checks
     if ((millis()-checkTime) > checkInterval) {
-      #ifdef RAMCHECK
-        Serial.print(F("free RAM: ")); Serial.println(freeRam());
+      #ifdef DEBUG
+        //Serial.print(checkTime);Serial.println(F("ms played - check LIGHT, NFC and BAT"));
       #endif
       
       // check if we shall still fade the info light - depends on max light time and light startup time and also on the light button state
@@ -962,6 +756,7 @@ static char playTrack(uint8_t trackNo) {
         }
       #endif
       
+      // TODO: check if this really works this way
       // check if the battery is still good
       #ifdef LOWBAT
         if (digitalRead(lowBatPin == LOW)) digitalWrite(errorLedPin, HIGH);
@@ -997,6 +792,9 @@ static char playTrack(uint8_t trackNo) {
         //
         // PAUSE
         if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
+          #ifdef DEBUG
+            Serial.println(F(" - Pause Button Pressed"));
+          #endif
           plrTogglePause();
           //musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
         }
@@ -1007,7 +805,7 @@ static char playTrack(uint8_t trackNo) {
           if (trackNo > 2) nextTrackToPlay = trackNo - 2;
           else nextTrackToPlay = 0;
           #ifdef DEBUG
-            Serial.print(F("Prev track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+            Serial.print(F(" - Prev Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
           #endif
           musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
           return(nextTrackToPlay); 
@@ -1018,7 +816,7 @@ static char playTrack(uint8_t trackNo) {
           plrStop();
           nextTrackToPlay = trackNo;
           #ifdef DEBUG
-            Serial.print(F("Next track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+            Serial.print(F(" - Next Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
           #endif
           musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
           return(nextTrackToPlay);
@@ -1027,6 +825,9 @@ static char playTrack(uint8_t trackNo) {
         // LIGHT
         #ifdef OPRLIGHT
           if ( ((btnVal - btnValDrift) < btnLightValue) && ((btnVal + btnValDrift) > btnLightValue) ) { 
+            #ifdef DEBUG
+              Serial.println(F(" - Light Button Pressed")); 
+            #endif
             switchLightState();
             //musicPlayer.sineTest(0x40, 100);    // Make a tone to indicate button press
           }
@@ -1035,27 +836,26 @@ static char playTrack(uint8_t trackNo) {
     #endif
 
     #ifdef IRREMOTE
-      // IR Remote Control Layout
-      //                +-------+
-      //               |    UP   |
-      //                +-------+
-      //    +-------+   +-------+   +-------+
-      //   |   LEFT  | |   HOME  | |  RIGHT  |
-      //    +-------+   +-------+   +-------+
-      //                +-------+
-      //               |   DOWN  |
-      //                +-------+
-      //       +-------+         +-------+  
-      //      |  PAUSE  |       |  MENU   |
-      //       +-------+         +-------+
-      //
-      // check for IR Remote Control action
+      // IR Remote Control
+      //               +-------+
+      //               |  UP   |
+      //               +-------+
+      //    +-------+  +-------+  +-------+
+      //    | LEFT  |  | HOME  |  | RIGHT |
+      //    +-------+  +-------+  +-------+
+      //               +-------+
+      //               | DOWN  |
+      //               +-------+
+      //      +-------+        +-------+  
+      //      | PAUSE |        |  MENU |
+      //      +-------+        +-------+
+      // chek for IR Remote Control action
       if (irrecv.decode(&results)) { // get data from IR Remote
         switch ((results.value-2011000000)/100) {
           // PREV
           case prevVal:
             #ifdef DEBUG
-              Serial.print(F("Prev track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+              Serial.print(F(" - Prev Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
             #endif
             plrStop();
             musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
@@ -1065,7 +865,7 @@ static char playTrack(uint8_t trackNo) {
           // NEXT
           case nextVal:
             #ifdef DEBUG
-              Serial.print(F("Next track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+              Serial.print(F(" - Next Button Pressed, track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
             #endif
             plrStop();
             musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
@@ -1074,24 +874,30 @@ static char playTrack(uint8_t trackNo) {
             break;
           // PAUSE
           case pauseVal:
+            #ifdef DEBUG
+              Serial.println(F(" - Pause Button Pressed"));
+            #endif
             plrTogglePause();
             break;
           // LIGHT
           #ifdef OPRLIGHT
             case lightVal:
+              #ifdef DEBUG
+                Serial.println(F(" - Light Button Pressed")); 
+              #endif
               switchLightState();
               break;
           #endif
           // VOL UP
           case volUpVal:
             #ifdef DEBUG
-              Serial.println(F("Volume Up"));
+              Serial.println(F(" - Volume Up Button Pressed"));
             #endif
             break;
           // VOL DOWN
           case volDwnVal:
             #ifdef DEBUG
-              Serial.println(F("Volume Down"));
+              Serial.println(F(" - Volume Down Button Pressed"));
             #endif
             break;
           // MENU
@@ -1116,7 +922,6 @@ static char playTrack(uint8_t trackNo) {
   nextTrackToPlay = trackNo;
   return (nextTrackToPlay);
 }
-
 
 //
 //      TTTTTTTTTT  RRRRRR       AA       CCCCC  KK   KK  DDDDDD    BBBBBB
@@ -1188,68 +993,40 @@ static boolean writeTrackDbEntry() {
   #ifdef DEBUG
     Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
   #endif
-
-  // FIRST (if set) write the AlbumNFC file  --> ALBUMNFC.TDB
-  #ifdef ALBUMNFC
-    File file = SD.open(albumNfcFile, FILE_WRITE);
-    bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-    file.close();                                      // and make sure everything is clean and save
-
-    // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
-    if (bytesWritten == sizeof(albumNfcFile)) {
-      #ifdef DEBUG
-        Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(albumNfcFile);
-      #endif
-      success = true;
-    } else {
-      #ifdef DEBUG
-        Serial.print(F("  error writing "));Serial.println(albumNfcFile);
-      #endif
-      digitalWrite(warnLedPin, HIGH);
-      success = false;
-    }
-  #endif
-  
-  // SECOND write the TrackDb-File --> e.g. larsrent.txt
-  memset(trackDbFile, 0, sizeof(trackDbFile));       // make sure var to hold path to track db file is empty
-  strcat(trackDbFile, trackDbDir);                   // add the trackDb Directory to the 
-  strcat(trackDbFile, "/");                          // a / 
-  strcat(trackDbFile, plrCurrentFolder);             // and the filename
-  strcat(trackDbFile, ".txt");                       // plus of course a txt extension
-  SD.remove(trackDbFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
-  
-  // used in case the albumnfc.tdb file is written first - redeclare file var
-  #ifdef ALBUMNFC
-    file = SD.open(trackDbFile, FILE_WRITE);
-  #endif
-  // used in case we only write the TrackDB file - need to initially declare file var
-  #ifndef ALBUMNFC
-    File file = SD.open(trackDbFile, FILE_WRITE);
-  #endif
+  /*
+  // FIRST write the trackDbFile --> ALBUMNFC.TXT
+  File file = SD.open(trackDbFile, FILE_WRITE);
   bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-  file.close();
-
-  // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
+  file.close();                                   // and make sure everything is clean and save
   if (bytesWritten == sizeof(trackDbEntry)) {
     #ifdef DEBUG
-      Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(trackDbFile);
+      Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(trackDbFile);
     #endif
-    success = true;
+    success = true; 
   } else {
+    Serial.print(F("  error writing "));Serial.println(trackDbFile);
+  }
+  
+  // SECOND write the tDirFile --> e.g. larsrent.txt
+  memset(tDirFile, 0, sizeof(tDirFile));          // make sure var to hold path to track db file is empty
+  strcat(tDirFile, trackDbDir);                   // add the trackDb Directory to the 
+  strcat(tDirFile, "/");                          // a / 
+  strcat(tDirFile, plrCurrentFolder);             // and the filename
+  strcat(tDirFile, ".txt");                       // plus of course a txt extension
+  SD.remove(tDirFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
+  File file = SD.open(tDirFile, FILE_WRITE);      // and now we open / create it
+  bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
+  file.close();                                   // and make sure everything is clean and save
+  if (bytesWritten == sizeof(trackDbEntry)) {
     #ifdef DEBUG
-      Serial.print(F("  error writing "));Serial.println(trackDbFile);
+      Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(tDirFile);
     #endif
-    digitalWrite(warnLedPin, HIGH);
+    success = false;
+  } else {
+    Serial.print(F("  error writing "));Serial.println(tDirFile);
     success = false;
   }
-
-  // THIRD (if set) write the plrCurrentFolder (aka the album directory) to the file /trackdb0/LASTPLAY.TDB
-  #ifdef RESUMELAST
-    file = SD.open(resumeLastFile, FILE_WRITE);
-    bytesWritten = file.write(plrCurrentFolder, sizeof(plrCurrentFolder));
-    file.close();
-  #endif
-  
+  */
   return (success);
 }
 #endif 
@@ -1271,7 +1048,6 @@ boolean checkTag() {
   return(sameTagPresent);
 }
 #endif
-
 
 // 
 //      HH    HH  EEEEEE  LL      PPPPPP    EEEEEE  RRRRRR
@@ -1305,6 +1081,7 @@ static boolean setFileNameToPlay(byte trackNo) {
 #ifdef NFCTRACKDB
 static void setTrackDbEntry() {
   char tmpbuf[4];                                 // temp buffer for one number of the uid
+  memset(trackDbEntry, 0, sizeof(trackDbEntry));
     
   // create the entry for the  "Tag UID <-> directory + track number"  connection
   memset(trackDbEntry, 0, sizeof(trackDbEntry));
@@ -1324,17 +1101,6 @@ static void setTrackDbEntry() {
 }
 #endif
 
-
-#ifdef RAMCHECK
-// return the free RAM - called periodically during playTrack()
-int freeRam () {
-  extern int __heap_start, *__brkval;
-  int v;
-  return (int) &v - (__brkval == 0 ? (int) &__heap_start : (int) __brkval);
-}
-#endif
-
-
 //
 //        FFFFFF  II  LL      EEEEEE
 //        FF      II  LL      EE
@@ -1345,8 +1111,8 @@ int freeRam () {
 // BELOW THIS LINE THE FILE HELPER FUNCTIONS CAN BE FOUND
 //
 // counts the number of files in directory
-static uint8_t countFiles(File dir) {
-  uint8_t counter = 0;
+static byte countFiles(File dir) {
+  byte counter = 0;
   while (true) {
     File entry = dir.openNextFile();
     // Skip directories and hidden files.
@@ -1383,7 +1149,6 @@ static void issueWarning(const char msg[20], const char filename[23], boolean vo
   digitalWrite(warnLedPin, HIGH);
 }
 
-
 //
 //  LL      EEEEEE  DDDDDD
 //  LL      EE      DD   DD
@@ -1391,7 +1156,7 @@ static void issueWarning(const char msg[20], const char filename[23], boolean vo
 //  LL      EE      DD   DD
 //  LLLLLL  EEEEEE  DDDDDD
 //
-// switches the value of lightOn between true and false - only needed in case there is a LED attached
+// switches the value of lightOn between true and false
 #ifdef OPRLIGHT
 static void switchLightState(void) {
   if (!lightOn) {
