@@ -445,7 +445,7 @@ char nextTrackToPlay        = 1;                         // the track number to 
   const byte lowBatPin      = A2;      // pin on which the Adafruit PowerBoost will indicate a low battery
                                        // this pin will usually be pulled high but when the charger detects 
                                        // a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
-  boolean lowBatWarn        = true;    // used to throttle low battery messages to every 5 minutes
+  unsigned long lowBatCheckTime = 0;   // used to throttle low battery messages to every 5 minutes
 #endif
 
 
@@ -733,14 +733,14 @@ void loop() {
   } // end of tag is present
   
   delay(1000); // throttle the loop for 1 second
+  
   // check if the battery is still good
   #ifdef LOWBAT
     if (digitalRead(lowBatPin == LOW)) {
-      if (lowBatWarn && (millis()-lightStartUpTime > 300000)) {
+      if ((millis()-lowBatCheckTime > 300000)) {
         digitalWrite(errorLedPin, HIGH);
         issueWarning("BATTERY LOW", "/system00/lowbat01.mp3", true);
-        lowBatWarn = false;
-        lightStartUpTime = millis();
+        lowBatCheckTime = millis();
       }
     }
   #endif
@@ -959,7 +959,6 @@ static char playTrack(char trackNo) {
         }
       #endif
       
-      // TODO: check if this really works this way
       // check if the battery is still good
       #ifdef LOWBAT
         if (digitalRead(lowBatPin == LOW)) digitalWrite(errorLedPin, HIGH);
