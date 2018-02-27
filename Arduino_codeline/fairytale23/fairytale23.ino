@@ -657,37 +657,12 @@ void loop() {
   boolean resumeLast = false;                     // set true when pause button (also on IR Remote) is pressed
   boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
   boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
-
-  // this allows for the pause/resume button to be pressed without a tag being present
-  // in this case the last played album is resumed - given there was one. 
-  #ifdef RESUMELAST
-    // Of course works only when we have theButtons 
-    #ifdef BUTTONS
-      btnVal = analogRead(btnLinePin);
-      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
-        if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
-          #ifdef DEBUG
-            Serial.println(F("BUTTON: resume album"));
-          #endif
-        }
-      }
-    #endif
-    // ... or the IR Remote Control implementation
-    #ifdef IRREMOTE
-      if (irrecv.decode(&results)) { // get data from IR Remote
-        if ((results.value-2011000000)/100) == pauseVal) {
-          #ifdef DEBUG
-            Serial.println(F("IR Remote: resume album"));
-          #endif
-        }
-      }
-    #endif
-  #endif
   
   #ifdef DEBUG 
     Serial.print(F("."));
   #endif
 
+  
   // check for tag presence
   #ifdef NFCNDEF
     // this implementation uses the Speedmaster Library and Don's NDEF lib
@@ -698,10 +673,26 @@ void loop() {
     weHaveATag = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
   #endif
 
+  
+  // this allows for the pause/resume button to be pressed without a tag being present
+  // in this case the last played album is resumed - given there was one. 
+  #ifdef RESUMELAST
+    // Of course works only when we have the Buttons 
+    #ifdef BUTTONS
+      btnVal = analogRead(btnLinePin);
+      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
+    #endif
+    // ... or the IR Remote Control implementation
+    #ifdef IRREMOTE
+      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal) ) resumeLast = true;
+    #endif
+  #endif
+
+  
   // if a tag is found or the pause button is pressed without a tag, we continue
   if (weHaveATag || resumeLast) {
     #ifdef DEBUG
-      Serial.println(F(" tag found!"));
+      if (weHaveATag) Serial.println(F(" tag found!")); else Serial.println(F(" resume last album"));
     #endif
     
     // read data from tag: directory, track number and playing order.
