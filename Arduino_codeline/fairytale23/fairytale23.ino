@@ -365,7 +365,7 @@ char nextTrackToPlay        = 1;                         // the track number to 
 
 // file to hold the last played album (aka directory) name - from here we may retrieve other data from the trackDb 
 #ifdef RESUMELAST
-  const char lastPlayedSessionFile[] = "/trackdb0/LASTPLAY.TDB";
+  const char resumeLastFile[] = "/trackdb0/LASTPLAY.TDB";
 #endif
 
 
@@ -653,20 +653,31 @@ void setup() {
 //        LLLLLL   OOOOOO    OOOOOO   PP
 //
 void loop() {
-  boolean weHaveATag = false;              // is set to true if a tag is present and false, if not
-  boolean resumeLast = false;              // is set to true if the pause button is pressed without a tag
+  boolean weHaveATag = false;                     // set true if a tag is present and false
+  boolean resumeLast = false;                     // set true when pause button (also on IR Remote) is pressed
   boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
   boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
 
   // this allows for the pause/resume button to be pressed without a tag being present
-  // in this case the last played album is resumed
+  // in this case the last played album is resumed - given there was one. 
   #ifdef RESUMELAST
+    // Of course works only when we have theButtons 
     #ifdef BUTTONS
       btnVal = analogRead(btnLinePin);
       if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
         if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
           #ifdef DEBUG
-            Serial.println(F("Resume last album"));
+            Serial.println(F("Resuming last album"));
+          #endif
+        }
+      }
+    #endif
+    // ... or the IR Remote Control implementation
+    #ifdef IRREMOTE
+      if (irrecv.decode(&results)) { // get data from IR Remote
+        if ((results.value-2011000000)/100) == pauseVal) {
+          #ifdef DEBUG
+            Serial.println(F("Resuming last album"));
           #endif
         }
       }
@@ -677,16 +688,17 @@ void loop() {
     Serial.print(F("."));
   #endif
 
-  // if a tag is found, we continue - this implementation uses the Speedmaster Library and Don's NDEF lib
+  // check for tag presence
   #ifdef NFCNDEF
+    // this implementation uses the Speedmaster Library and Don's NDEF lib
     weHaveATag = nfc.tagPresent(1000);
   #endif
-
-  // if a tag is found, we continue - this implementation uses the Adafruit PN532 library alone
   #ifdef NFCTRACKDB
+    // this implementation uses the Adafruit PN532 library alone
     weHaveATag = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
   #endif
-  
+
+  // if a tag is found or the pause button is pressed without a tag, we continue
   if (weHaveATag || resumeLast) {
     #ifdef DEBUG
       Serial.println(F(" tag found!"));
@@ -847,26 +859,23 @@ static char playAlbum(char numberOfFiles) {
       break;  // try the filename - we break the for loop and skip to next number
     }
     
-    // make sure we remember the just started track to be the new track, in case player is stopped
-    if (curTrack != firstTrackToPlay) {
-      // in case we are on the last track, choose the first track, so we start playback all from the beginning.
-      if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
-      
-      #ifdef DEBUG
-        //Serial.print(F("set ")); Serial.print(firstTrackToPlay); Serial.println(F(" as first track to play"));
-      #endif
-
-      // now store this new first track in the TrackDB
-      #ifdef NFCTRACKDB
+    // make sure we remember the just started track to be the new track, in case player is stopped 
+    // this works only with the NFC TrackDb and not with the NFC NDEF implementation
+    #ifdef NFCTRACKDB
+      if (curTrack != firstTrackToPlay) {
+        // in case we are on the last track, choose the first track, so we start playback all from the beginning.
+        if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
+        
+        // now store this new first track in the TrackDB
         // first create the new trackDb entry:
         setTrackDbEntry();
-        // second store this entry in the TrackDb files
+        // second store this entry in the TrackDb files, plus optional in the albumnfc.tdb file
         if (!writeTrackDbEntry()) {
           issueWarning("trackdb update error", "", false);
         }
-      #endif
-    }
-
+      }
+    #endif
+    
     // play the track on the music maker shield and retrieve the nextTrackToPlay from global variable (it is set by playTrack())
     //        -1  errors trying to play the file (like file not found)
     //         0  success - the file was played
@@ -949,10 +958,6 @@ static char playTrack(char trackNo) {
     
     // every ten seconds we do some checks
     if ((millis()-checkTime) > checkInterval) {
-      #ifdef DEBUG
-        //Serial.print(checkTime);Serial.println(F("ms played - check LIGHT, NFC and BAT"));
-      #endif
-      
       // check if we shall still fade the info light - depends on max light time and light startup time and also on the light button state
       #ifdef OPRLIGHTTIME
         if (((millis()-lightStartUpTime) > maxLightTime) && lightOn) {
@@ -1043,19 +1048,20 @@ static char playTrack(char trackNo) {
     #endif
 
     #ifdef IRREMOTE
-      // IR Remote Control
-      //               +-------+
-      //               |  UP   |
-      //               +-------+
-      //    +-------+  +-------+  +-------+
-      //    | LEFT  |  | HOME  |  | RIGHT |
-      //    +-------+  +-------+  +-------+
-      //               +-------+
-      //               | DOWN  |
-      //               +-------+
-      //      +-------+        +-------+  
-      //      | PAUSE |        |  MENU |
-      //      +-------+        +-------+
+      // IR Remote Control Layout
+      //                +-------+
+      //               |    UP   |
+      //                +-------+
+      //    +-------+   +-------+   +-------+
+      //   |   LEFT  | |   HOME  | |  RIGHT  |
+      //    +-------+   +-------+   +-------+
+      //                +-------+
+      //               |   DOWN  |
+      //                +-------+
+      //       +-------+         +-------+  
+      //      |  PAUSE  |       |  MENU   |
+      //       +-------+         +-------+
+      //
       // check for IR Remote Control action
       if (irrecv.decode(&results)) { // get data from IR Remote
         switch ((results.value-2011000000)/100) {
@@ -1201,46 +1207,53 @@ static boolean writeTrackDbEntry() {
   #ifdef DEBUG
     Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
   #endif
+
+  // FIRST (if set) write the AlbumNFC file  --> ALBUMNFC.TDB
   #ifdef ALBUMNFC
-    // FIRST write the AlbumNFC file  --> ALBUMNFC.TDB
     File file = SD.open(albumNfcFile, FILE_WRITE);
     bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-    file.close();                                   // and make sure everything is clean and save
-    if (bytesWritten == sizeof(trackDbEntry)) {
+    file.close();                                      // and make sure everything is clean and save
+
+    // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
+    if (bytesWritten == sizeof(albumNfcFile)) {
       #ifdef DEBUG
-        Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(albumNfcFile);
+        Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(albumNfcFile);
       #endif
-      success = true; 
+      success = true;
     } else {
       #ifdef DEBUG
         Serial.print(F("  error writing "));Serial.println(albumNfcFile);
       #endif
       digitalWrite(warnLedPin, HIGH);
+      success = false;
     }
   #endif
   
   // SECOND write the TrackDb-File --> e.g. larsrent.txt
-  memset(trackDbFile, 0, sizeof(trackDbFile));          // make sure var to hold path to track db file is empty
+  memset(trackDbFile, 0, sizeof(trackDbFile));       // make sure var to hold path to track db file is empty
   strcat(trackDbFile, trackDbDir);                   // add the trackDb Directory to the 
   strcat(trackDbFile, "/");                          // a / 
   strcat(trackDbFile, plrCurrentFolder);             // and the filename
   strcat(trackDbFile, ".txt");                       // plus of course a txt extension
   SD.remove(trackDbFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
   
+  // used in case the albumnfc.tdb file is written first - redeclare file var
   #ifdef ALBUMNFC
-    file = SD.open(trackDbFile, FILE_WRITE);         // used in case the albumnfc.tdb file is written first
+    file = SD.open(trackDbFile, FILE_WRITE);
   #endif
+  // used in case we only write the TrackDB file - need to initially declare file var
   #ifndef ALBUMNFC
-    File file = SD.open(trackDbFile, FILE_WRITE);    // used in case we only write the TrackDB files
+    File file = SD.open(trackDbFile, FILE_WRITE);
   #endif
-  
   bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-  file.close();                                   // and make sure everything is clean and save
+  file.close();
+
+  // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
   if (bytesWritten == sizeof(trackDbEntry)) {
     #ifdef DEBUG
-      Serial.print(F(" ok. wrote "));Serial.print(bytesWritten);Serial.print(F(" byte(s) to "));Serial.println(trackDbFile);
+      Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(trackDbFile);
     #endif
-    success = false;
+    success = true;
   } else {
     #ifdef DEBUG
       Serial.print(F("  error writing "));Serial.println(trackDbFile);
@@ -1248,6 +1261,13 @@ static boolean writeTrackDbEntry() {
     digitalWrite(warnLedPin, HIGH);
     success = false;
   }
+
+  // THIRD (if set) write the plrCurrentFolder (aka the album directory) to the file /trackdb0/LASTPLAY.TDB
+  #ifdef RESUMELAST
+    file = SD.open(resumeLastFile, FILE_WRITE);
+    bytesWritten = file.write(plrCurrentFolder, sizeof(plrCurrentFolder));
+    file.close();
+  #endif
   
   return (success);
 }
@@ -1304,7 +1324,6 @@ static boolean setFileNameToPlay(byte trackNo) {
 #ifdef NFCTRACKDB
 static void setTrackDbEntry() {
   char tmpbuf[4];                                 // temp buffer for one number of the uid
-  memset(trackDbEntry, 0, sizeof(trackDbEntry));
     
   // create the entry for the  "Tag UID <-> directory + track number"  connection
   memset(trackDbEntry, 0, sizeof(trackDbEntry));
