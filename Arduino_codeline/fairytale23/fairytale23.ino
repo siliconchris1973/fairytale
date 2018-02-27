@@ -250,7 +250,7 @@ __asm volatile ("nop");
 // to enable the operations light on the front of the box, uncomment the following line
 #define OPRLIGHT 1
 // to enable time based operations light - turns off the light after 30 Minutes - uncomment the following line
-//#define OPRLIGHTTIME 1
+#define OPRLIGHTTIME 1
 
 // Define the NFC <-> Album implementation
 // ONLY ONE of the these two options can be chosen
@@ -266,7 +266,7 @@ __asm volatile ("nop");
 
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
-//#define RESUMELAST 1
+#define RESUMELAST 1
 
 
 
@@ -684,7 +684,7 @@ void loop() {
     #endif
     // ... or the IR Remote Control implementation
     #ifdef IRREMOTE
-      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal) ) resumeLast = true;
+      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal ) resumeLast = true;
     #endif
   #endif
 
