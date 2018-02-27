@@ -228,7 +228,7 @@ __asm volatile ("nop");
 
 // make sure to comment this out before uploading in production as it turns on lots and lots of serial messages
 // if it is not define, no Serial.print is possible, as also Serial.begin() is omitted
-//#define DEBUG 1
+#define DEBUG 1
 
 
 
@@ -236,7 +236,7 @@ __asm volatile ("nop");
 // turn ON / OFF certain hardware features
 //
 // to enable the IR Remote Control option uncomment the following line
-#define IRREMOTE 1
+//#define IRREMOTE 1
 
 // to enable the 4 control buttons uncomment the following line
 #define BUTTONS 1
@@ -250,15 +250,15 @@ __asm volatile ("nop");
 // to enable the operations light on the front of the box, uncomment the following line
 #define OPRLIGHT 1
 // to enable time based operations light - turns off the light after 30 Minutes - uncomment the following line
-#define OPRLIGHTTIME 1
+//#define OPRLIGHTTIME 1
 
 // Define the NFC <-> Album implementation
 // ONLY ONE of the these two options can be chosen
 // to use NDEF to get the album directory uncomment the following line
-//#define NFCNDEF 1
+#define NFCNDEF 1
 // to use the Adafruit NFC library to get the Tag UID and retrieve the directory from the trackDb 
 // uncomment the following line. 
-#define NFCTRACKDB 1
+//#define NFCTRACKDB 1
 
 // uncomment to enable a special file albumnfc.tdb in which all album <-> nfc connections are stored 
 // this is an additional storage to the individual TrackDb files and requires NFCTRACKDB 
@@ -266,7 +266,7 @@ __asm volatile ("nop");
 
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
-#define RESUMELAST 1
+//#define RESUMELAST 1
 
 
 
@@ -489,10 +489,10 @@ static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolde
 // these are the prototypes for the mp3 player controller
 static void plrStop(void);              // stops the player
 static void plrTogglePause(void);       // pause and unpause the player
-static char playAlbum(char);            // plays the album from plrCurrentFolder: returns -1 for error or a higher 
+static char playAlbum(uint8_t);         // plays the album from plrCurrentFolder: returns -1 for error or a higher 
                                         // calls playTrack to actually play a track and check if that was successful and which 
                                         // track number to play next
-static char playTrack(char);            // plays a track as defined by the global var filename.
+static char playTrack(uint8_t);         // plays a track as defined by the global var filename.
                                         // returns -1 for error, 0 for success and track number to play next
                                         // this can either be provided char+1 or char-1
 
@@ -502,7 +502,7 @@ static void issueWarning(const char[], const char[], boolean); // the new warnin
 
 
 // these are the prototypes to work on files and general helpers
-static byte countFiles(File);           // return the number of files in a directory passed as a File descriptor
+static uint8_t countFiles(File);        // return the number of files in a directory passed as a File descriptor
 
 
 // helper functions to set global vars
@@ -704,7 +704,7 @@ void loop() {
       }
     } else {  // we may start playing as it seems
       // now let's get the number of files in the album directory
-      const char numberOfFiles = countFiles(SD.open(plrCurrentFolder));
+      uint8_t numberOfFiles = countFiles(SD.open(plrCurrentFolder));
       
       // there is no file in the folder indicate this as a minor error
       if (numberOfFiles < 1) {
@@ -825,7 +825,7 @@ static void plrTogglePause(void) {
 
 
 // iterates through al files in an album directory and calls playTrack for each track number iteratively
-static char playAlbum(char numberOfFiles) {
+static char playAlbum(uint8_t numberOfFiles) {
   boolean loopWarningMessageFileNotFound = true;// make sure   file not found               warning message is shown at least once
   
   #ifdef DEBUG
@@ -836,10 +836,7 @@ static char playAlbum(char numberOfFiles) {
   #endif
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
     digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
-    #ifdef DEBUG
-      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/")); Serial.print(numberOfFiles);Serial.println(F(": "));
-    #endif
-
+    
     // set the filename we want to play in the global variable so the playTrack() function knows what to play
     if (!setFileNameToPlay(curTrack)) {
       // set filename does not exit on SD card :-(
@@ -849,7 +846,10 @@ static char playAlbum(char numberOfFiles) {
       }
       break;  // try the filename - we break the for loop and skip to next number
     }
-    
+    #ifdef DEBUG
+      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/"));Serial.print(numberOfFiles);Serial.print(F(": "));Serial.println(filename);
+    #endif
+
     // make sure we remember the just started track to be the new track, in case player is stopped 
     // this works only with the NFC TrackDb and not with the NFC NDEF implementation
     #ifdef NFCTRACKDB
@@ -888,7 +888,7 @@ static char playAlbum(char numberOfFiles) {
 
 
 // play a single track within an album - is called by playAlbum() or by issueWarning()
-static char playTrack(char trackNo) {
+static char playTrack(uint8_t trackNo) {
   #ifdef OPRLIGHTTIME
     const unsigned long maxLightTime = 1800000L;// how long shall the light stay on while nothing is playing - 1800000L = 30 Minutes
   #endif
@@ -949,6 +949,10 @@ static char playTrack(char trackNo) {
     
     // every ten seconds we do some checks
     if ((millis()-checkTime) > checkInterval) {
+      #ifdef DEBUG
+        Serial.print(F("free RAM: ")); Serial.println(freeRam());
+      #endif
+      
       // check if we shall still fade the info light - depends on max light time and light startup time and also on the light button state
       #ifdef OPRLIGHTTIME
         if (((millis()-lightStartUpTime) > maxLightTime) && lightOn) {
@@ -1354,8 +1358,8 @@ int freeRam () {
 // BELOW THIS LINE THE FILE HELPER FUNCTIONS CAN BE FOUND
 //
 // counts the number of files in directory
-static byte countFiles(File dir) {
-  byte counter = 0;
+static uint8_t countFiles(File dir) {
+  uint8_t counter = 0;
   while (true) {
     File entry = dir.openNextFile();
     // Skip directories and hidden files.
