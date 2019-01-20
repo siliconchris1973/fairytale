@@ -1,5 +1,4 @@
 #define VERSION 2
-#define PROGRAM searchTrackDb
 
 //
 //     CCCCC   OOOOOO   NN    NN  FFFFFF

@@ -16,7 +16,7 @@
 PN532_SPI pn532spi(SPI, PN532_SS);
 NfcAdapter nfc = NfcAdapter(pn532spi);
 
-String directory = " fndszelt";
+String directory = " bibtin88";
 String track = " 1";
 //String position = "0";
 
@@ -35,7 +35,7 @@ boolean getNfcCardData(void);
 
 
 void setup() {
-    Serial.begin(38400);
+    Serial.begin(115200);
     nfc.begin();
     delay(1000);
     Serial.println("NFC Tag Writer ready"); // Serial Monitor Message
@@ -111,4 +111,3 @@ boolean getNfcCardData(void) {
   
   return (usableContent);
 }
-
