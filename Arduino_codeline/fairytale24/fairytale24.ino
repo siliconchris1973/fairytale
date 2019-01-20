@@ -4,7 +4,10 @@
 #if 1
 __asm volatile ("nop");
 #endif
+
+// set according to the baudrate of your serial console. used for debugging output
 #define BAUDRATE 115200
+
 /*
    Fairytale Main program
    ---------------------------------------------------------------------------------------
@@ -122,7 +125,7 @@ __asm volatile ("nop");
    different warning or error conditions:
    1) Missing information for playback warning
    2) Low Battery warning
-   2) Missing hardware error
+   3) Missing hardware error
    
    Errors shown via the error light (also cause the system to halt):
    - Music Maker Shield not found
