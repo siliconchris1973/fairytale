@@ -444,8 +444,11 @@ char nextTrackToPlay        = 1;                         // the track number to 
   const byte btnValDrift     = 5;     // maximum allowed difference + and - the predefined value for each button we allow
   const word btnPressDelay   = 500;   // delay in milliseconds to prevent double press detection
   unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-  const word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  const word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  //const word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  //const word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  // switching pause and light button:
+  const word btnLightValue   = 933;   // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  const word btnPauseValue   = 1021;  // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
   const word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
   const word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
   const word minBtnValue     = 800;   // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
@@ -759,12 +762,17 @@ void loop() {
       // if it is and looping is disabled, then we won't start playback
       #ifdef DISABLE_LOOPING
         equal = true;
-        for (byte i=0; i<<9; i++) {
+        for (byte i=0; i<8; i++) {
+          Serial.print(" last: ");
+          Serial.print(plrLastFolder[i]); 
+          Serial.print(" / current: ");
+          Serial.print(plrCurrentFolder[i]);
           if ( plrLastFolder[i] != plrCurrentFolder[i] ) {
             #ifdef DEBUG
-              Serial.println(F("and it is a new tag"));
+              Serial.println(F(" and it is a new tag"));
             #endif
             equal = false;
+            break;
           }
         }
         if (!equal) {
@@ -785,7 +793,7 @@ void loop() {
             #ifdef DISABLE_LOOPING
               // first we check whether or not the two variables are different 
               equal = true;
-              for (byte i=0; i<<9; i++) {
+              for (byte i=0; i<8; i++) {
                 if ( plrLastFolder[i] != plrCurrentFolder[i] ) equal = false;
               }
               // and only in this case we set plrLastFolder to the value of plrCurrentFolder
@@ -1086,7 +1094,7 @@ static char playTrack(uint8_t trackNo) {
         //       Button Layout on the box:
         //
         //   +-------+  +-------+  +-------+  +-------+
-        //   | PAUSE |  | <PREV |  | NEXT> |  | LIGHT |
+        //   | LIGHT |  | <PREV |  | NEXT> |  | PAUSE |
         //   +-------+  +-------+  +-------+  +-------+
         //
         // PAUSE
