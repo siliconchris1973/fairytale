@@ -99,6 +99,9 @@ __asm volatile ("nop");
    After playback of all files is finished, the program will resume it's main loop, delay 
    operation for roughly 15 seconds (to give the user the chance to remove the just used Tag 
    from the reader) and then wait until it detects the next tag.
+   In case the figure is not removed from the reader, the album will be played again. To 
+   prevent this from happening, there is a compile time switch below DISABLE_LOOPING. Enable 
+   this switch and the box will only start the newxt album if it is != just played played album.
    
    While advancing through the files in the directory, the program will update the TrackDB-File 
    with  the number of the currently played track. Doing so allows for interrupted playbacks - 
@@ -205,29 +208,31 @@ __asm volatile ("nop");
    Some features (as e.g. Remote Control, Buttons or operation LED etc.) can be turned off 
    or on via #define switches in the code below.
    
-      #define IRREMOTE     enables the IR Remote Control option
+      IRREMOTE          enables the IR Remote Control option
       
-      #define BUTTONS      enables the 4 control buttons
+      BUTTONS           enables the 4 control buttons
       
-      #define VOLUMEPOT    enables the volume potentiometer
+      VOLUMEPOT         enables the volume potentiometer
       
-      #define LOWBAT       enables the low battery warning with light and voice
+      LOWBAT            enables the low battery warning with light and voice
 
-      #define OPRLIGHT     enables the operations light on the front of the box
+      OPRLIGHT          enables the operations light on the front of the box
       
-      #define OPRLIGHTTIME enables time based operations light - turns off the light after 30 Minutes
+      OPRLIGHTTIME      enables time based operations light - turns off the light after 30 Minutes
 
-      #define NFCNDEF      enables the use of NDEF messages to get the directory for a tag
+      NFCNDEF           enables the use of NDEF messages to get the directory for a tag
       
-      #define NFCTRACKDB   enables the use of the TrackDB to get the directiry for a tag
+      NFCTRACKDB        enables the use of the TrackDB to get the directiry for a tag
 
-      #define ALBUMNFC     enables a special file albumnfc.tdb in which all album <-> nfc
-                           connections are stored - additional to the TrackDb files
+      ALBUMNFC          enables a special file albumnfc.tdb in which all album <-> nfc
+                        connections are stored - additional to the TrackDb files
 
-      #define RESUMELAST   enables the option to resume last played album upon startup.
-                           This is achieved via a file in the TrackDB and works without 
-                           a tag but uses the pause/resume button instead 
-
+      RESUMELAST        enables the option to resume last played album upon startup.
+                        This is achieved via a file in the TrackDB and works without 
+                        a tag but uses the pause/resume button instead 
+      
+      DISABLE_LOOPING   disables looping an album in case the figure is still on the 
+                        reader when playback is finished
 */
 
 //
