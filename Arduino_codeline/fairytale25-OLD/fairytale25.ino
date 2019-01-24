@@ -4,10 +4,6 @@
 #if 1
 __asm volatile ("nop");
 #endif
-
-// set according to the baudrate of your serial console. used for debugging output
-#define BAUDRATE 115200
-
 /*
    Fairytale Main program
    ---------------------------------------------------------------------------------------
@@ -24,8 +20,8 @@ __asm volatile ("nop");
    NDEF Implementation
    ---------------------------------------------------------------------------------------
    This implementation is based on the Speedmaster PN532 and Don's NDEF Library. Upon 
-   detection of an NFC Tag placed on the reader it will check if there is at least one 
-   NDEF Message written to the RFID tag. This message must be of the form 
+   detection of an NFC Tag at the reader it will check if there is at least one NDEF Message 
+   on the tag. This message must be of the form 
 
       en [directory name]
 
@@ -44,22 +40,25 @@ __asm volatile ("nop");
 
    for the first track. To use this implementation you have to activate the configuration 
    option     NFCNDEF     below and you will have to write the NDEF Messages with the 
-   directory name. This can be done with the program staticNFCWriter.ino from this repository.
+   directory name to the tags. This can bedone with the program staticNFCWriter.ino from 
+   this repository.
    
-   There is a downside to this implementation. It lacks a usable update of the track to 
+   The downside of this implementation is it's lack for an usable update of the track to 
    start playback with - I simply could not get it to work. Secondly the implementation
-   lacks a reliable way of detecting the absence of a tag. Therefore the playback can only be 
-   stopped by turning the box off. The third problem is with the used progmem. The two libraries 
-   consume way too much progmem as opposed to the Adafruit PN532 library therefore I switched to:
+   lacks a reliable way of detecting the absence of a tag. Therefore the playback can only 
+   be stopped by turning the box off. The third problem is with the used progmem. The two 
+   libraries also consume way more progmem than the Adafruit PN532 library due to which I 
+   switched to:
    
    
    TrackDB-Implementation:
    ---------------------------------------------------------------------------------------
-   Upon detection of an NFC Tag, the program will retrieve the tag's UID and use this to scan 
-   what I call the TrackDB to find a matching directory to play.
+   Upon detection of an NFC Tag, the program will retrieve the tag's UID and use this to 
+   scan what I call the TrackDB to find a matching directory to play.
    
-   The TrackDB is a list of files in a special directory (TRACKDB0) on the SD card. The TrackDB
-   files are named after the directory of the album and their respective content is of the form:
+   The TrackDB is a list of files in a special directory (TRACKDB0) on the SD card. The 
+   TrackDB files are named after the directory of the album and their respective content 
+   is of the form:
    
       taguid:directory:track
    
@@ -75,43 +74,45 @@ __asm volatile ("nop");
 
       46722634231761290:findorie:1
 
-   This line connects the Tag UID with the aformentioned directory plus the number of the track
-   with which to start playback:
+   This line connects the Tag UID with the aformentioned directory plus the number of the 
+   track with which to start playback:
    
       46722634231761290   the UID of the NFC Tag
       findorie            the directory from which to play the files
-      1                   the number of the track with which to start playback - here the 1st 
+      1                   the number of the track with which to start playback
 
    To use this implementation you need to activate the configuration   NFCTRACKDB   
-   You will also need to create the necessary TrackDb files. This can be done with the program
-   createTrackDb.ino from this repository.
+   You will also need to create the necessary TrackDb files. This can be done with the 
+   program createTrackDb.ino from this repository.
    
    
    Playback and controls
    ---------------------------------------------------------------------------------------
    Regardless of the way the program retrieved the information on which directory to play 
-   (NDEF message or TrackDB), it will store this in the global var plrCurrentFolder and then 
-   start a for-loop beginning with the provided first track until all consecutive numbered 
-   tracks are played - for this it counts the number of files in the given dierctory. 
+   (NDEF message or TrackDB), it will store this in the global var plrCurrentFolder and 
+   then start a for-loop beginning with the provided first track until all consecutive 
+   numbered tracks are played - for this it counts the number of files in the dierctory. 
    
-   While the album (or file) is played an operations light is fading up and down in intensity. 
+   While the album (or file) is played an operations light is fading up and down in 
+   intensity. 
    
    After playback of all files is finished, the program will resume it's main loop, delay 
-   operation for roughly 15 seconds (to give the user the chance to remove the just used Tag 
-   from the reader) and then wait until it detects the next tag.
+   operation for roughly 15 seconds (to give the user the chance to remove the just used 
+   Tag from the reader) and then wait until it detects the next tag.
    
-   While advancing through the files in the directory, the program will update the TrackDB-File 
-   with  the number of the currently played track. Doing so allows for interrupted playbacks - 
-   tag is removed and later put back on when the playback will start with the last track in 
-   playback. 
+   While advancing through the files in the directory, the program will update the TrackDB-
+   File with  the number of the currently played track. Doing so allows for interrupted 
+   playbacks - tag is removed and later put back on when the playback will start with the 
+   last track in playback. 
    
    
    Restrictions
    ---------------------------------------------------------------------------------------
    For this to work, a couple of restrictions are in place:
-   1. All filenames must be in the format  trackXXX.mp3, where XXX is a numbering from 001 to 127
-   2. Follows from 1: You can have a maximum of 127 files per directory. I use a char to count the
-      files in a directory to preserve memory and need the ability to return -1 in case of an error
+   1. All filenames must be named trackXXX.mp3, where XXX is a numbering from 001 to 127
+   2. Follows from 1: You can have a maximum of 127 files per directory. I use a char to 
+      count the files in a directory to preserve memory and need the ability to return -1 
+      in case of an error
    3. All directory names must be exactly 8 chars long. You may use any combination of a-z 
       and 0-9 chars for the directory name though
    4. if a file is missing in a consecutive order, you may get a glitch in the sound 
@@ -125,7 +126,7 @@ __asm volatile ("nop");
    different warning or error conditions:
    1) Missing information for playback warning
    2) Low Battery warning
-   3) Missing hardware error
+   2) Missing hardware error
    
    Errors shown via the error light (also cause the system to halt):
    - Music Maker Shield not found
@@ -215,7 +216,7 @@ __asm volatile ("nop");
 
       #define OPRLIGHT     enables the operations light on the front of the box
       
-      #define OPRLIGHTTIME enables time based operations light - turns off the light after 30 Minutes
+      #define OPRLIGHTTIME if enabledP1card turns off the light after 30 Minutes
 
       #define NFCNDEF      enables the use of NDEF messages to get the directory for a tag
       
@@ -279,9 +280,6 @@ __asm volatile ("nop");
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
 //#define RESUMELAST 1
-
-// uncomment to disable looping an album in case the figure is still on the reader when playback is finished
-#define DISABLE_LOOPING 1
 
 // uncomment the next line to activate the VS1053 Component on the Music Maker Shield - aka the MP3 Player
 #define VS1053 1
@@ -394,32 +392,24 @@ char filename[]             = "/system00/track001.mp3";  // path and filename of
 byte firstTrackToPlay       = 1;                         // the track number to play (used for the loop)
 char nextTrackToPlay        = 1;                         // the track number to play next (or -1 in case of an error)
 
-// in case looping of the last album is NOT wanted, we need a variable to store the 
-// last payed album directory. With this var, we then will check if the album dir of 
-// the tag equals the album of this variable and in case they do, we do not start 
-// playback
-#ifdef DISABLE_LOOPING 
-  char plrLastFolder[]      = "NOFILES";
-  boolean equal = true;
-#endif
 
 // file to hold the last played album (aka directory) name - from here we may retrieve other data from the trackDb 
 #ifdef RESUMELAST
-  const char resumeLastFile[] = "/trackdb0/LASTPLAY.TDB";
+  const PROGMEM char resumeLastFile[] = "/trackdb0/LASTPLAY.TDB";
 #endif
 
 
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
 // and is the complementary implementation to the NDEF messages on the NFC Tag - see option NFCNDEF
 #ifdef NFCTRACKDB
-  const char trackDbDir[]   = "/trackdb0"; // where do we store the TrackDB files for each album 
+  const PROGMEM char trackDbDir[]   = "/trackdb0"; // where do we store the TrackDB files for each album 
   char trackDbFile[23];                    // path to the file with uid, directory and track
   char trackDbEntry[35];                   // will hold a nfc <-> album info connection 
                                            // in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
 
   #ifdef ALBUMNFC
     // a special file that additionally holds the connection between an NFC tag UID and the corresponding directory
-    const char albumNfcFile[]  = "/trackdb0/albumnfc.tdb";  
+    const PROGMEM char albumNfcFile[]  = "/trackdb0/albumnfc.tdb";  
   #endif
   
   // NFC Tag data
@@ -444,11 +434,14 @@ char nextTrackToPlay        = 1;                         // the track number to 
   const byte btnValDrift     = 5;     // maximum allowed difference + and - the predefined value for each button we allow
   const word btnPressDelay   = 500;   // delay in milliseconds to prevent double press detection
   unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-  const word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  const word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-  const word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-  const word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
-  const word minBtnValue     = 800;   // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
+  const PROGMEM word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
+  const PROGMEM word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
+  const PROGMEM word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  const PROGMEM word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  
+  const PROGMEM word minBtnValue     = 800;   // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
+  // structure for the button values   prev  next  up    down  light pause menu
+  const uint16_t buttonVals PROGMEM = {2387, 2919, 2878, 2796, 2822, 2658, 2509}
 #endif
 
 
@@ -467,14 +460,16 @@ char nextTrackToPlay        = 1;                         // the track number to 
   // Middle:   2011282170    - 2011000000) / 100 = 2822
   // Pause:    2011265786    - 2011000000) / 100 = 2658
   // Menu:     2011250938    - 2011000000) / 100 = 2509
-  const uint16_t nextVal    = 2919; // decoded value if button  NEXT  is pressed on remote
-  const uint16_t prevVal    = 2387; // decoded value if button  PREV  is pressed on remote
-  const uint16_t volUpVal   = 2878; // decoded value if button  UP    is pressed on remote
-  const uint16_t volDwnVal  = 2796; // decoded value if button  DOWN  is pressed on remote
-  const uint16_t lightVal   = 2822; // decoded value if button  HOME  is pressed on remote
-  const uint16_t pauseVal   = 2658; // decoded value if button  PAUSE is pressed on remote
-  const uint16_t menuVal    = 2509; // decoded value if button  MENU  is pressed on remote
+  //const PROGMEM uint16_t prevVal    = 2387; // decoded value if button  PREV  is pressed on remote
+  //const PROGMEM uint16_t nextVal    = 2919; // decoded value if button  NEXT  is pressed on remote
+  //const PROGMEM uint16_t volUpVal   = 2878; // decoded value if button  UP    is pressed on remote
+  //const PROGMEM uint16_t volDwnVal  = 2796; // decoded value if button  DOWN  is pressed on remote
+  //const PROGMEM uint16_t lightVal   = 2822; // decoded value if button  HOME  is pressed on remote
+  //const PROGMEM uint16_t pauseVal   = 2658; // decoded value if button  PAUSE is pressed on remote
+  //const PROGMEM uint16_t menuVal    = 2509; // decoded value if button  MENU  is pressed on remote
   
+  // structure for the button values   prev  next  up    down  light pause menu
+  const uint16_t buttonVals PROGMEM = {2387, 2919, 2878, 2796, 2822, 2658, 2509}
   IRrecv irrecv(iRRemotePin);         // define an object to read infrared sensor on pin A4
   decode_results results;             // make sure decoded values from IR are stored 
 #endif
@@ -552,9 +547,7 @@ static void setTrackDbEntry(void);
 
 // these are the prototypes for the led
 #ifdef OPRLIGHT
-  // switch the boolean var lightOn from true to false and vice versa 
-  // - in case light is lightOn is set to true, lightStartUpTime is set to millis()
-  static void switchLightState(void);   
+  static void switchLightState(void);   // switch the boolean var lightOn from true to false and vice versa - in case light is lightOn is set to true, lightStartUpTime is set to millis()
 #endif
 
 
@@ -570,7 +563,7 @@ void setup() {
   // SETUP SERIAL CONSOLE
   #ifdef DEBUG
     // in case we want debug output
-    Serial.begin(BAUDRATE);
+    Serial.begin(38400);
   #endif
   #ifdef RAMCHECK
     // or at least print out available RAM
@@ -653,7 +646,6 @@ void setup() {
     //   but needs the trackDB to get the album directory for a tag as no NDEF messages are supported
     nfc.begin();
     // make sure to comment this out after PN532 is working as it takes approx 290 bytes from progmem
-    //*
     uint32_t versiondata = nfc.getFirmwareVersion();
     if (! versiondata) {
       #ifdef DEBUG
@@ -667,7 +659,6 @@ void setup() {
       Serial.print(F("Firmware ver. ")); Serial.print((versiondata>>16) & 0xFF, DEC); 
       Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
     #endif
-    //*
     // configure board to read RFID tags
     nfc.setPassiveActivationRetries(0xFF);
     nfc.SAMConfig();
@@ -731,8 +722,7 @@ void loop() {
     // Of course works only when we have the Buttons 
     #ifdef BUTTONS
       btnVal = analogRead(btnLinePin);
-      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) 
-        if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
+      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
     #endif
     // ... or the IR Remote Control implementation
     #ifdef IRREMOTE
@@ -755,77 +745,32 @@ void loop() {
         issueWarning("no album info", "/system00/nodirtag.mp3", true);
       }
     } else {  // we may start playing as it seems
-      // check if the current directory as read from the tag is the same as the plrLastFolder
-      // if it is and looping is disabled, then we won't start playback
-      #ifdef DISABLE_LOOPING
-        equal = true;
-        for (byte i=0; i<<9; i++) {
-          if ( plrLastFolder[i] != plrCurrentFolder[i] ) {
-            #ifdef DEBUG
-              Serial.println(F("and it is a new tag"));
-            #endif
-            equal = false;
-          }
+      // now let's get the number of files in the album directory
+      uint8_t numberOfFiles = countFiles(SD.open(plrCurrentFolder));
+      
+      // there is no file in the folder indicate this as a minor error
+      if (numberOfFiles < 1) {
+        if (loopWarningMessageNoFilesInDir) {
+          loopWarningMessageNoFilesInDir  = false; // set loop warning message so we don't show this warning in the next loop
+          issueWarning("no files found", "/system00/nofilesd.mp3", true);
         }
-        if (!equal) {
-      #endif
-          // now let's get the number of files in the album directory
-          uint8_t numberOfFiles = countFiles(SD.open(plrCurrentFolder));
-          
-          // there is no file in the folder indicate this as a minor error
-          if (numberOfFiles < 1) {
-            if (loopWarningMessageNoFilesInDir) {
-              loopWarningMessageNoFilesInDir  = false; // set loop warning message so we don't show this warning in the next loop
-              issueWarning("no files found", "/system00/nofilesd.mp3", true);
-            }
-          } else {
-            // check if the current directory as read from the tag is the same as the plrLastFolder
-            // if NOT, put the current directory in the last directory played var so we can dcide later whether 
-            // or not we want to loop the current album - as instructed per compile time define
-            #ifdef DISABLE_LOOPING
-              // first we check whether or not the two variables are different 
-              equal = true;
-              for (byte i=0; i<<9; i++) {
-                if ( plrLastFolder[i] != plrCurrentFolder[i] ) equal = false;
-              }
-              // and only in this case we set plrLastFolder to the value of plrCurrentFolder
-              if (!equal) {
-                memset(plrLastFolder, 0, sizeof(plrLastFolder));       // make sure var to hold path is empty
-                strcat(plrLastFolder, plrCurrentFolder);               // and add the Directory to it
-              }
-            #endif
-            
-            char retVal = playAlbum(numberOfFiles);
-            retVal = nextTrackToPlay;
-            if (retVal < 0) { 
-              issueWarning("playback failed", "/system00/playfail.mp3", true);
-            } else {  
-              #ifdef DEBUG
-                Serial.println(F("\nplayback end"));
-              #endif
-              digitalWrite(warnLedPin, LOW);
-            }
-          } // end of check if at least 1 file was found
-          
-      // DISABLE LOOPING
-      #ifdef DISABLE_LOOPING
-        } else {
+      } else {
+        char retVal = playAlbum(numberOfFiles);
+        retVal = nextTrackToPlay;
+        if (retVal < 0) { 
+          issueWarning("playback failed", "/system00/playfail.mp3", true);
+        } else {  
           #ifdef DEBUG
-            Serial.println(F("the tag is the same tag - won't play it"));
+            Serial.println(F("\nplayback end"));
           #endif
+          digitalWrite(warnLedPin, LOW);
         }
-      #endif
+      } // end of check if at least 1 file was found
     } // end of directory plus track retrieved from nfc tag
     
     // finally turn off the info led
     #ifdef OPRLIGHT
       if (lightOn) digitalWrite(infoLedPin, LOW);
-    #endif
-    
-    // RESET THE NFC READER
-    #ifdef NFCNDEF
-      // this now clears the NFC reader so it will recognize a new tag again
-      nfc.begin();
     #endif
   } // end of tag is present
   
@@ -874,9 +819,7 @@ static void plrAdjustVolume() {
   if (volCompareValue > volSensorDrift) {
     const byte soundVolume = volSensorValue / 10; // map the sensor value to a sound volume
     #ifdef DEBUG
-      Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); 
-      Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); 
-      Serial.print(F(", vol: -")); Serial.println(soundVolume);
+      Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); Serial.print(F(", vol: ")); Serial.println(soundVolume);
     #endif
     lastVolSensorValue = volSensorValue;
     musicPlayer.setVolume(soundVolume, soundVolume);
@@ -924,7 +867,7 @@ static char playAlbum(uint8_t numberOfFiles) {
     Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);
   #endif
   #ifdef OPRLIGHTTIME
-    lightStartUpTime = millis(); // store the time in millis when the  playback-for-loop started, so we can later check, whether or not the light shall continue to be on
+    lightStartUpTime = millis();          // store the time in millis when the  playback-for-loop started, so we can later check, whether or not the light shall continue to be on
   #endif
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
     digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
@@ -1079,8 +1022,7 @@ static char playTrack(uint8_t trackNo) {
       if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
         btnPressTime = millis(); 
         #ifdef DEBUG
-          // Serial.print(F("VALUE: "));Serial.print(btnVal - btnValDrift); 
-          // Serial.print(F(" < ")); Serial.print(btnVal); Serial.print(F(" < ")); Serial.print(btnVal + btnValDrift);
+          //Serial.print(F("VALUE: "));Serial.print(btnVal - btnValDrift); Serial.print(F(" < ")); Serial.print(btnVal); Serial.print(F(" < ")); Serial.print(btnVal + btnValDrift);
         #endif
         //
         //       Button Layout on the box:

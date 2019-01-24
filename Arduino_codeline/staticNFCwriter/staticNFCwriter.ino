@@ -16,7 +16,7 @@
 PN532_SPI pn532spi(SPI, PN532_SS);
 NfcAdapter nfc = NfcAdapter(pn532spi);
 
-String directory = " bluemc12";
+String directory = " klehexe2";
 String track = " 1";
 //String position = "0";
 
