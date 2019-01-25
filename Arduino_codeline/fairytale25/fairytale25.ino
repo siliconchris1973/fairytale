@@ -100,13 +100,13 @@ __asm volatile ("nop");
    operation for roughly 15 seconds (to give the user the chance to remove the just used Tag 
    from the reader) and then wait until it detects the next tag.
    In case the figure is not removed from the reader, the album will be played again. To 
-   prevent this from happening, there is a compile time switch below DISABLE_LOOPING. Enable 
-   this switch and the box will only start the newxt album if it is != just played played album.
+   prevent this from happening, there is a compile time switch below DISABLE_LOOPING. Enabling 
+   this switch prevents the box from playing the same album again and again.
    
    While advancing through the files in the directory, the program will update the TrackDB-File 
    with  the number of the currently played track. Doing so allows for interrupted playbacks - 
    tag is removed and later put back on when the playback will start with the last track in 
-   playback. 
+   playback. <-- Attention this only works with the TrackDB and not with NDEF implementation.
    
    
    Restrictions
