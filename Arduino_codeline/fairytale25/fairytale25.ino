@@ -555,6 +555,10 @@ static void setTrackDbEntry(void);              // setTrackDbEntry stores the cu
                                                 // file) to allow resuming a played album on the current track in case the box is turned off                                                
 static boolean writeTrackDbEntry(void);         // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
 
+static boolean checkForResumeLast(void);        // allows to start the last played album without a tag being on the reader
+                                                // for this to work it neads the TrackDb implementation and eitehr buttons or the remote control
+                                                // if the box is started, not tag is on the reader and the pause/resume button is pressed, the last 
+                                                // played album is continued
 
 static void issueWarning(const char[], const char[], boolean); // the new warning method
 
@@ -720,25 +724,9 @@ void loop() {
   #endif
   
   
-  // check for tag presence
+  // check for tag presence or if the user wants to resume the last album
   weHaveATag = checkForTagPresence();
-  
-  
-  // this allows for the pause/resume button to be pressed without a tag being present
-  // in this case the last played album is resumed - given there was one. 
-  #ifdef RESUMELAST
-    // Of course works only when we have the Buttons 
-    #ifdef BUTTONS
-      btnVal = analogRead(btnLinePin);
-      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) 
-        if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
-    #endif
-    // ... or the IR Remote Control implementation
-    #ifdef IRREMOTE
-      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal ) resumeLast = true;
-    #endif
-  #endif
-
+  resumeLast = checkForResumeLast();
   
   // if a tag is found or the pause button is pressed without a tag, we continue
   if (weHaveATag || resumeLast) {
@@ -747,7 +735,10 @@ void loop() {
     #endif
     
     // read data from tag: directory, track number and playing order.
-    if (!getDirAndTrackToPlay(weHaveATag)) {
+    // sets the directpry to play (plrCurrentFolder) and the track to start playback with (firstTrackToPlay)
+    if (!getDirAndTrackToPlay(weHaveATag)) {      // if passed true, the function will try to get the information from a tag, 
+                                                  // on false, it will try to read the last played album file - only with TrackDb option
+      
       // if we don't get at least a directory we can't start playback and inform the user
       if (loopWarningMessageNoAlbumInfos) {
         loopWarningMessageNoAlbumInfos = false;
@@ -1214,6 +1205,8 @@ static char playTrack(uint8_t trackNo) {
 //          TT      RR   RR  AA      AA   CCCCC  KK   KK  DDDDDD    BBBBBB
 //
 // sets the directpry to play (plrCurrentFolder) and the track to start playback with (firstTrackToPlay)
+// if passed true, the function will try to get the information from a tag, on false, it will try to read 
+// the last played album file
 static boolean getDirAndTrackToPlay(boolean readFromTag) {
   boolean plrStartPlaying = false;
 
@@ -1399,6 +1392,27 @@ boolean checkForTagPresence(void) {
 //      HH    HH  EE      LL      PP        EE      RR   RR
 //      HH    HH  EEEEEE  LLLLLL  PP        EEEEEE  RR   RR
 //
+
+// this allows for the pause/resume button to be pressed without a tag being present
+// in this case the last played album is resumed - given there was one. 
+static boolean checkForResumeLast(){
+  boolean resumeLast = false;
+  #ifdef RESUMELAST
+    // Of course works only when we have the Buttons 
+    #ifdef BUTTONS
+      btnVal = analogRead(btnLinePin);
+      if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) 
+        if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
+    #endif
+    // ... or the IR Remote Control implementation
+    #ifdef IRREMOTE
+      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal ) resumeLast = true;
+    #endif
+  #endif
+  return (resumeLast);
+}
+
+
 // stores the file to play in the global var filename - it is created from the gloal vars plrCurrentFolder and current track
 static void setFileNameToPlay(byte trackNo) {
   // convert the trackNo to a char array - we need it next to create the filename of the track
