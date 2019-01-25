@@ -518,52 +518,50 @@ const byte errorLedPin      = 9;       // the pin to which the error led is conn
 //       PP        RR    RR  OO    OO     TT     OO    OO     TT        YY     PP        EE          SS
 //       PP        RR    RR   OOOOOO      TT      OOOOOO      TT        YY     PP        EEEEEE  SSSSS
 //
-// these are the prototypes to retrieve and set directory and track to play - aka work on the tagdb
-static boolean getDirAndTrackToPlay(boolean);  // retrieves the directory and track number 
-static boolean writeTrackDbEntry(void);        // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
+static boolean checkForTagPresence(void);       // checks if there is a tag on the reader, either Speedmaster or Adafruit style
+static boolean checkForSameTag(void);           // checks if the same tag as the one for currently played album is still on the reader
+                                                // this one can only be used with the Adafruit library and TrackDB implementation
+
+static void plrAdjustVolume(void);              // function to check for changes on the volume control and adjust volume accrodingly
+
+                                                // these are the prototypes for the mp3 player controller
+static void plrStop(void);                      // stops the player
+static void plrTogglePause(void);               // pause and unpause the player
+static char playAlbum(uint8_t);                 // plays the album from plrCurrentFolder: returns -1 for error or a higher 
+                                                // calls playTrack to actually play a track and check if that was successful and which 
+                                                // track number to play next
+static char playTrack(uint8_t);                 // plays a track as defined by the global var filename.
+                                                // returns -1 for error, 0 for success and track number to play next
+                                                // this can either be provided char+1 or char-1
 
 
-// prototype for NFC check for tag presence
-#ifdef NFCTRACKDB
-  static boolean checkTag(void);        // check if the tag is still on the reader - returns true or falce
-#endif
-
-// prototype for volume control via potentiometer
-#ifdef VOLUMEPOT
-  static void plrAdjustVolume(void);    // function to check for changes on the volume control and adjust volume accrodingly
-#endif
+                                                // these are the prototypes to work on files and general helpers
+static uint8_t countFiles(File);                // return the number of files in a directory passed as a File descriptor
+static boolean checkIfFileExists(void);         // returns true if the file from global vars plrCurrentFolder and plrCurrentFile exists on sd
 
 
-// these are the prototypes for the mp3 player controller
-static void plrStop(void);              // stops the player
-static void plrTogglePause(void);       // pause and unpause the player
-static char playAlbum(uint8_t);         // plays the album from plrCurrentFolder: returns -1 for error or a higher 
-                                        // calls playTrack to actually play a track and check if that was successful and which 
-                                        // track number to play next
-static char playTrack(uint8_t);         // plays a track as defined by the global var filename.
-                                        // returns -1 for error, 0 for success and track number to play next
-                                        // this can either be provided char+1 or char-1
+                                                // helper functions to set global vars
+static void setFileNameToPlay(byte);            // sets filename of the track to play from global vars plrCurrentFolder and plrCurrentFile
 
 
-// prototype for warning
+                                                // helper functions for the TrackDb 
+                                                // these are the prototypes to retrieve and set directory and tracks to play
+static boolean getDirAndTrackToPlay(boolean);   // retrieves the directory and track number 
+
+static void checkAndSetCurTrack(byte, uint8_t); // function called from playAlbum for every file played. it checks if the current track is
+                                                // the last in the album and if so sets firstTrackToPlay to 1. Otherwise firstTrackToPlay is set 
+                                                // to curTrack and afterwards setTrackDbEntry is called to store the track
+static void setTrackDbEntry(void);              // setTrackDbEntry stores the currently played file in the TrackDb plus (plus optionally the AlbumNFC 
+                                                // file) to allow resuming a played album on the current track in case the box is turned off                                                
+static boolean writeTrackDbEntry(void);         // store Tag UID, plrCurrentFolder and firstTrackToPlay in the trackDb (files on SD)
+
+
 static void issueWarning(const char[], const char[], boolean); // the new warning method
 
 
-// these are the prototypes to work on files and general helpers
-static uint8_t countFiles(File);        // return the number of files in a directory passed as a File descriptor
-
-
-// helper functions to set global vars
-static boolean setFileNameToPlay(byte); // sets filename of the track to play from global vars plrCurrentFolder and plrCurrentFile and returns true if it exists
-static void setTrackDbEntry(void);
-
-
-// these are the prototypes for the led
-#ifdef OPRLIGHT
-  // switch the boolean var lightOn from true to false and vice versa 
-  // - in case light is lightOn is set to true, lightStartUpTime is set to millis()
-  static void switchLightState(void);   
-#endif
+                                                // these are the prototypes for the led
+static void switchLightState(void);             // switch the boolean var lightOn from true to false and vice versa 
+                                                // - in case light is lightOn is set to true, lightStartUpTime is set to millis()
 
 
 
@@ -720,18 +718,11 @@ void loop() {
   #ifdef DEBUG 
     Serial.print(F("."));
   #endif
-
+  
   
   // check for tag presence
-  #ifdef NFCNDEF
-    // this implementation uses the Speedmaster Library and Don's NDEF lib
-    weHaveATag = nfc.tagPresent(1000);
-  #endif
-  #ifdef NFCTRACKDB
-    // this implementation uses the Adafruit PN532 library alone
-    weHaveATag = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
-  #endif
-
+  weHaveATag = checkForTagPresence();
+  
   
   // this allows for the pause/resume button to be pressed without a tag being present
   // in this case the last played album is resumed - given there was one. 
@@ -869,33 +860,33 @@ void loop() {
 //  BELOW THIS LINE THE MP3 PLAYER CONTROL IS DEFINED
 //
 // included in while loop of playTrack() for checks for volume changes
-#ifdef VOLUMEPOT
 static void plrAdjustVolume() {
-  // volume control functions
-  const byte volSensorDrift = 7;    // difference to last received sensor value that must be exceeded to activate a change in the volume
-  word volCompareValue      = 0;    // just a convenience variable to make comparison easier
-  
-  // read the input on analog pin 0 and check if we have a change in volume.
-  const word volSensorValue = analogRead(volPotPin);
-  if (lastVolSensorValue > volSensorValue) {
-    volCompareValue = lastVolSensorValue - volSensorValue;
-  } else {
-    volCompareValue = volSensorValue - lastVolSensorValue;
-  }
-  
-  // If we have a high enough difference in the sensor reading, calculate it so we may set it on the player
-  if (volCompareValue > volSensorDrift) {
-    const byte soundVolume = volSensorValue / 10; // map the sensor value to a sound volume
-    #ifdef DEBUG
-      Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); 
-      Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); 
-      Serial.print(F(", vol: -")); Serial.println(soundVolume);
-    #endif
-    lastVolSensorValue = volSensorValue;
-    musicPlayer.setVolume(soundVolume, soundVolume);
-  } // end of change sound volume
+  #ifdef VOLUMEPOT
+    // volume control functions
+    const byte volSensorDrift = 7;    // difference to last received sensor value that must be exceeded to activate a change in the volume
+    word volCompareValue      = 0;    // just a convenience variable to make comparison easier
+    
+    // read the input on analog pin 0 and check if we have a change in volume.
+    const word volSensorValue = analogRead(volPotPin);
+    if (lastVolSensorValue > volSensorValue) {
+      volCompareValue = lastVolSensorValue - volSensorValue;
+    } else {
+      volCompareValue = volSensorValue - lastVolSensorValue;
+    }
+    
+    // If we have a high enough difference in the sensor reading, calculate it so we may set it on the player
+    if (volCompareValue > volSensorDrift) {
+      const byte soundVolume = volSensorValue / 10; // map the sensor value to a sound volume
+      #ifdef DEBUG
+        Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); 
+        Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); 
+        Serial.print(F(", vol: -")); Serial.println(soundVolume);
+      #endif
+      lastVolSensorValue = volSensorValue;
+      musicPlayer.setVolume(soundVolume, soundVolume);
+    } // end of change sound volume
+  #endif
 }
-#endif
 
 
 //
@@ -937,14 +928,17 @@ static char playAlbum(uint8_t numberOfFiles) {
     Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);
   #endif
   #ifdef OPRLIGHTTIME
-    lightStartUpTime = millis(); // store the time in millis when the  playback-for-loop started, so we can later check, whether or not the light shall continue to be on
+    lightStartUpTime = millis(); // store the time in millis when the  playback-for-loop started, so we can later check, 
+                                 // whether or not the light shall continue to be on
   #endif
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
     digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
     
     // set the filename we want to play in the global variable so the playTrack() function knows what to play
-    if (!setFileNameToPlay(curTrack)) {
-      // set filename does not exit on SD card :-(
+    setFileNameToPlay(curTrack);
+    // and if it exists, lets play it
+    if (!checkIfFileExists()) {
+      // set filename does not exit on SD card :-(  issue a warning
       if (loopWarningMessageFileNotFound) {
         loopWarningMessageFileNotFound = false; // set loop warning message so we don't show this warning in the next loop
         issueWarning("file not found", "/system00/filnotfn.mp3", true);
@@ -957,20 +951,7 @@ static char playAlbum(uint8_t numberOfFiles) {
 
     // make sure we remember the just started track to be the new track, in case player is stopped 
     // this works only with the NFC TrackDb and not with the NFC NDEF implementation
-    #ifdef NFCTRACKDB
-      if (curTrack != firstTrackToPlay) {
-        // in case we are on the last track, choose the first track, so we start playback all from the beginning.
-        if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
-        
-        // now store this new first track in the TrackDB
-        // first create the new trackDb entry:
-        setTrackDbEntry();
-        // second store this entry in the TrackDb files, plus optional in the albumnfc.tdb file
-        if (!writeTrackDbEntry()) {
-          issueWarning("trackdb update error", "", false);
-        }
-      }
-    #endif
+    checkAndSetCurTrack(curTrack, checkAndSetCurTrack);
     
     // play the track on the music maker shield and retrieve the nextTrackToPlay from global variable (it is set by playTrack())
     //        -1  errors trying to play the file (like file not found)
@@ -1075,7 +1056,7 @@ static char playTrack(uint8_t trackNo) {
       
       // check if we can still read the tag and if not, stop/pause the playback
       #ifdef NFCTRACKDB
-        if (!checkTag()) plrTogglePause();
+        if (!checkForSameTag()) plrTogglePause();
       #endif
       
       checkTime = millis(); // reset checktime so we can wait another 10 seconds aka 10000 ms
@@ -1286,80 +1267,100 @@ static boolean getDirAndTrackToPlay(boolean readFromTag) {
 }
 
 
+// make sure we remember the just started track to be the new track, in case player is stopped 
+static void checkAndSetCurTrack(byte curTrack, uint8_t numberOfFiles){
+  #ifdef NFCTRACKDB
+    if (curTrack != firstTrackToPlay) {
+      // in case we are on the last track, choose the first track, so we start playback all from the beginning.
+      if (curTrack == numberOfFiles) firstTrackToPlay = 1; else firstTrackToPlay = curTrack;
+      
+      // now store this new first track in the TrackDB
+      // first create the new trackDb entry:
+      setTrackDbEntry();
+      // second store this entry in the TrackDb files, plus optional in the albumnfc.tdb file
+      if (!writeTrackDbEntry()) {
+        issueWarning("trackdb update error", "", false);
+      }
+    }
+  #endif
+}
+
+
 // write the created trackDbEntry into the Track DB on SD
-#ifdef NFCTRACKDB
 static boolean writeTrackDbEntry() {
   boolean success = true;
-  byte bytesWritten;
   
-  #ifdef DEBUG
-    Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
-  #endif
-
-  // FIRST (if set) write the AlbumNFC file  --> ALBUMNFC.TDB
-  #ifdef ALBUMNFC
-    File file = SD.open(albumNfcFile, FILE_WRITE);
+  #ifdef NFCTRACKDB
+    byte bytesWritten;
+    
+    #ifdef DEBUG
+      Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
+    #endif
+  
+    // FIRST (if set) write the AlbumNFC file  --> ALBUMNFC.TDB
+    #ifdef ALBUMNFC
+      File file = SD.open(albumNfcFile, FILE_WRITE);
+      bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
+      file.close();                                      // and make sure everything is clean and save
+  
+      // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
+      if (bytesWritten == sizeof(albumNfcFile)) {
+        #ifdef DEBUG
+          Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(albumNfcFile);
+        #endif
+        success = true;
+      } else {
+        #ifdef DEBUG
+          Serial.print(F("  error writing "));Serial.println(albumNfcFile);
+        #endif
+        digitalWrite(warnLedPin, HIGH);
+        success = false;
+      }
+    #endif
+    
+    // SECOND write the TrackDb-File --> e.g. larsrent.txt
+    memset(trackDbFile, 0, sizeof(trackDbFile));       // make sure var to hold path to track db file is empty
+    strcat(trackDbFile, trackDbDir);                   // add the trackDb Directory to the 
+    strcat(trackDbFile, "/");                          // a / 
+    strcat(trackDbFile, plrCurrentFolder);             // and the filename
+    strcat(trackDbFile, ".txt");                       // plus of course a txt extension
+    SD.remove(trackDbFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
+    
+    // used in case the albumnfc.tdb file is written first - redeclare file var
+    #ifdef ALBUMNFC
+      file = SD.open(trackDbFile, FILE_WRITE);
+    #endif
+    // used in case we only write the TrackDB file - need to initially declare file var
+    #ifndef ALBUMNFC
+      File file = SD.open(trackDbFile, FILE_WRITE);
+    #endif
     bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-    file.close();                                      // and make sure everything is clean and save
-
+    file.close();
+  
     // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
-    if (bytesWritten == sizeof(albumNfcFile)) {
+    if (bytesWritten == sizeof(trackDbEntry)) {
       #ifdef DEBUG
-        Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(albumNfcFile);
+        Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(trackDbFile);
       #endif
       success = true;
     } else {
       #ifdef DEBUG
-        Serial.print(F("  error writing "));Serial.println(albumNfcFile);
+        Serial.print(F("  error writing "));Serial.println(trackDbFile);
       #endif
       digitalWrite(warnLedPin, HIGH);
       success = false;
     }
-  #endif
   
-  // SECOND write the TrackDb-File --> e.g. larsrent.txt
-  memset(trackDbFile, 0, sizeof(trackDbFile));       // make sure var to hold path to track db file is empty
-  strcat(trackDbFile, trackDbDir);                   // add the trackDb Directory to the 
-  strcat(trackDbFile, "/");                          // a / 
-  strcat(trackDbFile, plrCurrentFolder);             // and the filename
-  strcat(trackDbFile, ".txt");                       // plus of course a txt extension
-  SD.remove(trackDbFile);                            // we want the file to be empty prior writing directory and track to it, so we remove it
-  
-  // used in case the albumnfc.tdb file is written first - redeclare file var
-  #ifdef ALBUMNFC
-    file = SD.open(trackDbFile, FILE_WRITE);
-  #endif
-  // used in case we only write the TrackDB file - need to initially declare file var
-  #ifndef ALBUMNFC
-    File file = SD.open(trackDbFile, FILE_WRITE);
-  #endif
-  bytesWritten = file.write(trackDbEntry, sizeof(trackDbEntry));
-  file.close();
-
-  // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
-  if (bytesWritten == sizeof(trackDbEntry)) {
-    #ifdef DEBUG
-      Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(trackDbFile);
+    // THIRD (if set) write the plrCurrentFolder (aka the album directory) to the file /trackdb0/LASTPLAY.TDB
+    #ifdef RESUMELAST
+      file = SD.open(resumeLastFile, FILE_WRITE);
+      bytesWritten = file.write(plrCurrentFolder, sizeof(plrCurrentFolder));
+      file.close();
     #endif
-    success = true;
-  } else {
-    #ifdef DEBUG
-      Serial.print(F("  error writing "));Serial.println(trackDbFile);
-    #endif
-    digitalWrite(warnLedPin, HIGH);
-    success = false;
-  }
-
-  // THIRD (if set) write the plrCurrentFolder (aka the album directory) to the file /trackdb0/LASTPLAY.TDB
-  #ifdef RESUMELAST
-    file = SD.open(resumeLastFile, FILE_WRITE);
-    bytesWritten = file.write(plrCurrentFolder, sizeof(plrCurrentFolder));
-    file.close();
   #endif
   
   return (success);
 }
-#endif 
 
 
 // 
@@ -1371,13 +1372,24 @@ static boolean writeTrackDbEntry() {
 //
 // check Tag presence is used in the loop() (to populate the char array with the uid of the tag) and in function playTrack() to see
 // if the tag is still on the reader - this can only be used with the Adafruit NFC library
-#ifdef NFCTRACKDB
-boolean checkTag() {
+boolean checkForSameTag() {
   boolean sameTagPresent = true;
 
   return(sameTagPresent);
 }
-#endif
+
+boolean checkForTagPresence(void) {
+  boolean weHaveATag = false;
+  #ifdef NFCNDEF
+    // this implementation uses the Speedmaster Library and Don's NDEF lib
+    weHaveATag = nfc.tagPresent(1000);
+  #endif
+  #ifdef NFCTRACKDB
+    // this implementation uses the Adafruit PN532 library alone
+    weHaveATag = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
+  #endif
+  return(weHaveATag);
+}
 
 
 // 
@@ -1388,7 +1400,7 @@ boolean checkTag() {
 //      HH    HH  EEEEEE  LLLLLL  PP        EEEEEE  RR   RR
 //
 // stores the file to play in the global var filename - it is created from the gloal vars plrCurrentFolder and current track
-static boolean setFileNameToPlay(byte trackNo) {
+static void setFileNameToPlay(byte trackNo) {
   // convert the trackNo to a char array - we need it next to create the filename of the track
   char curTrackCharNumber[4];
   sprintf(curTrackCharNumber, "%03d", trackNo);
@@ -1401,35 +1413,37 @@ static boolean setFileNameToPlay(byte trackNo) {
   strcat(filename, "track");
   strcat(filename, curTrackCharNumber);
   strcat(filename, ".mp3");
-  
-  // return true or false for the filename created - this is checked
+}
+
+// return true or false for the filename created - this is checked
+static boolean checkIfFileExists(void){
   return (SD.exists(filename));
 }
 
-
 // store uid, plrCurrentFolder and firstTrackToPlay in the char array trackDbEntry[]
 // so we may write it to the track Db file
-#ifdef NFCTRACKDB
 static void setTrackDbEntry() {
-  char tmpbuf[4];                                 // temp buffer for one number of the uid
+  #ifdef NFCTRACKDB
+    char tmpbuf[4];                                 // temp buffer for one number of the uid
+      
+    // create the entry for the  "Tag UID <-> directory + track number"  connection
+    memset(trackDbEntry, 0, sizeof(trackDbEntry));
+    for (byte i = 0; i <= uidLength ; i++) {
+      sprintf( tmpbuf, "%d", uid[i] );              // print one byte of the uid as decimal into tmpbuf, so
+      strcat( charUid, tmpbuf );                    // we can add it to the charUid 
+    }
     
-  // create the entry for the  "Tag UID <-> directory + track number"  connection
-  memset(trackDbEntry, 0, sizeof(trackDbEntry));
-  for (byte i = 0; i <= uidLength ; i++) {
-    sprintf( tmpbuf, "%d", uid[i] );              // print one byte of the uid as decimal into tmpbuf, so
-    strcat( charUid, tmpbuf );                    // we can add it to the charUid 
-  }
-  
-  memcpy(trackDbEntry, charUid, sizeof(charUid)); // finally we add the charUid to the trackDbENtry 
-  strcat(trackDbEntry, ":");                      // add a seperator :
-  strcat(trackDbEntry, plrCurrentFolder);         // the folder of the album this tag is connected with
-  char cstr[4];                                   // a new char array that will hold firstTrackToPlay as a char array
-  itoa(firstTrackToPlay, cstr, 10);               // converting firstTrackToPlay to char and place it in cstr
-  strcat(trackDbEntry, ":");                      // and the number of the track
-  strcat(trackDbEntry, cstr);                     // and the number of the track
-  strcat(trackDbEntry, "\n");                     // and a newline :-)
+    memcpy(trackDbEntry, charUid, sizeof(charUid)); // finally we add the charUid to the trackDbENtry 
+    strcat(trackDbEntry, ":");                      // add a seperator :
+    strcat(trackDbEntry, plrCurrentFolder);         // the folder of the album this tag is connected with
+    char cstr[4];                                   // a new char array that will hold firstTrackToPlay as a char array
+    itoa(firstTrackToPlay, cstr, 10);               // converting firstTrackToPlay to char and place it in cstr
+    strcat(trackDbEntry, ":");                      // and the number of the track
+    strcat(trackDbEntry, cstr);                     // and the number of the track
+    strcat(trackDbEntry, "\n");                     // and a newline :-)
+  #endif
 }
-#endif
+
 
 
 #ifdef RAMCHECK
@@ -1499,22 +1513,22 @@ static void issueWarning(const char msg[20], const char filename[23], boolean vo
 //  LLLLLL  EEEEEE  DDDDDD
 //
 // switches the value of lightOn between true and false - only needed in case there is a LED attached
-#ifdef OPRLIGHT
 static void switchLightState(void) {
-  if (!lightOn) {
-    #ifdef DEBUG
-      Serial.println(F("Switching light off -> ON"));
-    #endif
-    lightOn = true;
-    #ifdef OPRLIGHTTIME
-      lightStartUpTime = millis(); // also sets the lightStartUpTime
-    #endif
-  } else {
-    #ifdef DEBUG
-      Serial.println(F("Switching light on -> OFF"));
-    #endif
-    lightOn = false;
-    digitalWrite(infoLedPin, LOW);   // also turns off the info led
-  }
+  #ifdef OPRLIGHT
+    if (!lightOn) {
+      #ifdef DEBUG
+        Serial.println(F("Switching light off -> ON"));
+      #endif
+      lightOn = true;
+      #ifdef OPRLIGHTTIME
+        lightStartUpTime = millis(); // also sets the lightStartUpTime
+      #endif
+    } else {
+      #ifdef DEBUG
+        Serial.println(F("Switching light on -> OFF"));
+      #endif
+      lightOn = false;
+      digitalWrite(infoLedPin, LOW);   // also turns off the info led
+    }
+  #endif
 }
-#endif
