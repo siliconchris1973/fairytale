@@ -951,7 +951,7 @@ static char playAlbum(uint8_t numberOfFiles) {
 
     // make sure we remember the just started track to be the new track, in case player is stopped 
     // this works only with the NFC TrackDb and not with the NFC NDEF implementation
-    checkAndSetCurTrack(curTrack, checkAndSetCurTrack);
+    checkAndSetCurTrack(curTrack, numberOfFiles);
     
     // play the track on the music maker shield and retrieve the nextTrackToPlay from global variable (it is set by playTrack())
     //        -1  errors trying to play the file (like file not found)
