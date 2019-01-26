@@ -43,8 +43,9 @@ __asm volatile ("nop");
       en 1
 
    for the first track. To use this implementation you have to activate the configuration 
-   option     NFCNDEF     below and you will have to write the NDEF Messages with the 
-   directory name. This can be done with the program staticNFCWriter.ino from this repository.
+   option     NFCNDEF     below. For each album you have to write the NDEF Messages with the 
+   directory name on the corrresponding tag. 
+   This can be done with the program staticNFCWriter.ino from this repository.
    
    There is a downside to this implementation. It lacks a usable update of the track to 
    start playback with - I simply could not get it to work. Secondly the implementation
@@ -219,7 +220,11 @@ __asm volatile ("nop");
       OPRLIGHT          enables the operations light on the front of the box
       
       OPRLIGHTTIME      enables time based operations light - turns off the light after 30 Minutes
-
+      
+      SPEEDMASTER_PN532 enables the use of the Speedmaster library for the PN532 board
+      
+      ADAFRUIT_PN532    enables the use of the Adafruit library for the PN532 board
+      
       NFCNDEF           enables the use of NDEF messages to get the directory for a tag
       
       NFCTRACKDB        enables the use of the TrackDB to get the directiry for a tag
@@ -269,12 +274,25 @@ __asm volatile ("nop");
 // to enable time based operations light - turns off the light after 30 Minutes - uncomment the following line
 //#define OPRLIGHTTIME 1
 
-// Define the NFC <-> Album implementation
-// ONLY ONE of the these two options can be chosen
-// to use NDEF to get the album directory uncomment the following line
+// Define the PN532 implementation
+// ONLY ONE of these two can be used and additionally the first one is obligatory in case 
+// you want to use   NFCNDEF   for tag <--> album connection. If you opt for the TrackDB for this connection 
+// (with option NFCTRACKDB below) you may also try the Adafruit library - it will additionally give you 
+// track absence detection and has a smaller memory footprint. 
+#define SPEEDMASTER_PN532 1
+//#define ADAFRUIT_PN532 1
+
+// Define the NFC <-> Album connection implementation
+// ONLY ONE of the following two options for the NFC reading and album <-> tag connection can be chosen
+
+// to use NDEF to get the album directory directly from the tag, uncomment the following line
+// this implementation uses the Speedmaster Library and Don's NDEF library to read NFC Tags and
+// get the album directory that is stored as an NDEF Message on the tag. That means, it does NOT
+// use the decribed TrackDB. It is also much heavier (in Progmem size) than the Adafruit PN532
+// implementation and does NOT support recognition of a removed tag. 
 #define NFCNDEF 1
-// to use the Adafruit NFC library to get the Tag UID and retrieve the directory from the trackDb 
-// uncomment the following line. 
+
+// to use TrackDB to get the Tag UID and retrieve the directory from the trackDb, uncomment the following 
 //#define NFCTRACKDB 1
 
 // uncomment to enable a special file albumnfc.tdb in which all album <-> nfc connections are stored 
@@ -321,24 +339,21 @@ __asm volatile ("nop");
 
 
 //
-// SETUP MUSIC MAKER SHIELD
+// SETUP MUSIC MAKER SHIELD AND SD CARD READER
 // 
 #include <Adafruit_VS1053.h>
 // These are the pins used for the music maker shield
 #define SHIELD_RESET     -1    // VS1053 reset pin (unused!)
 #define SHIELD_CS         7    // VS1053 chip select pin (output)
 #define SHIELD_DCS        6    // VS1053 Data/command select pin (output)
-
-
-//
-// SETUP SD CARD
-//
 // These are common pins between breakout and shield
 #define CARDCS            4    // Card chip select pin
 // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
 #define DREQ              3    // VS1053 Data request, ideally an Interrupt pin
+
 // Create shield object
-Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS);
+Adafruit_VS1053_FilePlayer musicPlayer = 
+  Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS);
 
 
 //
@@ -349,11 +364,12 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 // use the decribed TrackDB. It is also much heavier (in Progmem size than the Adafruit PN532
 // implementation below and does NOT support recognition of a removed track. Furthermore the user
 // has to turn off the box before she can listen to the next album :-(
-#ifdef NFCNDEF
-  // these includes are sued for the NDEF implementation
+#ifdef SPEEDMASTER_PN532
+  // these includes are used for the NDEF implementation
   #include <PN532_SPI.h>
   #include <PN532.h>
   #include <NfcAdapter.h>
+  
   #define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
   #define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
   #define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
@@ -366,16 +382,17 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET
 // this implementation uses the Adafruit PN532 library alone - it is way smaller and preferrable
 // as it allows for tag removal recognition and does not enforce the user to turn off the box
 // after an album was played, as the above implementation does.
-#ifdef NFCTRACKDB
+#ifdef ADAFRUIT_PN532
   // INCLUDE Adafruit NFC LIbrary here
   #include <Wire.h>
   #include <Adafruit_PN532.h>
-  //#define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-  //#define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
-  //#define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
+  
+  #define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
+  #define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
+  #define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
   #define PN532_SS          10    // NFC breakout board chip select pin
-  //Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-  Adafruit_PN532 nfc(SCK, MISO, MOSI, PN532_SS);
+  Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
+  //Adafruit_PN532 nfc(SCK, MISO, MOSI, PN532_SS);
 #endif
 
 
@@ -653,12 +670,12 @@ void setup() {
   
   
   // START THE NFC READER
-  #ifdef NFCNDEF
+  #ifdef SPEEDMASTER_PN532
     // either use the simple one with NDEF support to get the   tag <-> album directory  connection
     nfc.begin();
   #endif
   
-  #ifdef NFCTRACKDB
+  #ifdef ADAFRUIT_PN532
     // or use the Adafruit implementation, which allows for resume and rescan etc. 
     //   but needs the trackDB to get the album directory for a tag as no NDEF messages are supported
     nfc.begin();
@@ -714,8 +731,8 @@ void setup() {
 //        LLLLLL   OOOOOO    OOOOOO   PP
 //
 void loop() {
-  boolean weHaveATag = false;                     // set true if a tag is present and false
-  boolean resumeLast = false;                     // set true when pause button (also on IR Remote) is pressed
+  boolean weHaveATag = false;                     // set true if a tag is present
+  boolean resumeLast = false;                     // set true if the pause button (also on IR Remote) is pressed without a tag present
   boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
   boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
   
@@ -745,15 +762,17 @@ void loop() {
         issueWarning("no album info", "/system00/nodirtag.mp3", true);
       }
     } else {  // we may start playing as it seems
-      // check if the current directory as read from the tag is the same as the plrLastFolder
-      // if it is and looping is disabled, then we won't start playback
+      // check if the current directory is the same as the plrLastFolder
+      // if it is and looping is disabled, then we won't restart playback
       #ifdef DISABLE_LOOPING
         equal = true;
         for (byte i=0; i<8; i++) {
-          Serial.print(" last: ");
-          Serial.print(plrLastFolder[i]); 
-          Serial.print(" / current: ");
-          Serial.print(plrCurrentFolder[i]);
+          #ifdef TRACE
+            Serial.print(" last: ");
+            Serial.print(plrLastFolder[i]); 
+            Serial.print(" / current: ");
+            Serial.print(plrCurrentFolder[i]);
+          #endif
           if ( plrLastFolder[i] != plrCurrentFolder[i] ) {
             #ifdef DEBUG
               Serial.println(F(" and it is a new tag"));
@@ -806,7 +825,7 @@ void loop() {
       #ifdef DISABLE_LOOPING
         } else {
           #ifdef DEBUG
-            Serial.println(F("the tag is the same tag - won't play it"));
+            Serial.println(F("the tag is the same as the last one - won't play it"));
           #endif
         }
       #endif
@@ -1211,13 +1230,20 @@ static boolean getDirAndTrackToPlay(boolean readFromTag) {
   boolean plrStartPlaying = false;
 
   if (readFromTag) {
-    #ifdef NFCNDEF
-      // GET ALBUM DIRECTORY TO PLAY FROM TAG NDEF MESSAGES
+    #ifdef SPEEDMASTER_PN532
+      // read the tag object with the Speedmaster PN532 library
       NfcTag tag = nfc.read();
       #ifdef DEBUG
         Serial.print(F("Tag Type: ")); Serial.println(tag.getTagType()); Serial.print(F("UID: ")); Serial.println(tag.getUidString());
       #endif
+    #endif
+
+    #ifdef ADAFRUIT_PN532
+      // TODO: implement reading tag data with the Adafruit PN532 library
+    #endif
     
+    #if NFCNDEF
+      // GET ALBUM DIRECTORY TO PLAY FROM TAG NDEF MESSAGES
       if (tag.hasNdefMessage()) {
         NdefMessage message = tag.getNdefMessage();
     
@@ -1251,10 +1277,10 @@ static boolean getDirAndTrackToPlay(boolean readFromTag) {
       }
     #endif
     #ifdef NFCTRACKDB
-      // GET ALBUM DIRECTORY TO PLAY FROM TRACKDB
+      // GET ALBUM DIRECTORY TO PLAY FROM THE TRACKDB
     #endif
   } else {
-    // GET FROM LAST PLAYED SESSION FILE
+    // GET THE ALBUM FROM LAST PLAYED SESSION FILE
   }
   return (plrStartPlaying);
 }
@@ -1373,11 +1399,11 @@ boolean checkForSameTag() {
 
 boolean checkForTagPresence(void) {
   boolean weHaveATag = false;
-  #ifdef NFCNDEF
+  #ifdef SPEEDMASTER_PN532
     // this implementation uses the Speedmaster Library and Don's NDEF lib
     weHaveATag = nfc.tagPresent(1000);
   #endif
-  #ifdef NFCTRACKDB
+  #ifdef ADAFRUIT_PN532
     // this implementation uses the Adafruit PN532 library alone
     weHaveATag = nfc.readPassiveTargetID(PN532_MIFARE_ISO14443A, uid, &uidLength);
   #endif
