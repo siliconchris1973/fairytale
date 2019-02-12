@@ -290,14 +290,14 @@ __asm volatile ("nop");
 // get the album directory that is stored as an NDEF Message on the tag. That means, it does NOT
 // use the decribed TrackDB. It is also much heavier (in Progmem size) than the Adafruit PN532
 // implementation and does NOT support recognition of a removed tag. 
-#define NFCNDEF 1
+//#define NFCNDEF 1
 
 // to use TrackDB to get the Tag UID and retrieve the directory from the trackDb, uncomment the following 
-//#define NFCTRACKDB 1
+#define NFCTRACKDB 1
 
 // uncomment to enable a special file albumnfc.tdb in which all album <-> nfc connections are stored 
 // this is an additional storage to the individual TrackDb files and requires NFCTRACKDB 
-//#define ALBUMNFC 1
+#define ALBUMNFC 1
 
 // uncomment the next line to enable resuming the last played album on switch on
 // this is achieved via a special file on the SD card and works without a tag but uses the pause/resume button instead
@@ -434,20 +434,20 @@ char nextTrackToPlay        = 1;                         // the track number to 
 // trackDb on the SD card - this is where we store the NFC TAG <-> Directory connection and the track to start playback with
 // and is the complementary implementation to the NDEF messages on the NFC Tag - see option NFCNDEF
 #ifdef NFCTRACKDB
-  const char trackDbDir[]   = "/trackdb0"; // where do we store the TrackDB files for each album 
-  char trackDbFile[23];                    // path to the file with uid, directory and track
-  char trackDbEntry[35];                   // will hold a nfc <-> album info connection 
-                                           // in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
+  const char trackDbDir[]   = "/trackdb0";  // where do we store the TrackDB files for each album 
+  char trackDbFile[23];                     // path to the file with uid, directory and track
+  char trackDbEntry[35];                    // will hold a nfc <-> album info connection 
+                                            // in the form of [NFC Tag UID]:[album]:[Track] e.g.: 43322634231761291:larsrent:1
 
   #ifdef ALBUMNFC
     // a special file that additionally holds the connection between an NFC tag UID and the corresponding directory
-    const char albumNfcFile[]  = "/trackdb0/albumnfc.tdb";  
+    const char albumNfcFile[]  = "/trackdb0/NTRACKDB.TDB"; // formerly called albumnfc.tdb
   #endif
   
   // NFC Tag data
-  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };// Buffer to store the returned UID
-  char charUid[22];                    // char representation of the UID
-  byte uidLength;                      // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
+  byte uid[] = { 0, 0, 0, 0, 0, 0, 0 };     // Buffer to store the returned UID
+  char charUid[22];                         // char representation of the UID
+  byte uidLength;                           // Length of the UID (4 or 7 bytes depending on ISO14443A card type)
 #endif 
 
 

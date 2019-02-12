@@ -286,6 +286,7 @@ void loop(void) {
   if (weHaveATag) {
     // The NTAG203 has a 7 byte UID, so I'll assume that if this tag does, it is the right type of tag. 
     NfcTag tag = nfc.read();
+    
     #ifdef DEBUG
       Serial.print(F("Tag Type: ")); Serial.println(tag.getTagType()); Serial.print(F("UID: ")); Serial.println(tag.getUidString());
     #endif
