@@ -1,4 +1,4 @@
-#define VERSION 25
+#define VERSION 27
 
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
@@ -187,16 +187,20 @@ __asm volatile ("nop");
     
    - PN532_SS          10  NFC breakout board chip select pin
 
-   - infoLedPin         5  the pin to which the operation led is connected to
-   - warnLedPin         8  the pin to which the warning led is connected to
-   - errorLedPin        9  the pin to which the error led is connected to 
-                           e.g. used for LBO of powerboost 1000c
+   YOU CAN EITHER CONNECT AND USE THE INFO AND WARNING LEDS OR THE 8x8 LED MATRIX
+   - OPRLEDPIN          5  the pin to which the operation led is connected to
+   - WRNLEDPIN          8  the pin to which the warning led is connected to
+   - ERRLEDPIN          9  the pin to which the error led is connected to 
+                            e.g. used for LBO of powerboost 1000c
     
-
-   - volPotPin         A0  the analog input pin that we use for the potentiometer
-   - btnLinePin        A1  pin to which the button line (4 buttons) is connected to
-   - lowBatPin         A2  the pin on which the powerboost 1000c indicates a low baterry - not functional
-   - iRRemotePin       A3  the pin on which the IR Remote Receiver is connected to
+   - MATRIX_DIN         9  the pin for the DATA IN port of the 8x8 led matrix 
+   - MATRIX_CS          8  the pin for the Chip Select port of the 8x8 led matrix
+   - MATRIX_CLK         5  the pin of the clock cycle port of the 8x8 led matrix
+   
+   - VOLPOTPIN         A0  the analog input pin that we use for the potentiometer
+   - BTNLINPIN        A1  pin to which the button line (4 buttons) is connected to
+   - LOWBATPIN         A2  the pin on which the powerboost 1000c indicates a low baterry - not functional
+   - IRREMOTEPIN       A3  the pin on which the IR Remote Receiver is connected to
    - programming       A4  the pin the program button is connected to. The program 
                            button changes the functionality of the overall program in 
                            that (if pressed) the code will register a new tag for use with 
@@ -215,11 +219,19 @@ __asm volatile ("nop");
       
       VOLUMEPOT         enables the volume potentiometer
       
-      LOWBAT            enables the low battery warning with light and voice
+      LOWBAT            enables the pin to read about low battery warnings from the adafruit powerboost 1000c
 
+                        
+                        YOU CAN ONLY EITHER ACTIVATE THE LEDs OR THE LEDMATRIX
+                        
       OPRLIGHT          enables the operations light on the front of the box
       
       OPRLIGHTTIME      enables time based operations light - turns off the light after 30 Minutes
+
+      INFOLED           enables a warning and an error led
+      
+      LEDMATRIX         enables the 8x8 LED Matrix to display working parameter
+
       
       SPEEDMASTER_PN532 enables the use of the Speedmaster library for the PN532 board
       
@@ -249,7 +261,9 @@ __asm volatile ("nop");
 //
 // make sure to comment this out before uploading in production as it turns on lots and lots of serial messages
 // if it is not define, no Serial.print is possible, as also Serial.begin() is omitted
-#define DEBUG 1
+#define DEBUGOUT 1
+// trace gives out even more info - does coszt quite some RAM so use with caution
+//#define TRACEOUT 1
 // to enable periodic output of free RAM during playBack, uncomment the following line.
 //#define RAMCHECK 1
 
@@ -257,11 +271,20 @@ __asm volatile ("nop");
 //
 // turn ON / OFF certain hardware/software features
 //
+// if defined the box emits a sound whenever next / prev track or pause track is executed via buttons or ir remote
+#define TONE_SIGNAL 1 
+
 // to enable the IR Remote Control option uncomment the following line - does not work currently
 //#define IRREMOTE 1
 
-// to enable the 4 control buttons uncomment the following line
-//#define BUTTONS 1
+// to enable the control buttons uncomment the following and each corresponding line for the buttons
+#define BUTTONS 1
+#define VOLUP_BUTTON 1
+#define VOLDOWN_BUTTON 1
+#define NEXTTRACK_BUTTON 1
+#define PREVTRACK_BUTTON 1
+#define PAUSE_BUTTON 1
+//#define LIGHT_BUTTON 1
 
 // to enable the volume potentiometer uncomment the follwing line
 //#define VOLUMEPOT 1
@@ -269,10 +292,21 @@ __asm volatile ("nop");
 // to enable the low battery warning with light and voice uncomment the follwing line
 //#define LOWBAT 1
 
+
+//
+// YOU CAN EITHER CONNECT AND USE THE INFO AND WARNING LEDS OR THE 8x8 LED MATRIX
+//
 // to enable the operations light on the front of the box, uncomment the following line
 //#define OPRLIGHT 1
 // to enable time based operations light - turns off the light after 30 Minutes - uncomment the following line
 //#define OPRLIGHTTIME 1
+
+// to enable the error and warning led, which is also used to indicate waiting for a tag, ucomment the next 
+//#define INFOLED 1
+
+// to enable the 8x8 LED Matrix uncomment the next
+//#define LEDMATRIX 1
+
 
 // Define the PN532 implementation
 // ONLY ONE of these two can be used and additionally the first one is obligatory in case 
@@ -329,8 +363,9 @@ __asm volatile ("nop");
 // include SPI and SD libraries
 //
 #include <SPI.h>
-#include <SD.h>
-
+#ifdef SDCARD
+  #include <SD.h>  
+#endif
 
 // These are the SPI pins shared among all components
 #define CLK             13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
@@ -392,7 +427,6 @@ Adafruit_VS1053_FilePlayer musicPlayer =
   #define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
   #define PN532_SS          10    // NFC breakout board chip select pin
   Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-  //Adafruit_PN532 nfc(SCK, MISO, MOSI, PN532_SS);
 #endif
 
 
@@ -401,6 +435,48 @@ Adafruit_VS1053_FilePlayer musicPlayer =
 //
 #ifdef IRREMOTE
   #include <IRremote.h>
+
+  #define IRREMOTEPIN A3  // the pin the IR remote control diode (receiver) is connected to
+#endif
+
+
+#ifdef BUTTONS
+  #define BTNLINPIN   A1  // pin on which the button line (4 buttons) is connected
+#endif
+
+// volume control variables for the analog poti
+#ifdef VOLUMEPOT
+  #define VOLPOTPIN   A0  // the analog input pin that we use for the potentiometer
+#endif
+
+// battery control
+#ifdef LOWBAT
+  #define LOWBATPIN   A2  // pin on which the Adafruit PowerBoost will indicate a low battery
+                          // this pin will usually be pulled high but when the charger detects 
+                          // a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
+#endif
+
+
+
+#ifdef OPRLIGHT
+  #define OPRLEDPIN     5       // the pin to which the operation led is connected to
+#endif
+
+#ifdef INFOLED
+  #define WRNLEDPIN       8       // the pin to which the warning led is connected to
+  #define ERRLEDPIN      9       // the pin to which the error led is connected to
+#endif
+
+
+//
+// include 8x8 LED MAtrix
+//
+#ifdef LEDMATRIX
+  #include <LedControl.h>
+  
+  #define MATRIX_DIN 9              // DIN pin of MAX7219 module
+  #define MATRIX_CLK 5              // CLK pin of MAX7219 module
+  #define MATRIX_CS  8              // CS  pin of MAX7219 module
 #endif
 
 
@@ -451,41 +527,71 @@ char nextTrackToPlay        = 1;                         // the track number to 
 #endif 
 
 
+// regardles wheter we use the poti, the button line or the ir remote, we always want to save the last sound volume
+uint8_t lastSoundVolume = 40;         // from this value, which is the previous volume level
+
 // volume control variables for the analog poti
 #ifdef VOLUMEPOT
-  const byte volPotPin       = A0;    // the analog input pin that we use for the potentiometer
-  word lastVolSensorValue    = 0;     // keeps the last read sensor value
-  const uint16_t delayBetweenScansInMillis = 1000;
-  const uint8_t minimumPotiValue = 771;
-  const uint16_t maximumPotiValue = 1023;
-  const uint8_t fuzzyValue = 5;
+  word lastVolSensorValue                   = 0;    // keeps the last read sensor value
+  const uint8_t minimumPotiValue            = 603;  // the minimum value the poti returns
+  const uint16_t maximumPotiValue           = 1023; // the maximum value the poti returns
+  const uint8_t minimumVolume               = 0;    // the minimum volume
+  const uint8_t maximumVolume               = 100;  // the maximum volume
+  
+  const uint8_t valueDrift = 30;
 #endif
-
-
+  
 // control buttons definition
 #ifdef BUTTONS
-  const byte btnLinePin      = A1;    // pin on which the button line (4 buttons) is connected
-  
-  word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
+  word btnVal;                        // stores the value we receive on the BTNLINPIN for comparance with the predefined analog reads for the 4 buttons
   const byte btnValDrift     = 5;     // maximum allowed difference + and - the predefined value for each button we allow
   const word btnPressDelay   = 500;   // delay in milliseconds to prevent double press detection
   unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-  //const word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  //const word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-  // switching pause and light button:
-  const word btnLightValue   = 933;   // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  const word btnPauseValue   = 1021;  // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-  const word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-  const word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
+  
+  boolean buttonPressed = false;      // whenever a button on the button line or IR is pressed this var is set to true
+  boolean volumeUp = true;            // if the volume down button is pressed, this is set to false otherwise its true 
+                                      // the function plrAdjustVolume() reads this var in 
+  const uint8_t volumeStepper = 5;    // and increases, decreases the volume by this factor
+  
+  #ifdef LIGHT_BUTTON
+    const word btnLightValue   = 933;   // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
+  #endif
+  #ifdef PAUSE_BUTTON
+    const word btnPauseValue   = 1021;  // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
+  #endif
+  #ifdef NEXTTRACK_BUTTON
+    const word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
+  #endif
+  #ifdef PREVTRACK_BUTTON
+    const word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
+  #endif
+  #ifdef VOLUP_BUTTON
+    const word btnVolumeUpValue   = 456;
+  #endif
+  #ifdef VOLDOWN_BUTTON
+    const word btnVolumeDownValue = 456;
+  #endif
+  
   const word minBtnValue     = 800;   // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
 #endif
 
 
 // IR remote control 
 #ifdef IRREMOTE
-  const byte iRRemotePin    = A3;      // the pin the IR remote control diode (receiver) is connected to
-  
-  // IR Remote control
+  // IR Remote Control Layout               Codes from Silver Apple TV Remote Control
+  //                +-------+
+  //               |    UP   |                      53498
+  //                +-------+
+  //    +-------+   +-------+   +-------+
+  //   |   LEFT  | |   HOME  | |  RIGHT  |  4346    47866   57594
+  //    +-------+   +-------+   +-------+
+  //                +-------+
+  //               |   DOWN  |                      45306
+  //                +-------+ 
+  //       +-------+         +-------+  
+  //      |  MENU  |         | PAUSE |      16634           31482
+  //       +-------+         +-------+
+  //
   // to reduce PROGMEM size I decided to not use the whole decimal value for each button on the remote control but instead do a calculation 
   // which reduces the needed size of the variable to hold the value but still creates different values for each button
   const uint16_t nextVal    = 57594;  // decoded value if button  NEXT  is pressed on remote
@@ -496,16 +602,24 @@ char nextTrackToPlay        = 1;                         // the track number to 
   const uint16_t pauseVal   = 31482;  // decoded value if button  PAUSE is pressed on remote
   const uint16_t menuVal    = 16634;  // decoded value if button  MENU  is pressed on remote
   
-  IRrecv irrecv(iRRemotePin);         // define an object to read infrared sensor on pin A4
-  decode_results results;             // make sure decoded values from IR are stored 
+
+  #ifndef BUTTONS
+    boolean volumeUp = true;              // if the volume down button is pressed, this is set to false otherwise its true 
+                                          // the function plrAdjustVolume() reads this var in 
+    const uint8_t volumeStepper = 5;      // and increases, decreases the volume by this factor
+  
+    boolean buttonPressed = false;        // whenever a button on the IR is pressed this var is set to true to prevent double events
+  #endif
+                                          // after the corresponding function is executed, the var is set to false again
+                                          // to prevent accidential repeated execution
+  
+  IRrecv irrecv(IRREMOTEPIN);             // define an object to read infrared sensor on pin A4
+  decode_results results;                 // make sure decoded values from IR are stored 
 #endif
 
 
 // battery control
 #ifdef LOWBAT
-  const byte lowBatPin      = A2;      // pin on which the Adafruit PowerBoost will indicate a low battery
-                                       // this pin will usually be pulled high but when the charger detects 
-                                       // a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
   unsigned long lowBatCheckTime = 0;   // used to throttle low battery messages to every 5 minutes
 #endif
 
@@ -515,14 +629,91 @@ char nextTrackToPlay        = 1;                         // the track number to 
   #ifdef OPRLIGHTTIME
     unsigned long lightStartUpTime = 0; // millis() the operations light started
   #endif
-  const byte infoLedPin     = 5;       // the pin to which the operation led is connected to
+  
   boolean lightOn           = true;    // if true, the operations light fader is active. switched via a button, 
                                        // set to false after a maxLightTime (in case of OPRLIGHTTIME) is reached
 #endif
-const byte warnLedPin       = 8;       // the pin to which the warning led is connected to
-const byte errorLedPin      = 9;       // the pin to which the error led is connected to
-boolean loopLightHigh       = false;   // we turn the warnLed on and off while waiting for the next tag
 
+#ifdef INFOLED
+  boolean loopLightHigh       = false;   // we turn the warnLed on and off while waiting for the next tag
+#endif
+
+#ifdef LEDMATRIX
+  const uint64_t IMAGES[] PROGMEM = {
+                  //0x3c4299a581a5423c,   //  Happy Smiley
+                  0x003e22222a2a1e00,   //  Error writing / reading to / from SD 
+                  0x3c42a59981a5423c,   //  Sad Smiley
+                  0xff0072856515e500,   //  NOVS1053 - VS1053 Not found
+                  0xff0000555d5df500,   //  NOINT - No interrupt on DREQ pin
+                  0x0036363636363600,   //  Pause
+                  0x0000cc663366cc00,   //  Previous
+                  0x00003366cc663300,   //  Next
+                  0x000c1c3c7c3c1c0c,   //  Play
+                  //0xff009191d3b59300,   //  NOPN53 - Didn't find PN53x board
+                  0x060e0c0808281800,   //  NOTE1
+                  //0x066eecc88898f000,   //  NOTE2
+                  //0x00082a1c771c2a08,   //  SONNE
+                  //0x10387cfefeee4400,   //  HEART
+                  //0x00496b5d5d6b4914,   //  Butterfly 1
+                  //0x00082a3e3e2a0814,   //  Butterfly 2
+                  0x1800183860663c00,   //  QUESTION
+                  0x0088acafafac8800,   //  Volume UP
+                  0x00088cafaf8c0800,   //  Volume DOWN
+                  0xffffbb2f2a0a0808,   //  EQ1
+                  0xffdffa5c5a480800,   //  EQ2
+                  0xfffbf3b292900000,   //  EQ3
+                  0xffeeeea6e2a20000,   //  EQ4
+                  0xffefaf868a820000,   //  EQ5
+                  0xffefee6a68602000,   //  EQ6
+                  0xffefca4a08000000,   //  EQ7
+                  0xffeec44000000000,   //  EQ8
+                  0xffeeecc480808000,   //  EQ9
+                  0x013e262a32324e80   //  NO SD CARD
+                  //0x1818245a5a241800    //  Light
+                  
+                  
+  };
+
+  // for easiere selction of the images these constants can be used
+  //#define HAPPY     0
+  #define SADSD 0     // 1
+  #define SAD 1       // 2
+  #define NOVS1053 2  // 3
+  #define NOINT 3     // 4
+  #define PAUSE 4     // 5
+  #define PREVIOUS 5  // 6
+  #define NEXT 6      // 7
+  #define PLAY 7      // 8
+  //#define NOPN53    9
+  #define NOTE1 8     // 10
+  //#define NOTE2     11
+  //#define SONNE     12
+  //#define HEART     13
+  //#define BFLY1     14
+  //#define BFLY2     15
+  #define QUESTION 9  // 16
+  #define VOLUMEUP 10  // 17
+  #define VOLUMEDOWN 11 // 18
+  #define EQ1 12      //  19
+  #define EQ2 13      //  20
+  #define EQ3 14      //  21
+  #define EQ4 15      //  22
+  #define EQ5 16      //  23
+  #define EQ6 17      //  24
+  #define EQ7 18      //  25
+  #define EQ8 19      //  26
+  #define EQ9 20      //  27
+  #define NOSDCARD 21 //  28
+  //#define LIGHT     29
+
+  const byte PLR1STSEQ = EQ1; // cycle through equalizer while playing
+  const byte PLRLSTSEQ = EQ9;
+  
+  byte MATRIX_INTENSITY  = 13;   // how bright from 0=off till 15=full
+  uint64_t image;
+  
+  LedControl ledmatrix=LedControl(MATRIX_DIN, MATRIX_CLK, MATRIX_CS, 0);
+#endif
 
 //
 //        PPPPPP    RRRRR     OOOOOO   TTTTTTTT   OOOOOO   TTTTTTTT  YY    YY   PPPPPP    EEEEE   SSSSS
@@ -580,7 +771,8 @@ static void issueWarning(const char[], const char[], boolean); // the new warnin
 static void switchLightState(void);             // switch the boolean var lightOn from true to false and vice versa 
                                                 // - in case light is lightOn is set to true, lightStartUpTime is set to millis()
 
-
+static void displayStuff(int);                  // this is used to display smileys and the like on the 8x8 LED Matrix
+void displayImage(uint64_t);
 
 //
 //       SSSSSS  EEEEEE  TTTTTTTT  UU   UU   PPPPP
@@ -591,130 +783,168 @@ static void switchLightState(void);             // switch the boolean var lightO
 //
 void setup() {
   // SETUP SERIAL CONSOLE
-  #ifdef DEBUG
+  #ifdef DEBUGOUT
     // in case we want debug output
     Serial.begin(BAUDRATE);
+    Serial.print(F("\nfairytale V"));Serial.println(VERSION);
   #endif
   #ifdef RAMCHECK
     // or at least print out available RAM
     Serial.begin(38400);
   #endif
 
-  
   // DEFINE INPUT PINs
   #ifdef VOLUMEPOT
-    pinMode(volPotPin, INPUT);       // connects to the potentiometer that shall control the volume
+    pinMode(VOLPOTPIN, INPUT);       // connects to the potentiometer that shall control the volume
   #endif
   #ifdef BUTTONS
-    pinMode(btnLinePin, INPUT);      // connects to the 4 buttons with different resistors (set the value down in function playTrack())
+    pinMode(BTNLINPIN, INPUT);      // connects to the 4 buttons with different resistors (set the value down in function playTrack())
   #endif
   #ifdef LOWBAT
-    pinMode(lowBatPin, INPUT);     // connects to the LBO pin of the Adafruit PowerBoost 1000c
+    pinMode(LOWBATPIN, INPUT);     // connects to the LBO pin of the Adafruit PowerBoost 1000c
   #endif
   #ifdef IRREMOTE
-    pinMode(iRRemotePin, INPUT);     // connects to the output port of the remote control (decoded values for each button in function playTrack())
+    pinMode(IRREMOTEPIN, INPUT);     // connects to the output port of the remote control (decoded values for each button in function playTrack())
   #endif
-  
-    
+
   // DEFINE OUPUT PINs
   #ifdef OPRLIGHT
-    pinMode(infoLedPin, OUTPUT);     // connect to blue LED
+    pinMode(OPRLEDPIN, OUTPUT);     // connect to blue LED
   #endif
-  pinMode(warnLedPin, OUTPUT);     // connect to orange LED
-  pinMode(errorLedPin, OUTPUT);    // connect to a red LED
+  #ifdef INFOLED
+    pinMode(WRNLEDPIN, OUTPUT);     // connect to orange LED
+    pinMode(ERRLEDPIN, OUTPUT);    // connect to a red LED
+  #endif
 
+  #ifdef LEDMATRIX
+    #ifdef TRACEOUT
+      Serial.println(F("8x8 led matrix initialized"));
+    #endif
+    ledmatrix.shutdown(0, false);
+    ledmatrix.setIntensity(0, MATRIX_INTENSITY);
+    ledmatrix.clearDisplay(0);
+  #endif
   
   // INITIALIZE THE MUSIC PLAYER
-  #ifdef VS1053
-    if (!musicPlayer.begin()) {
-      #ifdef DEBUG
-        Serial.println(F("VS1053 Not found"));
-      #endif
-      // flash the red light to indicate we have an error
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
-    }
-    // This option uses a pin interrupt. No timers required! But DREQ
-    // must be on an interrupt pin. For Uno/Duemilanove/Diecimilla
-    // that's Digital #2 or #3
-    // See http://arduino.cc/en/Reference/attachInterrupt for other pins
-    if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT)) {
-      #ifdef DEBUG
-        Serial.println(F("No interrupt on DREQ pin"));
-      #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
-    }
-  #endif
+  if (!musicPlayer.begin()) {
+    #ifdef DEBUGOUT
+      Serial.println(F("VS1053 Not found"));
+    #endif
+    // flash the red light to indicate we have an error
+    #ifdef INFOLED
+      digitalWrite(ERRLEDPIN, HIGH);
+    #endif
+    #ifdef LEDMATRIX
+      displayStuff(NOVS1053);
+    #endif
+    for (;;) { delay(1000); }
+  } else {
+    #ifdef TRACEOUT
+      Serial.println(F("VS1053 music player setup"));
+    #endif
+  }
+  
+  // This option uses a pin interrupt. No timers required! But DREQ
+  // must be on an interrupt pin. For Uno/Duemilanove/Diecimilla
+  // that's Digital #2 or #3
+  // See http://arduino.cc/en/Reference/attachInterrupt for other pins
+  if (! musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT)) {
+    #ifdef DEBUGOUT
+      Serial.println(F("DREQ without interrupt"));
+    #endif
+    #ifdef INFOLED
+      digitalWrite(ERRLEDPIN, HIGH);
+    #endif
+    #ifdef LEDMATRIX
+      displayStuff(NOINT);
+    #endif
+    for (;;) { delay(1000); }
+  } else {
+    #ifdef TRACEOUT
+      Serial.println(F("Interrupt for VS1053 set"));
+    #endif
+  }
   
   // INITIALIZE THE SD CARD
-  #ifdef SDCARD
-    if (!SD.begin(CARDCS)) {
-      #ifdef DEBUG
-        Serial.println(F("SD-Card Not found"));
-      #endif
-      // flash the red light to indicate we have an error
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
-    }
-  #endif
-  
+  if (!SD.begin(CARDCS)) {
+    #ifdef DEBUGOUT
+      Serial.println(F("No SDCard found"));
+    #endif
+    // flash the red light to indicate we have an error
+    #ifdef INFOLED
+      digitalWrite(ERRLEDPIN, HIGH);
+    #endif
+    #ifdef LEDMATRIX
+      displayStuff(NOSDCARD);
+    #endif
+    for (;;) { delay(1000); }
+  } else {
+    #ifdef TRACEOUT
+      Serial.println(F("SD Card reader initialized"));
+    #endif
+  }
+
   // PLAY THE WELCOME SOUND
-  #ifdef VOLUMEPOT
-    plrAdjustVolume();            // initiallly adjust volume
-  #endif
-  if (playTrack(1) == -1) {  // play the welcome sound
+  musicPlayer.setVolume(lastSoundVolume, lastSoundVolume);
+  if (playTrack(1) == -1) {       // play the welcome sound
     issueWarning("HELLO error", "", false);
   }
   
-  
   // START THE NFC READER
   #ifdef SPEEDMASTER_PN532
+    #ifdef TRACEOUT
+      Serial.println(F("activating PN532 NFC reader"));
+    #endif
     // either use the simple one with NDEF support to get the   tag <-> album directory  connection
     nfc.begin();
   #endif
   
   #ifdef ADAFRUIT_PN532
+    #ifdef TRACEOUT
+      Serial.println(F("activating PN532 NFC reader"));
+    #endif
     // or use the Adafruit implementation, which allows for resume and rescan etc. 
     //   but needs the trackDB to get the album directory for a tag as no NDEF messages are supported
     nfc.begin();
+    
     // make sure to comment this out after PN532 is working as it takes approx 290 bytes from progmem
     //*
     uint32_t versiondata = nfc.getFirmwareVersion();
     if (! versiondata) {
-      #ifdef DEBUG
-        Serial.print("Didn't find PN53x board");
+      #ifdef DEBUGOUT
+        Serial.println(F("No PN53x board"));
       #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef LEDMATRIX
+        displayStuff(NOPN53);
+      #endif
+      #ifdef INFOLED
+        digitalWrite(ERRLEDPIN, HIGH);
+      #endif
+      for (;;) { delay(1000); }
     }
-    #ifdef DEBUG
+    #ifdef TRACEOUT
       // Got ok data, print it out!
       Serial.print(F("Found chip PN5")); Serial.println((versiondata>>24) & 0xFF, HEX); 
       Serial.print(F("Firmware ver. ")); Serial.print((versiondata>>16) & 0xFF, DEC); 
       Serial.print('.'); Serial.println((versiondata>>8) & 0xFF, DEC);
     #endif
-    //*
+    //*/
     // configure board to read RFID tags
     nfc.setPassiveActivationRetries(0xFF);
     nfc.SAMConfig();
   #endif
-
+  
   
   // ALL DONE
   delay(100); // wait some time for everything to settle
-  #ifdef OPRLIGHT
-    digitalWrite(infoLedPin, LOW); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, HIGH); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, LOW); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, HIGH); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, LOW); // turn off the info led
-  #endif
   
   // check our current time, so we know when to stop
   //startUpTime = millis();
-  #ifdef DEBUG
-    Serial.print(F("fairytale V"));Serial.print(VERSION);Serial.print(F(" - waiting "));
+  #ifdef DEBUGOUT
+    Serial.print(F("\nwaiting "));
+  #endif
+  #ifdef LEDMATRIX
+    displayStuff(NOTE1);
   #endif
 }
 
@@ -732,16 +962,19 @@ void loop() {
   boolean loopWarningMessageNoAlbumInfos = true;  // make sure we get the "no album info on tag" message at least once
   boolean loopWarningMessageNoFilesInDir = true;  // make sure we get the "no files in dir" message at least once
   
-  #ifdef DEBUG 
+  #ifdef DEBUGOUT
     Serial.print(F("."));
-    if (loopLightHigh) {
-      digitalWrite(warnLedPin, LOW);
-      loopLightHigh = false;
-    } else {
-      digitalWrite(warnLedPin, HIGH);
-      loopLightHigh = true;
-    }
+    #ifdef INFOLED
+      if (loopLightHigh) {
+        digitalWrite(WRNLEDPIN, LOW);
+        loopLightHigh = false;
+      } else {
+        digitalWrite(WRNLEDPIN, HIGH);
+        loopLightHigh = true;
+      }
+    #endif
   #endif
+
   
   
   // check for tag presence or if the user wants to resume the last album
@@ -750,11 +983,13 @@ void loop() {
   
   // if a tag is found or the pause button is pressed without a tag, we continue
   if (weHaveATag || resumeLast) {
-    digitalWrite(warnLedPin, LOW);
-    loopLightHigh = false;
+    #ifdef INFOLED
+      digitalWrite(WRNLEDPIN, LOW);
+      loopLightHigh = false;
+    #endif
     
-    #ifdef DEBUG
-      if (weHaveATag) Serial.println(F(" tag found! ")); else Serial.println(F(" resume last album "));
+    #ifdef DEBUGOUT
+      if (weHaveATag) Serial.println(F(" tag found! ")); else Serial.println(F(" resume last "));
     #endif
     
     // read data from tag: directory, track number and playing order.
@@ -773,15 +1008,15 @@ void loop() {
       #ifdef DISABLE_LOOPING
         equal = true;
         for (byte i=0; i<8; i++) {
-          #ifdef TRACE
+          #ifdef TRACEOUT
             Serial.print(" last: ");
             Serial.print(plrLastFolder[i]); 
             Serial.print(" / current: ");
             Serial.print(plrCurrentFolder[i]);
           #endif
           if ( plrLastFolder[i] != plrCurrentFolder[i] ) {
-            #ifdef DEBUG
-              Serial.println(F(" and it is a new tag"));
+            #ifdef TRACEOUT
+              Serial.println(F(" is a new tag"));
             #endif
             equal = false;
             break;
@@ -797,6 +1032,9 @@ void loop() {
             if (loopWarningMessageNoFilesInDir) {
               loopWarningMessageNoFilesInDir  = false; // set loop warning message so we don't show this warning in the next loop
               issueWarning("no files found", "/system00/nodirtag.mp3", true);
+              #ifdef LEDMATRIX
+                displayStuff(SADSD);
+              #endif
             }
           } else {
             // check if the current directory as read from the tag is the same as the plrLastFolder
@@ -820,18 +1058,25 @@ void loop() {
             if (retVal < 0) { 
               issueWarning("playback failed", "/system00/playfail.mp3", true);
             } else {  
-              #ifdef DEBUG
+              #ifdef TRACEOUT
                 Serial.println(F("\nplayback end"));
               #endif
-              digitalWrite(warnLedPin, LOW);
+              #ifdef DEBUGOUT
+                #ifndef TRACEOUT
+                  Serial.println(F("\n"));
+                #endif
+              #endif
+              #ifdef INFOLED
+                digitalWrite(WRNLEDPIN, LOW);
+              #endif
             }
           } // end of check if at least 1 file was found
           
       // DISABLE LOOPING
       #ifdef DISABLE_LOOPING
         } else {
-          #ifdef DEBUG
-            Serial.println(F("the tag is the same as the last one - won't play it"));
+          #ifdef TRACEOUT
+            Serial.println(F("same tag detected"));
           #endif
         }
       #endif
@@ -839,7 +1084,7 @@ void loop() {
     
     // finally turn off the info led
     #ifdef OPRLIGHT
-      if (lightOn) digitalWrite(infoLedPin, LOW);
+      if (lightOn) digitalWrite(OPRLEDPIN, LOW);
     #endif
     
     // RESET THE NFC READER
@@ -853,9 +1098,9 @@ void loop() {
   
   // check if the battery is still good
   #ifdef LOWBAT
-    if (digitalRead(lowBatPin == LOW)) {
+    if (digitalRead(LOWBATPIN == LOW)) {
       if ((millis()-lowBatCheckTime > 300000)) {
-        digitalWrite(errorLedPin, HIGH);
+        digitalWrite(ERRLEDPIN, HIGH);
         issueWarning("BATTERY LOW", "/system00/lowbat01.mp3", true);
         lowBatCheckTime = millis();
       }
@@ -877,45 +1122,81 @@ void loop() {
 //
 // included in while loop of playTrack() for checks for volume changes
 static void plrAdjustVolume() {
+  uint16_t soundVolume = lastSoundVolume;
+  
   #ifdef VOLUMEPOT
-    // volume control functions
-    const byte volSensorDrift = 8;    // difference to last received sensor value that must be exceeded to activate a change in the volume
-    
-    // read the input on analog pin 0 and check if we have a change in volume.
-    const float volSensorValue = constrain(analogRead(volPotPin) / 10, 0, 100) / 100.00;
-    const byte soundVolume = volSensorValue; // map the sensor value to a sound volume
-    #ifdef DEBUG
-      Serial.print(F("volume sensor value read: "));Serial.println(volSensorValue);
-    #endif
-    
+    // this is the functionality, when we use the potentiometer to controle the volume
     // TODO: Make this work again
-    lastVolSensorValue = volSensorValue;
-    musicPlayer.setVolume(soundVolume, soundVolume);
-    /*
-    word volCompareValue      = 0;    // just a convenience variable to make comparison easier
-    
+    // volume control functions
+
     // read the input on analog pin 0 and check if we have a change in volume.
-    const word volSensorValue = analogRead(volPotPin);
+    //const float soundVolume = constrain(analogRead(VOLPOTPIN) / 10, 0, 100) / 100.00;
+    const uint16_t volSensorValue = analogRead(VOLPOTPIN);
     
-    if (lastVolSensorValue > volSensorValue) {
-      volCompareValue = lastVolSensorValue - volSensorValue;
-    } else {
-      volCompareValue = volSensorValue - lastVolSensorValue;
-    }
-    
-    // If we have a high enough difference in the sensor reading, calculate it so we may set it on the player
-    if (volCompareValue > volSensorDrift) {
-      const byte soundVolume = volSensorValue + 1023; // map the sensor value to a sound volume
-      #ifdef DEBUG
-        Serial.print(F("old sensor: ")); Serial.print(lastVolSensorValue); 
-        Serial.print(F(", new sensor: ")); Serial.print(volSensorValue); 
-        Serial.print(F(", vol: -")); Serial.println(soundVolume);
+    if ((volSensorValue < (lastVolSensorValue - valueDrift)) || (volSensorValue > (lastVolSensorValue + valueDrift))) {
+      soundVolume = map(volSensorValue, minimumPotiValue, maximumPotiValue, minimumVolume, maximumVolume);
+      
+      #ifdef TRACEOUT
+        Serial.print(F("VOL sensor value: "));Serial.print(volSensorValue);
+        Serial.print(F(" / last sensor value: "));Serial.print(lastVolSensorValue);
+        Serial.print(F(" / volume: "));Serial.print(soundVolume);
+        Serial.print(F(" / last volume: "));Serial.println(lastSoundVolume);
       #endif
-      lastVolSensorValue = volSensorValue;
-      musicPlayer.setVolume(soundVolume, soundVolume);
-    } // end of change sound volume
-    */
+    }
+    lastVolSensorValue = volSensorValue;
+    lastSoundVolume = soundVolume;
   #endif
+  
+  #ifdef IRREMOTE
+    // this is the functionality, when we use the infrared remote to control the volume
+    // in case the variable volumeUp is set to true *volume Up Button pressed, we increase the volume
+    if (buttonPressed) {
+      if (volumeUp) {
+        soundVolume += volumeStepper;
+        lastSoundVolume = soundVolume;
+        #ifdef LEDMATRIX
+          displayStuff(VOLUMEUP);
+        #endif
+      } else {
+        // otherwise we decrease the volume
+        soundVolume -= volumeStepper;
+        lastSoundVolume = soundVolume;
+        #ifdef LEDMATRIX
+          displayStuff(VOLUMEDOWN);
+        #endif
+      }
+      // after everything is done make sure we don't execute this again accidentially
+      buttonPressed = false;
+    }
+  #endif
+
+  #ifdef BUTTONS
+    #ifdef VOLUP_BUTTON
+      #ifdef VOLDOWN_BUTTON
+        if (buttonPressed) {
+          if (volumeUp) {
+            soundVolume += volumeStepper;
+            lastSoundVolume = soundVolume;
+            #ifdef LEDMATRIX
+              displayStuff(VOLUMEUP);
+            #endif
+          } else {
+            // otherwise we decrease the volume
+            soundVolume -= volumeStepper;
+            lastSoundVolume = soundVolume;
+            #ifdef LEDMATRIX
+              displayStuff(VOLUMEDOWN);
+            #endif
+          }
+          // after everything is done make sure we don't execute this again accidentially
+          buttonPressed = false;
+        }
+      #endif
+    #endif
+  #endif
+  
+  // finally call the player to adjust the volume
+  musicPlayer.setVolume(soundVolume, soundVolume);
 }
 
 
@@ -931,21 +1212,30 @@ static void plrAdjustVolume() {
 // stop playback
 static void plrStop(void) {
   musicPlayer.stopPlaying();
+  #ifdef LEDMATRIX
+    displayStuff(NOTE1);
+  #endif
 }
 
 
 // toggle pause
 static void plrTogglePause(void) {
   if (!musicPlayer.paused()) {
-    #ifdef DEBUG
-      Serial.println(F("Playback pause"));
+    #ifdef DEBUGOUT
+      Serial.println(F("Pause"));
     #endif
     musicPlayer.pausePlaying(true);
+    #ifdef LEDMATRIX
+      displayStuff(PAUSE);
+    #endif
   } else {
-    #ifdef DEBUG
-      Serial.println(F("Playback resume"));
+    #ifdef DEBUGOUT
+      Serial.println(F("Resume"));
     #endif
     musicPlayer.pausePlaying(false);
+    #ifdef LEDMATRIX
+      displayStuff(PLAY);
+    #endif
   }
 }
 
@@ -954,16 +1244,23 @@ static void plrTogglePause(void) {
 static char playAlbum(uint8_t numberOfFiles) {
   boolean loopWarningMessageFileNotFound = true;// make sure   file not found     warning message is shown at least once
   
-  #ifdef DEBUG
-    Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder); Serial.print(F(" / Files: ")); Serial.println(numberOfFiles);
+  #ifdef DEBUGOUT
+    Serial.print(F("Folder: ")); Serial.print(plrCurrentFolder);
+  #endif
+  #ifdef TRACEOUT
+    Serial.print(F(" / Files: ")); Serial.print(numberOfFiles);
+  #endif
+  #ifdef DEBUGOUT
+    Serial.print("\n");
   #endif
   #ifdef OPRLIGHTTIME
     lightStartUpTime = millis(); // store the time in millis when the  playback-for-loop started, so we can later check, 
                                  // whether or not the light shall continue to be on
   #endif
-  
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
-    digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
+    #ifdef INFOLED
+      digitalWrite(WRNLEDPIN, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
+    #endif
     
     // set the filename we want to play in the global variable so the playTrack() function knows what to play
     setFileNameToPlay(curTrack);
@@ -976,9 +1273,14 @@ static char playAlbum(uint8_t numberOfFiles) {
       }
       break;  // try the filename - we break the for loop and skip to next number
     }
-    
-    #ifdef DEBUG
-      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/"));Serial.print(numberOfFiles);Serial.print(F(": "));Serial.println(filename);
+    #ifdef DEBUGOUT
+      Serial.print(F("Track ")); Serial.print(curTrack); Serial.print(F("/"));Serial.print(numberOfFiles);
+    #endif
+    #ifdef TRACEOUT
+      Serial.print(F(": "));Serial.print(filename);
+    #endif
+    #ifdef DEBUGOUT
+      Serial.print("\n");
     #endif
 
     // make sure we remember the just started track to be the new track, in case player is stopped 
@@ -1011,47 +1313,12 @@ static char playTrack(uint8_t trackNo) {
     const unsigned long maxLightTime = 1800000L;// how long shall the light stay on while nothing is playing - 1800000L = 30 Minutes
   #endif
   const unsigned int checkInterval = 10000L;    // time in milliseconds between checks for battery status, tag presence and max light time
-  /*
-  #ifdef BUTTONS
-    // the 4 control buttons  - defined in global section
-    word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
-    const byte btnValDrift   = 5;       // maximum allowed difference + and - the predefined value for each button we allow
-    const word btnPressDelay = 500;     // delay in milliseconds to prevent double press detection
-    unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-    const word btnLightValue = 1021;    // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-    const word btnPauseValue = 933;     // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-    const word btnNextValue  = 1002;    // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-    const word btnPrevValue  = 991;     // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
-    const word minBtnValue   = 800;     // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
-  #endif
-  
-  #ifdef IRREMOTE
-    // IR Remote control      - defined in global section
-    // to reduce PROGMEM size I decided to not use the whole decimal value for each button on the remote control but instead do a calculation 
-    // which reduces the needed size of the variable to hold the value but still creates different values for each button
-    // Function  Original code   Minus         DIV   code I use
-    // right:    2011291898    - 2011000000) / 100 = 2919
-    // left:     2011238650    - 2011000000) / 100 = 2387
-    // Up:       2011287802    - 2011000000) / 100 = 2878
-    // Down:     2011279610    - 2011000000) / 100 = 2796
-    // Middle:   2011282170    - 2011000000) / 100 = 2822
-    // Pause:    2011265786    - 2011000000) / 100 = 2658
-    // Menu:     2011250938    - 2011000000) / 100 = 2509
-    const uint16_t nextVal    = 2919; // decoded value if button  NEXT  is pressed on remote
-    const uint16_t prevVal    = 2387; // decoded value if button  PREV  is pressed on remote
-    const uint16_t volUpVal   = 2878; // decoded value if button  UP    is pressed on remote
-    const uint16_t volDwnVal  = 2796; // decoded value if button  DOWN  is pressed on remote
-    const uint16_t lightVal   = 2822; // decoded value if button  HOME  is pressed on remote
-    const uint16_t pauseVal   = 2658; // decoded value if button  PAUSE is pressed on remote
-    const uint16_t menuVal    = 2509; // decoded value if button  MENU  is pressed on remote
-  #endif
-  */
-  
+
   if (!musicPlayer.startPlayingFile(filename)) {
     nextTrackToPlay = -1;
     return (nextTrackToPlay);
   }
-
+    
   unsigned long checkTime = millis();
   //
   //    LETS PLAY THE TRACK
@@ -1061,8 +1328,12 @@ static char playTrack(uint8_t trackNo) {
     // to do something else like handling LEDs or buttons :)
     #ifdef OPRLIGHT 
       // fade the light
-      if (lightOn && musicPlayer.paused()) analogWrite(infoLedPin, 5);
-      if (lightOn && !musicPlayer.paused()) analogWrite(infoLedPin, 128 + 127 * cos(2 * PI / 20000 * millis()));
+      if (lightOn && musicPlayer.paused()) analogWrite(OPRLEDPIN, 5);
+      if (lightOn && !musicPlayer.paused()) analogWrite(OPRLEDPIN, 128 + 127 * cos(2 * PI / 20000 * millis()));
+    #endif
+    #ifdef LEDMATRIX
+      // randomly cycle through the defined images from the sprite definition array
+      displayStuff(random(PLR1STSEQ, PLRLSTSEQ));
     #endif
     
     // every ten seconds we do some checks
@@ -1074,8 +1345,8 @@ static char playTrack(uint8_t trackNo) {
       // check if we shall still fade the info light - depends on max light time and light startup time and also on the light button state
       #ifdef OPRLIGHTTIME
         if (((millis()-lightStartUpTime) > maxLightTime) && lightOn) {
-          #ifdef DEBUG
-            //Serial.println(F("Max Light Time reached, turn light off")); 
+          #ifdef TRACEOUT
+            Serial.println(F("Max Light Time reached, turn light off")); 
           #endif
           switchLightState(); 
         }
@@ -1083,7 +1354,7 @@ static char playTrack(uint8_t trackNo) {
       
       // check if the battery is still good
       #ifdef LOWBAT
-        if (digitalRead(lowBatPin == LOW)) digitalWrite(errorLedPin, HIGH);
+        if (digitalRead(LOWBATPIN == LOW)) digitalWrite(ERRLEDPIN, HIGH);
       #endif
       
       // check if we can still read the tag and if not, stop/pause the playback
@@ -1101,12 +1372,12 @@ static char playTrack(uint8_t trackNo) {
     
     // check for button presses to pause, play next or previous track or turn lights on/off
     #ifdef BUTTONS
-      btnVal = analogRead(btnLinePin);
+      btnVal = analogRead(BTNLINPIN);
       if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) { 
         btnPressTime = millis(); 
-        #ifdef DEBUG
-          // Serial.print(F("VALUE: "));Serial.print(btnVal - btnValDrift); 
-          // Serial.print(F(" < ")); Serial.print(btnVal); Serial.print(F(" < ")); Serial.print(btnVal + btnValDrift);
+        #ifdef TRACEOUT
+          Serial.print(F("VALUE: "));Serial.print(btnVal - btnValDrift); 
+          Serial.print(F(" < ")); Serial.print(btnVal); Serial.print(F(" < ")); Serial.print(btnVal + btnValDrift);
         #endif
         //
         //       Button Layout on the box:
@@ -1116,108 +1387,208 @@ static char playTrack(uint8_t trackNo) {
         //   +-------+  +-------+  +-------+  +-------+
         //
         // PAUSE
-        if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
-          plrTogglePause();
-          //musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
-        }
-  
-        // PREV
-        if ( ((btnVal - btnValDrift) < btnPrevValue)  && ((btnVal + btnValDrift) > btnPrevValue)  ) { 
-          plrStop();
-          if (trackNo > 2) nextTrackToPlay = trackNo - 2;
-          else nextTrackToPlay = 0;
-          #ifdef DEBUG
-            Serial.print(F("Prev track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
-          #endif
-          musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
-          return(nextTrackToPlay); 
-        }
+        #ifdef PAUSE_BUTTON
+          if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) { 
+            plrTogglePause();
+            #ifdef TONE_SIGNAL
+              musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #endif
+          }
+        #endif
         
+        // PREV
+        #ifdef PREVTRACK_BUTTON
+          if ( ((btnVal - btnValDrift) < btnPrevValue)  && ((btnVal + btnValDrift) > btnPrevValue)  ) { 
+            buttonPressed = true;
+            #ifdef TRACEOUT
+              Serial.print(F("Prev track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+            #endif
+            #ifdef LEDMATRIX
+              displayStuff(PREVIOUS);
+            #endif
+            if (trackNo > 2) nextTrackToPlay = trackNo - 2;
+            else nextTrackToPlay = 0;
+            plrStop();
+            #ifdef TONE_SIGNAL
+              musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #endif
+            buttonPressed = false;
+            return(nextTrackToPlay); 
+          }
+        #endif
+
         // NEXT
-        if ( ((btnVal - btnValDrift) < btnNextValue)  && ((btnVal + btnValDrift) > btnNextValue)  ) { 
-          plrStop();
-          nextTrackToPlay = trackNo;
-          #ifdef DEBUG
-            Serial.print(F("Next track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
-          #endif
-          musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
-          return(nextTrackToPlay);
-        }
+        #ifdef NEXTTRACK_BUTTON
+          if ( ((btnVal - btnValDrift) < btnNextValue)  && ((btnVal + btnValDrift) > btnNextValue)  ) { 
+            buttonPressed = true;
+            #ifdef TRACEOUT
+              Serial.print(F("Next track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+            #endif
+            #ifdef LEDMATRIX
+              displayStuff(NEXT);
+            #endif
+            plrStop();
+            nextTrackToPlay = trackNo;
+            #ifdef TONE_SIGNAL
+              musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #endif
+            buttonPressed = false;
+            return(nextTrackToPlay);
+          }
+        #endif
+
+        // VOLUME UP
+        #ifdef VOLUP_BUTTON
+          if ( ((btnVal - btnValDrift) < btnVolumeUpValue)  && ((btnVal + btnValDrift) > btnVolumeUpValue)  ) { 
+            buttonPressed = true;
+            #ifdef TRACEOUT
+              Serial.print(F("volume up "));
+            #endif
+            #ifdef LEDMATRIX
+              displayStuff(VOLUMEUP);
+            #endif
+            volumeUp = true;
+            plrAdjustVolume();
+            buttonPressed = false;
+          }
+        #endif
+
+        // VOLUME DOWN
+        #ifdef VOLDOWN_BUTTON
+          if ( ((btnVal - btnValDrift) < btnVolumeDownValue)  && ((btnVal + btnValDrift) > btnVolumeDownValue)  ) { 
+            buttonPressed = true;
+            #ifdef TRACEOUT
+              Serial.print(F("volume down "));
+            #endif
+            #ifdef LEDMATRIX
+              displayStuff(VOLUMEDOWN);
+            #endif
+            volumeUp = false;
+            plrAdjustVolume();
+            buttonPressed = false;
+          }
+        #endif
         
         // LIGHT
-        #ifdef OPRLIGHT
-          if ( ((btnVal - btnValDrift) < btnLightValue) && ((btnVal + btnValDrift) > btnLightValue) ) { 
-            switchLightState();
-            //musicPlayer.sineTest(0x40, 100);    // Make a tone to indicate button press
-          }
+        #ifdef LIGHT_BUTTON
+          #ifdef OPRLIGHT
+            if ( ((btnVal - btnValDrift) < btnLightValue) && ((btnVal + btnValDrift) > btnLightValue) ) { 
+              switchLightState();
+              #ifdef TONE_SIGNAL
+                musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+              #endif
+            }
+          #endif
         #endif
       }
     #endif
 
     #ifdef IRREMOTE
-      // IR Remote Control Layout
+      // IR Remote Control Layout                 Codes from the Apple TV Remote (Silver Model)
       //                +-------+
-      //               |    UP   |
+      //               |    UP   |                        3257242045
       //                +-------+
       //    +-------+   +-------+   +-------+
-      //   |   LEFT  | |   HOME  | |  RIGHT  |
+      //   |   LEFT  | |   HOME  | |  RIGHT  |  43265108  297656404   35532750
       //    +-------+   +-------+   +-------+
       //                +-------+
-      //               |   DOWN  |
-      //                +-------+
+      //               |   DOWN  |                        537802768
+      //                +-------+ 
       //       +-------+         +-------+  
-      //      |  PAUSE  |       |  MENU   |
+      //      |  MENU  |         | PAUSE |      21493330              3938283307
       //       +-------+         +-------+
       //
       // check for IR Remote Control action
       if (irrecv.decode(&results)) { // get data from IR Remote
-        switch ((results.value-2011000000)/100) {
+        const uint16_t switchValue = results.value;
+        switch (switchValue) {
           // PREV
           case prevVal:
-            #ifdef DEBUG
+            buttonPressed = true;
+            #ifdef TRACEOUT
               Serial.print(F("Prev track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
             #endif
-            plrStop();
-            musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
-            if (trackNo > 2) nextTrackToPlay = trackNo - 2; else nextTrackToPlay = 0;
-            return(nextTrackToPlay); 
-            break;
-          // NEXT
-          case nextVal:
-            #ifdef DEBUG
-              Serial.print(F("Next track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+            #ifdef LEDMATRIX
+              displayStuff(PREVIOUS);
             #endif
             plrStop();
-            musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #ifdef TONE_SIGNAL
+              musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #endif
+            if (trackNo > 2) nextTrackToPlay = trackNo - 2; else nextTrackToPlay = 0;
+            buttonPressed = false;
+            return(nextTrackToPlay); 
+            break;
+            
+          // NEXT
+          case nextVal:
+            buttonPressed = true;
+            #ifdef TRACEOUT
+              Serial.print(F("Next track "));Serial.print(nextTrackToPlay);Serial.println(F(" set"));
+            #endif
+            #ifdef LEDMATRIX
+              displayStuff(NEXT);
+            #endif
+            plrStop();
+            #ifdef TONE_SIGNAL
+              musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #endif
             nextTrackToPlay = trackNo;
+            buttonPressed = false;
             return(nextTrackToPlay);
             break;
+            
           // PAUSE
           case pauseVal:
+            buttonPressed = true;
+            #ifdef TONE_SIGNAL
+              musicPlayer.sineTest(0x42, 100);    // Make a tone to indicate button press
+            #endif
             plrTogglePause();
+            buttonPressed = false;
             break;
+            
           // LIGHT
           #ifdef OPRLIGHT
             case lightVal:
+              buttonPressed = true;
               switchLightState();
+              buttonPressed = false;
               break;
           #endif
+          
           // VOL UP
           case volUpVal:
-            #ifdef DEBUG
+            buttonPressed = true;
+            #ifdef TRACEOUT
               Serial.println(F("Volume Up"));
             #endif
+            #ifdef LEDMATRIX
+              displayStuff(VOLUMEUP);
+            #endif
+            volumeUp = true;
+            plrAdjustVolume();
+            buttonPressed = false;
             break;
+            
           // VOL DOWN
           case volDwnVal:
-            #ifdef DEBUG
+            buttonPressed = true;
+            #ifdef TRACEOUT
               Serial.println(F("Volume Down"));
             #endif
+            #ifdef LEDMATRIX
+              displayStuff(VOLUMEDOWN);
+            #endif
+            volumeUp = false;
+            plrAdjustVolume();
+            buttonPressed = false;
             break;
+            
           // MENU
           // CURRENTLY NO FUNCTION FOR MENU
           //case menuVal:
-          //  #ifdef DEBUG
+          //  #ifdef TRACEOUT
           //    Serial.println(F(" - Menu Button Pressed"));
           //  #endif
           //  break;
@@ -1233,6 +1604,12 @@ static char playTrack(uint8_t trackNo) {
     if (!musicPlayer.playingMusic && !musicPlayer.paused()) { nextTrackToPlay = trackNo; return (nextTrackToPlay); }
   } // end of while playing music
   
+  #ifdef IRREMOTE
+    buttonPressed = false;
+  #endif
+  #ifdef BUTTON
+    buttonPressed = false;
+  #endif
   nextTrackToPlay = trackNo;
   return (nextTrackToPlay);
 }
@@ -1255,7 +1632,7 @@ static boolean getDirAndTrackToPlay(boolean readFromTag) {
     #ifdef SPEEDMASTER_PN532
       // read the tag object with the Speedmaster PN532 library
       NfcTag tag = nfc.read();
-      #ifdef DEBUG
+      #ifdef TRACEOUT
         Serial.print(F("Tag Type: ")); Serial.println(tag.getTagType()); Serial.print(F("UID: ")); Serial.println(tag.getUidString());
       #endif
     #endif
@@ -1295,7 +1672,7 @@ static boolean getDirAndTrackToPlay(boolean readFromTag) {
               break;
           }
         }
-        #ifdef DEBUG
+        #ifdef TRACEOUT
           Serial.print(F("Folder from tag: "));Serial.println(plrCurrentFolder);
         #endif
         //return (plrStartPlaying);
@@ -1325,6 +1702,9 @@ static void checkAndSetCurTrack(byte curTrack, uint8_t numberOfFiles){
       if (!writeTrackDbEntry()) {
         issueWarning("trackdb update error", "", false);
       }
+      #ifdef LEDMATRIX
+        displayStuff(SADSD):
+      #endif
     }
   #endif
 }
@@ -1337,10 +1717,15 @@ static boolean writeTrackDbEntry() {
   #ifdef NFCTRACKDB
     byte bytesWritten;
     
-    #ifdef DEBUG
-      Serial.print(F("saving nfc <-> album: "));Serial.println(trackDbEntry);
+    #ifdef DEBUGOUT
+      Serial.print(F("saving"));
     #endif
-  
+    #ifdef TRACE
+      Serial.print(F(" nfc <-> album: "));Serial.print(trackDbEntry);
+    #endif
+    #ifdef DEBUGOUT
+      Serial.print(F("\n"));
+    #endif
     // FIRST (if set) write the AlbumNFC file  --> ALBUMNFC.TDB
     #ifdef ALBUMNFC
       File file = SD.open(albumNfcFile, FILE_WRITE);
@@ -1349,15 +1734,20 @@ static boolean writeTrackDbEntry() {
   
       // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
       if (bytesWritten == sizeof(albumNfcFile)) {
-        #ifdef DEBUG
-          Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(albumNfcFile);
+        #ifdef TRACEOUT
+          Serial.print(F(" ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(albumNfcFile);
         #endif
         success = true;
       } else {
-        #ifdef DEBUG
-          Serial.print(F("  error writing "));Serial.println(albumNfcFile);
+        #ifdef DEBUGOUT
+          Serial.print(F(" error writing "));Serial.println(albumNfcFile);
         #endif
-        digitalWrite(warnLedPin, HIGH);
+        #ifdef LEDMATRIX
+          displayStuff(SADSD);
+        #endif
+        #ifdef INFOLED
+          digitalWrite(WRNLEDPIN, HIGH);
+        #endif
         success = false;
       }
     #endif
@@ -1383,15 +1773,20 @@ static boolean writeTrackDbEntry() {
   
     // now check if the write was successful - means we wrote the number of bytes of the trackDb entry to the file
     if (bytesWritten == sizeof(trackDbEntry)) {
-      #ifdef DEBUG
-        Serial.print(F("  ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(trackDbFile);
+      #ifdef TRACEOUT
+        Serial.print(F(" ok. "));Serial.print(bytesWritten);Serial.print(F(" byte(s) written to "));Serial.println(trackDbFile);
       #endif
       success = true;
     } else {
-      #ifdef DEBUG
-        Serial.print(F("  error writing "));Serial.println(trackDbFile);
+      #ifdef DEBUGOUT
+        Serial.print(F(" error writing "));Serial.println(trackDbFile);
       #endif
-      digitalWrite(warnLedPin, HIGH);
+      #ifdef LEDMATRIX
+        displayStuff(SADSD);
+      #endif
+      #ifdef INFOLED
+        digitalWrite(WRNLEDPIN, HIGH);
+      #endif
       success = false;
     }
   
@@ -1452,13 +1847,13 @@ static boolean checkForResumeLast(){
   #ifdef RESUMELAST
     // Of course works only when we have the Buttons 
     #ifdef BUTTONS
-      btnVal = analogRead(btnLinePin);
+      btnVal = analogRead(BTNLINPIN);
       if (btnVal > minBtnValue && (millis()-btnPressTime) > btnPressDelay) 
         if ( ((btnVal - btnValDrift) < btnPauseValue) && ((btnVal + btnValDrift) > btnPauseValue) ) resumeLast = true;
     #endif
     // ... or the IR Remote Control implementation
     #ifdef IRREMOTE
-      if (irrecv.decode(&results)) if ( ((results.value-2011000000)/100) == pauseVal ) resumeLast = true;
+      if (irrecv.decode(&results)) if ( results.value == pauseVal ) resumeLast = true;
     #endif
   #endif
   return (resumeLast);
@@ -1511,7 +1906,13 @@ static void setTrackDbEntry() {
 }
 
 
-
+//
+//  RRRRRR      AA      MMM  MMM
+//  RR   RR    AAAA    MM  MM  MM
+//  RRRRRR    AA  AA   MM  MM  MM
+//  RR   RR  AAAAAAAA  MM      MM
+//  RR   RR AA      AA MM      MM
+//
 #ifdef RAMCHECK
 // return the free RAM - called periodically during playTrack()
 int freeRam () {
@@ -1559,15 +1960,18 @@ static uint8_t countFiles(File dir) {
 //            WW    WW    AA      AA  RR    RR  NN    NNNN
 //
 static void issueWarning(const char msg[20], const char filename[23], boolean voiceOutput) {
-  #ifdef DEBUG
+  #ifdef DEBUGOUT
     Serial.println(msg);
   #endif
   if (voiceOutput && SD.exists(filename)) {
     musicPlayer.playFullFile(filename);
-  } /*else {
-    musicPlayer.sineTest(0x30, 200);    // Make a tone to indicate warning
-  }*/
-  digitalWrite(warnLedPin, HIGH);
+  } 
+  #ifdef INFOLED
+    digitalWrite(WRNLEDPIN, HIGH);
+  #endif
+  #ifdef LEDMATRIX
+    displayStuff(SAD);
+  #endif
 }
 
 
@@ -1581,8 +1985,11 @@ static void issueWarning(const char msg[20], const char filename[23], boolean vo
 // switches the value of lightOn between true and false - only needed in case there is a LED attached
 static void switchLightState(void) {
   #ifdef OPRLIGHT
+    #ifdef LEDMATRIX
+      displayStuff(LIGHT):
+    #endif
     if (!lightOn) {
-      #ifdef DEBUG
+      #ifdef TRACEOUT
         Serial.println(F("Switching light off -> ON"));
       #endif
       lightOn = true;
@@ -1590,11 +1997,29 @@ static void switchLightState(void) {
         lightStartUpTime = millis(); // also sets the lightStartUpTime
       #endif
     } else {
-      #ifdef DEBUG
+      #ifdef TRACEOUT
         Serial.println(F("Switching light on -> OFF"));
       #endif
       lightOn = false;
-      digitalWrite(infoLedPin, LOW);   // also turns off the info led
+      digitalWrite(OPRLEDPIN, LOW);   // also turns off the info led
+    }
+  #endif
+}
+
+static void displayStuff(int i){
+  #ifdef LEDMATRIX
+    memcpy_P(&image, &IMAGES[i], 8);
+    displayImage(image);
+  #endif
+}
+
+void displayImage(uint64_t image) {
+  #ifdef LEDMATRIX
+    for (int i = 0; i < 8; i++) {
+      byte row = (image >> i * 8) & 0xFF;
+      for (int j = 0; j < 8; j++) {
+        ledmatrix.setLed(0, i, j, bitRead(row, j));
+      }
     }
   #endif
 }

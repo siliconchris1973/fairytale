@@ -1,4 +1,4 @@
-#define VERSION 25
+#define VERSION 26
 
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
@@ -518,11 +518,10 @@ char nextTrackToPlay        = 1;                         // the track number to 
   const byte infoLedPin     = 5;       // the pin to which the operation led is connected to
   boolean lightOn           = true;    // if true, the operations light fader is active. switched via a button, 
                                        // set to false after a maxLightTime (in case of OPRLIGHTTIME) is reached
+  const byte warnLedPin       = 8;       // the pin to which the warning led is connected to
+  const byte errorLedPin      = 9;       // the pin to which the error led is connected to
+  boolean loopLightHigh       = false;   // we turn the warnLed on and off while waiting for the next tag
 #endif
-const byte warnLedPin       = 8;       // the pin to which the warning led is connected to
-const byte errorLedPin      = 9;       // the pin to which the error led is connected to
-boolean loopLightHigh       = false;   // we turn the warnLed on and off while waiting for the next tag
-
 
 //
 //        PPPPPP    RRRRR     OOOOOO   TTTTTTTT   OOOOOO   TTTTTTTT  YY    YY   PPPPPP    EEEEE   SSSSS
@@ -594,6 +593,7 @@ void setup() {
   #ifdef DEBUG
     // in case we want debug output
     Serial.begin(BAUDRATE);
+    Serial.print(F("\n\nfairytale V"));Serial.print(VERSION);
   #endif
   #ifdef RAMCHECK
     // or at least print out available RAM
@@ -619,10 +619,9 @@ void setup() {
   // DEFINE OUPUT PINs
   #ifdef OPRLIGHT
     pinMode(infoLedPin, OUTPUT);     // connect to blue LED
+    pinMode(warnLedPin, OUTPUT);     // connect to orange LED
+    pinMode(errorLedPin, OUTPUT);    // connect to a red LED
   #endif
-  pinMode(warnLedPin, OUTPUT);     // connect to orange LED
-  pinMode(errorLedPin, OUTPUT);    // connect to a red LED
-
   
   // INITIALIZE THE MUSIC PLAYER
   #ifdef VS1053
@@ -631,7 +630,12 @@ void setup() {
         Serial.println(F("VS1053 Not found"));
       #endif
       // flash the red light to indicate we have an error
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef OPRLIGHT
+        digitalWrite(errorLedPin, HIGH); 
+      #endif
+      
+      // halt the system
+      for (;;) { delay(10000); }
     }
     // This option uses a pin interrupt. No timers required! But DREQ
     // must be on an interrupt pin. For Uno/Duemilanove/Diecimilla
@@ -641,7 +645,12 @@ void setup() {
       #ifdef DEBUG
         Serial.println(F("No interrupt on DREQ pin"));
       #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef OPRLIGHT
+        digitalWrite(errorLedPin, HIGH); 
+      #endif
+      
+      // halt the system
+      for (;;) { delay(10000); }
     }
   #endif
   
@@ -651,8 +660,12 @@ void setup() {
       #ifdef DEBUG
         Serial.println(F("SD-Card Not found"));
       #endif
-      // flash the red light to indicate we have an error
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef OPRLIGHT
+        digitalWrite(errorLedPin, HIGH); 
+      #endif
+      
+      // halt the system
+      for (;;) { delay(10000); }
     }
   #endif
   
@@ -682,7 +695,12 @@ void setup() {
       #ifdef DEBUG
         Serial.print("Didn't find PN53x board");
       #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef OPRLIGHT
+        digitalWrite(errorLedPin, HIGH); 
+      #endif
+      
+      // halt the system
+      for (;;) { delay(10000); }
     }
     #ifdef DEBUG
       // Got ok data, print it out!
@@ -714,7 +732,7 @@ void setup() {
   // check our current time, so we know when to stop
   //startUpTime = millis();
   #ifdef DEBUG
-    Serial.print(F("fairytale V"));Serial.print(VERSION);Serial.print(F(" - waiting "));
+    Serial.print(F("\nwaiting "));
   #endif
 }
 
@@ -734,13 +752,15 @@ void loop() {
   
   #ifdef DEBUG 
     Serial.print(F("."));
-    if (loopLightHigh) {
-      digitalWrite(warnLedPin, LOW);
-      loopLightHigh = false;
-    } else {
-      digitalWrite(warnLedPin, HIGH);
-      loopLightHigh = true;
-    }
+    #ifdef OPRLIGHT
+      if (loopLightHigh) {
+        digitalWrite(warnLedPin, LOW);
+        loopLightHigh = false;
+      } else {
+        digitalWrite(warnLedPin, HIGH);
+        loopLightHigh = true;
+      }
+    #endif
   #endif
   
   
@@ -750,8 +770,10 @@ void loop() {
   
   // if a tag is found or the pause button is pressed without a tag, we continue
   if (weHaveATag || resumeLast) {
-    digitalWrite(warnLedPin, LOW);
-    loopLightHigh = false;
+    #ifdef OPRLIGHT
+      digitalWrite(warnLedPin, LOW);
+      loopLightHigh = false;
+    #endif
     
     #ifdef DEBUG
       if (weHaveATag) Serial.println(F(" tag found! ")); else Serial.println(F(" resume last album "));
@@ -823,7 +845,9 @@ void loop() {
               #ifdef DEBUG
                 Serial.println(F("\nplayback end"));
               #endif
-              digitalWrite(warnLedPin, LOW);
+              #ifdef OPRLIGHT
+                digitalWrite(warnLedPin, LOW);
+              #endif
             }
           } // end of check if at least 1 file was found
           
@@ -963,7 +987,9 @@ static char playAlbum(uint8_t numberOfFiles) {
   #endif
   
   for (byte curTrack = firstTrackToPlay; curTrack <= numberOfFiles; curTrack++) {
-    digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
+    #ifdef OPRLIGHT
+      digitalWrite(warnLedPin, LOW); // in each for-loop, we make sure that the warning LED is NOT lit up
+    #endif
     
     // set the filename we want to play in the global variable so the playTrack() function knows what to play
     setFileNameToPlay(curTrack);
@@ -1567,7 +1593,9 @@ static void issueWarning(const char msg[20], const char filename[23], boolean vo
   } /*else {
     musicPlayer.sineTest(0x30, 200);    // Make a tone to indicate warning
   }*/
-  digitalWrite(warnLedPin, HIGH);
+  #ifdef OPRLIGHT
+    digitalWrite(warnLedPin, HIGH);
+  #endif
 }
 
 
