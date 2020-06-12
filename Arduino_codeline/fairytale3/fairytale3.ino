@@ -1,4 +1,4 @@
-#define VERSION 27
+#define VERSION 30
 
 // BOF preprocessor bug prevent - insert me on top of your arduino-code
 #if 1
@@ -305,7 +305,7 @@ __asm volatile ("nop");
 //#define INFOLED 1
 
 // to enable the 8x8 LED Matrix uncomment the next
-//#define LEDMATRIX 1
+#define LEDMATRIX 1
 
 
 // Define the PN532 implementation
@@ -313,8 +313,8 @@ __asm volatile ("nop");
 // you want to use   NFCNDEF   for tag <--> album connection. If you opt for the TrackDB for this connection 
 // (with option NFCTRACKDB below) you may also try the Adafruit library - it will additionally give you 
 // track absence detection and has a smaller memory footprint. 
-#define SPEEDMASTER_PN532 1
-//#define ADAFRUIT_PN532 1
+//#define SPEEDMASTER_PN532 1
+#define ADAFRUIT_PN532 1
 
 // Define the NFC <-> Album connection implementation
 // ONLY ONE of the following two options for the NFC reading and album <-> tag connection can be chosen
@@ -324,10 +324,10 @@ __asm volatile ("nop");
 // get the album directory that is stored as an NDEF Message on the tag. That means, it does NOT
 // use the decribed TrackDB. It is also much heavier (in Progmem size) than the Adafruit PN532
 // implementation and does NOT support recognition of a removed tag. 
-#define NFCNDEF 1
+//#define NFCNDEF 1
 
 // to use TrackDB to get the Tag UID and retrieve the directory from the trackDb, uncomment the following 
-//#define NFCTRACKDB 1
+#define NFCTRACKDB 1
 
 // uncomment to enable a special file albumnfc.tdb in which all album <-> nfc connections are stored 
 // this is an additional storage to the individual TrackDb files and requires NFCTRACKDB 
@@ -649,7 +649,7 @@ uint8_t lastSoundVolume = 40;         // from this value, which is the previous 
                   0x0000cc663366cc00,   //  Previous
                   0x00003366cc663300,   //  Next
                   0x000c1c3c7c3c1c0c,   //  Play
-                  //0xff009191d3b59300,   //  NOPN53 - Didn't find PN53x board
+                  0x007e425a5a527600,   //  NOPN53 - Didn't find PN53x board
                   0x060e0c0808281800,   //  NOTE1
                   //0x066eecc88898f000,   //  NOTE2
                   //0x00082a1c771c2a08,   //  SONNE
@@ -684,26 +684,26 @@ uint8_t lastSoundVolume = 40;         // from this value, which is the previous 
   #define PREVIOUS 5  // 6
   #define NEXT 6      // 7
   #define PLAY 7      // 8
-  //#define NOPN53    9
-  #define NOTE1 8     // 10
+  #define NOPN53    8
+  #define NOTE1 9     // 10
   //#define NOTE2     11
   //#define SONNE     12
   //#define HEART     13
   //#define BFLY1     14
   //#define BFLY2     15
-  #define QUESTION 9  // 16
-  #define VOLUMEUP 10  // 17
-  #define VOLUMEDOWN 11 // 18
-  #define EQ1 12      //  19
-  #define EQ2 13      //  20
-  #define EQ3 14      //  21
-  #define EQ4 15      //  22
-  #define EQ5 16      //  23
-  #define EQ6 17      //  24
-  #define EQ7 18      //  25
-  #define EQ8 19      //  26
-  #define EQ9 20      //  27
-  #define NOSDCARD 21 //  28
+  #define QUESTION 10  // 16
+  #define VOLUMEUP 11  // 17
+  #define VOLUMEDOWN 12 // 18
+  #define EQ1 13      //  19
+  #define EQ2 14      //  20
+  #define EQ3 15      //  21
+  #define EQ4 16      //  22
+  #define EQ5 17      //  23
+  #define EQ6 18      //  24
+  #define EQ7 19      //  25
+  #define EQ8 20      //  26
+  #define EQ9 21      //  27
+  #define NOSDCARD 22 //  28
   //#define LIGHT     29
 
   const byte PLR1STSEQ = EQ1; // cycle through equalizer while playing
@@ -914,11 +914,11 @@ void setup() {
       #ifdef DEBUGOUT
         Serial.println(F("No PN53x board"));
       #endif
-      #ifdef LEDMATRIX
-        displayStuff(NOPN53);
-      #endif
       #ifdef INFOLED
         digitalWrite(ERRLEDPIN, HIGH);
+      #endif
+      #ifdef LEDMATRIX
+        displayStuff(NOPN53);
       #endif
       for (;;) { delay(1000); }
     }

@@ -1,4 +1,12 @@
-#define VERSION 2
+#define VERSION 3
+
+// BOF preprocessor bug prevent - insert me on top of your arduino-code
+#if 1
+__asm volatile ("nop");
+#endif
+
+// set according to the baudrate of your serial console. used for debugging output
+#define BAUDRATE 115200
 
 //
 //     CCCCC   OOOOOO   NN    NN  FFFFFF
@@ -17,27 +25,13 @@
 //
 // turn ON / OFF certain hardware/software features
 //
-// to enable the IR Remote Control option uncomment the following line - does not work currently
-//#define IRREMOTE 1
+// to enable the 8x8 LED Matrix uncomment the next
+#define LEDMATRIX 1
 
-// to enable the 4 control buttons uncomment the following line
-#define BUTTONS 1
 
-// to enable the volume potentiometer uncomment the follwing line
-//#define VOLUMEPOT 1
-
-// to enable the low battery warning with light and voice uncomment the follwing line
-//#define LOWBAT 1
-
-// to enable the operations light on the front of the box, uncomment the following line
-#define OPRLIGHT 1
-// to enable time based operations light - turns off the light after 30 Minutes - uncomment the following line
-//#define OPRLIGHTTIME 1
+#define ADAFRUIT_PN532 1
 
 // Define the NFC <-> Album implementation
-// ONLY ONE of the these two options can be chosen
-// to use NDEF to get the album directory uncomment the following line
-//#define NFCNDEF 1
 // to use the Adafruit NFC library to get the Tag UID and retrieve the directory from the trackDb 
 // uncomment the following line. 
 #define NFCTRACKDB 1
@@ -76,75 +70,59 @@
 #include <SD.h>
 
 
-// These are the SPI pins shared among all components
-#define CLK             13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-#define MISO            12    // Input data from VS1053, SD card and NFC breakout board 
-#define MOSI            11    // Output data to VS1053, SD card and NFC breakout board 
-
 
 //
 // SETUP MUSIC MAKER SHIELD
 // 
-#include <Adafruit_VS1053.h>
-// These are the pins used for the music maker shield
-#define SHIELD_RESET     -1    // VS1053 reset pin (unused!)
-#define SHIELD_CS         7    // VS1053 chip select pin (output)
-#define SHIELD_DCS        6    // VS1053 Data/command select pin (output)
-
-//
-// SETUP SD CARD
-//
-// These are common pins between breakout and shield
-#define CARDCS            4    // Card chip select pin
-// DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
-#define DREQ              3    // VS1053 Data request, ideally an Interrupt pin
-// Create shield object
-Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS);
-
+#ifdef ADAFRUIT_PN532
+  #include <Adafruit_VS1053.h>
+  // These are the pins used for the music maker shield
+  #define SHIELD_RESET     (-1)    // VS1053 reset pin (unused!)
+  #define SHIELD_CS         (7)    // VS1053 chip select pin (output)
+  #define SHIELD_DCS        (6)    // VS1053 Data/command select pin (output)
+  
+  //
+  // SETUP SD CARD
+  //
+  // These are common pins between breakout and shield
+  #define CARDCS            (4)    // Card chip select pin
+  // DREQ should be an Int pin, see http://arduino.cc/en/Reference/attachInterrupt
+  #define DREQ              (3)    // VS1053 Data request, ideally an Interrupt pin
+  // Create shield object
+  Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(SHIELD_RESET, SHIELD_CS, SHIELD_DCS, DREQ, CARDCS);
+#endif
 
 //
 // SETUP NFC ADAPTER
 //
-// this implementation uses the Speedmaster Library and Don's NDEF library to read NFC Tags and
-// get the album directory that is stored as an NDEF Message on the tag. That means, it does NOT
-// use the decribed TrackDB. It is also much heavier (in Progmem size than the Adafruit PN532
-// implementation below and does NOT support recognition of a removed track. Furthermore the user
-// has to turn off the box before she can listen to the next album :-(
-#ifdef NFCNDEF
-  // these includes are sued for the NDEF implementation
-  #include <PN532_SPI.h>
-  #include <PN532.h>
-  #include <NfcAdapter.h>
-  #define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-  #define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
-  #define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
-  #define PN532_SS          10    // NFC breakout board chip select pin
-  PN532_SPI pn532spi(SPI, PN532_SS);
-  NfcAdapter nfc = NfcAdapter(pn532spi);
-#endif
-
-
 // this implementation uses the Adafruit PN532 library alone - it is way smaller and preferrable
 // as it allows for tag removal recognition and does not enforce the user to turn off the box
 // after an album was played, as the above implementation does.
-#ifdef NFCTRACKDB
+#ifdef ADAFRUIT_PN532
   // INCLUDE Adafruit NFC LIbrary here
   #include <Wire.h>
   #include <Adafruit_PN532.h>
-  //#define PN532_SCK         13    // SPI Clock shared with VS1053, SD card and NFC breakout board 
-  //#define PN532_MISO        12    // Input data from VS1053, SD card and NFC breakout board 
-  //#define PN532_MOSI        11    // Output data to VS1053, SD card and NFC breakout board 
-  #define PN532_SS          10    // NFC breakout board chip select pin
+
+  
+  #define PN532_SCK         (13)    // SPI Clock shared with VS1053, SD card and NFC breakout board 
+  #define PN532_MISO        (12)    // Input data from VS1053, SD card and NFC breakout board 
+  #define PN532_MOSI        (11)    // Output data to VS1053, SD card and NFC breakout board 
+  #define PN532_SS          (10)    // NFC breakout board chip select pin
   //Adafruit_PN532 nfc(PN532_SCK, PN532_MISO, PN532_MOSI, PN532_SS);
-  Adafruit_PN532 nfc(SCK, MISO, MOSI, PN532_SS);
+  // SCK = 13, MOSI = 11, MISO = 12.  The SS line can be any digital IO pin.
+  Adafruit_PN532 nfc(PN532_SS);
 #endif
 
 
 //
-// include IR Remote Control
+// include 8x8 LED MAtrix
 //
-#ifdef IRREMOTE
-  #include <IRremote.h>
+#ifdef LEDMATRIX
+  #include <LedControl.h>
+  
+  #define MATRIX_DIN (9)              // DIN pin of MAX7219 module
+  #define MATRIX_CLK (5)              // CLK pin of MAX7219 module
+  #define MATRIX_CS  (8)              // CS  pin of MAX7219 module
 #endif
 
 
@@ -182,78 +160,79 @@ char nextTrackToPlay        = 1;                         // the track number to 
 #endif 
 
 
-// volume control variables for the analog poti
-#ifdef VOLUMEPOT
-  const byte volPotPin       = A0;    // the analog input pin that we use for the potentiometer
-  word lastVolSensorValue    = 0;     // keeps the last read sensor value
-#endif
+#ifdef LEDMATRIX
+  const uint64_t IMAGES[] PROGMEM = {
+                  0x3c4299a581a5423c,   //  Happy Smiley
+                  0x003e22222a2a1e00,   //  Error writing / reading to / from SD 
+                  0x3c42a59981a5423c,   //  Sad Smiley
+                  0xff0072856515e500,   //  NOVS1053 - VS1053 Not found
+                  0xff0000555d5df500,   //  NOINT - No interrupt on DREQ pin
+                  //0x0036363636363600,   //  Pause
+                  //0x0000cc663366cc00,   //  Previous
+                  0x00003366cc663300,   //  Next
+                  //0x000c1c3c7c3c1c0c,   //  Play
+                  0x00088cafaf8c0800,   //  NOPN53 - Didn't find PN53x board
+                  //0x060e0c0808281800,   //  NOTE1
+                  //0x066eecc88898f000,   //  NOTE2
+                  //0x00082a1c771c2a08,   //  SONNE
+                  //0x10387cfefeee4400,   //  HEART
+                  //0x00496b5d5d6b4914,   //  Butterfly 1
+                  //0x00082a3e3e2a0814,   //  Butterfly 2
+                  0x1800183860663c00,   //  QUESTION
+                  //0x0088acafafac8800,   //  Volume UP
+                  //0x00088cafaf8c0800,   //  Volume DOWN
+                  //0xffffbb2f2a0a0808,   //  EQ1
+                  //0xffdffa5c5a480800,   //  EQ2
+                  //0xfffbf3b292900000,   //  EQ3
+                  //0xffeeeea6e2a20000,   //  EQ4
+                  //0xffefaf868a820000,   //  EQ5
+                  //0xffefee6a68602000,   //  EQ6
+                  //0xffefca4a08000000,   //  EQ7
+                  //0xffeec44000000000,   //  EQ8
+                  //0xffeeecc480808000,   //  EQ9
+                  0x013e262a32324e80   //  NO SD CARD
+                  //0x1818245a5a241800    //  Light
+                  
+                  
+  };
 
-
-// control buttons definition
-#ifdef BUTTONS
-  const byte btnLinePin      = A1;    // pin on which the button line (4 buttons) is connected
+  // for easiere selction of the images these constants can be used
+  #define HAPPY       (0)
+  #define SADSD       (1)
+  #define SAD         (2)
+  #define NOVS1053    (3)
+  #define NOINT       (4)
+  //#define PAUSE       (5)
+  //#define PREVIOUS    (6)
+  #define NEXT        (5)
+  //#define PLAY        (8)
+  #define NOPN53      (6)
+  //#define NOTE1       (10)
+  //#define NOTE2       (11)
+  //#define SONNE       (12)
+  //#define HEART       (13)
+  //#define BFLY1       (14)
+  //#define BFLY2       (15)
+  #define QUESTION    (7)
+  //#define VOLUMEUP    (17)
+  //#define VOLUMEDOWN  (18)
+  //#define EQ1         (19)
+  //#define EQ2         (20)
+  //#define EQ3         (21)
+  //#define EQ4         (22)
+  //#define EQ5         (23)
+  //#define EQ6         (24)
+  //#define EQ7         (25)
+  //#define EQ8         (26)
+  //#define EQ9         (27)
+  #define NOSDCARD    (8)
+  //#define LIGHT       (29)
   
-  word btnVal;                        // stores the value we receive on the btnLinePin for comparance with the predefined analog reads for the 4 buttons
-  const byte btnValDrift     = 5;     // maximum allowed difference + and - the predefined value for each button we allow
-  const word btnPressDelay   = 500;   // delay in milliseconds to prevent double press detection
-  unsigned long btnPressTime = 0;     // time in millis() when the button was pressed
-  const word btnLightValue   = 1021;  // 33 Ohm  - The value we receive from analog input if the Light On/Off Button is pressed
-  const word btnPauseValue   = 933;   // 1K Ohm  - The value we receive from analog input if the Pause Button is pressed
-  const word btnNextValue    = 1002;  // 220 Ohm - The value we receive from analog input if the Next (aka Fast Forward) Button is pressed
-  const word btnPrevValue    = 991;   // 330 Ohm - The value we receive from analog input if the Previos (aka Prev or Rewind) Button is pressed
-  const word minBtnValue     = 800;   // we use this value to determine, whether or not to check the buttons. Set to lower val than smallest of buttons
-#endif
-
-
-// IR remote control 
-#ifdef IRREMOTE
-  const byte iRRemotePin    = A3;      // the pin the IR remote control diode (receiver) is connected to
+  byte MATRIX_INTENSITY  = 13;   // how bright from 0=off till 15=full
+  uint64_t image;
   
-  // IR Remote control
-  // to reduce PROGMEM size I decided to not use the whole decimal value for each button on the remote control but instead do a calculation 
-  // which reduces the needed size of the variable to hold the value but still creates different values for each button
-  // Function  Original code   Minus         DIV   code I use
-  // right:    2011291898    - 2011000000) / 100 = 2919
-  // left:     2011238650    - 2011000000) / 100 = 2387
-  // Up:       2011287802    - 2011000000) / 100 = 2878
-  // Down:     2011279610    - 2011000000) / 100 = 2796
-  // Middle:   2011282170    - 2011000000) / 100 = 2822
-  // Pause:    2011265786    - 2011000000) / 100 = 2658
-  // Menu:     2011250938    - 2011000000) / 100 = 2509
-  const uint16_t nextVal    = 2919; // decoded value if button  NEXT  is pressed on remote
-  const uint16_t prevVal    = 2387; // decoded value if button  PREV  is pressed on remote
-  const uint16_t volUpVal   = 2878; // decoded value if button  UP    is pressed on remote
-  const uint16_t volDwnVal  = 2796; // decoded value if button  DOWN  is pressed on remote
-  const uint16_t lightVal   = 2822; // decoded value if button  HOME  is pressed on remote
-  const uint16_t pauseVal   = 2658; // decoded value if button  PAUSE is pressed on remote
-  const uint16_t menuVal    = 2509; // decoded value if button  MENU  is pressed on remote
-  
-  IRrecv irrecv(iRRemotePin);         // define an object to read infrared sensor on pin A4
-  decode_results results;             // make sure decoded values from IR are stored 
+  LedControl ledmatrix=LedControl(MATRIX_DIN, MATRIX_CLK, MATRIX_CS, 0);
 #endif
-
-
-// battery control
-#ifdef LOWBAT
-  const byte lowBatPin      = A2;      // pin on which the Adafruit PowerBoost will indicate a low battery
-                                       // this pin will usually be pulled high but when the charger detects 
-                                       // a low voltage (under 3.2V) the pin will drop down to 0V (LOW)
-  unsigned long lowBatCheckTime = 0;   // used to throttle low battery messages to every 5 minutes
-#endif
-
-
-// LIGHT EFFECTS
-#ifdef OPRLIGHT
-  #ifdef OPRLIGHTTIME
-    unsigned long lightStartUpTime = 0; // millis() the operations light started
-  #endif
-  const byte infoLedPin     = 5;       // the pin to which the operation led is connected to
-  boolean lightOn           = true;    // if true, the operations light fader is active. switched via a button, 
-                                       // set to false after a maxLightTime (in case of OPRLIGHTTIME) is reached
-#endif
-const byte warnLedPin       = 8;       // the pin to which the warning led is connected to
-const byte errorLedPin      = 9;       // the pin to which the error led is connected to
-
 
 
 //
@@ -272,7 +251,10 @@ void printAlbumNfc(void);
 void printDirectory(File, byte);
 void deleteFilesFromDir(File);
 
-
+#ifdef LCDMATRIX
+static void displayStuff(int);                  // this is used to display smileys and the like on the 8x8 LED Matrix
+void displayImage(uint64_t);
+#endif
 
 //
 //       SSSSSS  EEEEEE  TTTTTTTT  UU   UU   PPPPP
@@ -285,35 +267,21 @@ void setup() {
   // SETUP SERIAL CONSOLE
   #ifdef DEBUG
     // in case we want debug output
-    Serial.begin(38400);
+    Serial.begin(BAUDRATE);
   #endif
   #ifdef RAMCHECK
     // or at least print out available RAM
     Serial.begin(38400);
   #endif
 
-  
-  // DEFINE INPUT PINs
-  #ifdef VOLUMEPOT
-    pinMode(volPotPin, INPUT);       // connects to the potentiometer that shall control the volume
+  #ifdef LEDMATRIX
+    #ifdef TRACEOUT
+      Serial.println(F("8x8 led matrix initialized"));
+    #endif
+    ledmatrix.shutdown(0, false);
+    ledmatrix.setIntensity(0, MATRIX_INTENSITY);
+    ledmatrix.clearDisplay(0);
   #endif
-  #ifdef BUTTONS
-    pinMode(btnLinePin, INPUT);      // connects to the 4 buttons with different resistors (set the value down in function playTrack())
-  #endif
-  #ifdef LOWBAT
-    pinMode(lowBatPin, INPUT);     // connects to the LBO pin of the Adafruit PowerBoost 1000c
-  #endif
-  #ifdef IRREMOTE
-    pinMode(iRRemotePin, INPUT);     // connects to the output port of the remote control (decoded values for each button in function playTrack())
-  #endif
-  
-    
-  // DEFINE OUPUT PINs
-  #ifdef OPRLIGHT
-    pinMode(infoLedPin, OUTPUT);     // connect to blue LED
-  #endif
-  pinMode(warnLedPin, OUTPUT);     // connect to orange LED
-  pinMode(errorLedPin, OUTPUT);    // connect to a red LED
 
   
   // INITIALIZE THE MUSIC PLAYER
@@ -322,9 +290,16 @@ void setup() {
       #ifdef DEBUG
         Serial.println(F("VS1053 Not found"));
       #endif
-      // flash the red light to indicate we have an error
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef LEDMATRIX
+        displayStuff(NOVS1053);
+      #endif
+      for (;;) { delay(1000); }
+    }else {
+      #ifdef TRACEOUT
+        Serial.println(F("VS1053 music player setup"));
+      #endif
     }
+    
     // This option uses a pin interrupt. No timers required! But DREQ
     // must be on an interrupt pin. For Uno/Duemilanove/Diecimilla
     // that's Digital #2 or #3
@@ -333,7 +308,14 @@ void setup() {
       #ifdef DEBUG
         Serial.println(F("No interrupt on DREQ pin"));
       #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef LEDMATRIX
+        displayStuff(NOINT);
+      #endif
+      for (;;) { delay(1000); }
+    } else {
+      #ifdef TRACEOUT
+        Serial.println(F("Interrupt for VS1053 set"));
+      #endif
     }
   #endif
   
@@ -343,9 +325,14 @@ void setup() {
       #ifdef DEBUG
         Serial.println(F("SD-Card Not found"));
       #endif
-      // flash the red light to indicate we have an error
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef LEDMATRIX
+        displayStuff(NOSDCARD);
+      #endif
+      for (;;) { delay(1000); }
     } else {
+      #ifdef TRACEOUT
+        Serial.println(F("SD Card reader initialized"));
+      #endif
       #ifdef NFCTRACKDB
         //printDirectory(SD.open("/"), 1);
         if (!SD.exists(trackDbDir)) SD.mkdir(trackDbDir);
@@ -360,12 +347,8 @@ void setup() {
   
    
   // START THE NFC READER
-  #ifdef NFCNDEF
-    // either use the simple one with NDEF support to get the   tag <-> album directory  connection
-    nfc.begin();
-  #endif
   
-  #ifdef NFCTRACKDB
+  #ifdef ADAFRUIT_PN532
     // or use the Adafruit implementation, which allows for resume and rescan etc. 
     //   but needs the trackDB to get the album directory for a tag as no NDEF messages are supported
     nfc.begin();
@@ -375,7 +358,10 @@ void setup() {
       #ifdef DEBUG
         Serial.print("Didn't find PN53x board");
       #endif
-      for (;;) { digitalWrite(errorLedPin, HIGH); }
+      #ifdef LEDMATRIX
+        displayStuff(NOPN53);
+      #endif
+      for (;;) { delay(1000); }
     }
     #ifdef DEBUG
       // Got ok data, print it out!
@@ -391,17 +377,6 @@ void setup() {
   
   // ALL DONE
   delay(100); // wait some time for everything to settle
-  #ifdef OPRLIGHT
-    digitalWrite(infoLedPin, LOW); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, HIGH); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, LOW); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, HIGH); // turn off the info led
-    delay(100); // wait some time for everything to settle
-    digitalWrite(infoLedPin, LOW); // turn off the info led
-  #endif
   
   // check our current time, so we know when to stop
   //startUpTime = millis();
@@ -409,6 +384,9 @@ void setup() {
     Serial.print(F("searchTrackDb V"));Serial.println(VERSION);
     Serial.println(F("\nScan your NFC tag"));
     Serial.println(F("___________________________________________________\n"));
+  #endif
+  #ifdef LEDMATRIX
+    displayStuff(HAPPY);
   #endif
 }
 
@@ -441,6 +419,16 @@ void loop(void) {
       }
     #endif
   }
+  // Wait a bit before trying again
+  #ifdef DEBUG
+    Serial.println("\n\nSend a character to scan another tag!");
+    Serial.flush();
+    while (!Serial.available());
+    while (Serial.available()) {
+      Serial.read();
+    }
+    Serial.flush();  
+  #endif
 }
 
 #ifdef NFCTRACKDB
@@ -717,5 +705,22 @@ void deleteFilesFromDir(File dir) {
     }
     entry.close();
   } // end while
+}
+#endif
+
+
+#ifdef LEDMATRIX
+static void displayStuff(int i){
+    memcpy_P(&image, &IMAGES[i], 8);
+    displayImage(image);
+}
+
+void displayImage(uint64_t image) {
+    for (int i = 0; i < 8; i++) {
+      byte row = (image >> i * 8) & 0xFF;
+      for (int j = 0; j < 8; j++) {
+        ledmatrix.setLed(0, i, j, bitRead(row, j));
+      }
+    }
 }
 #endif

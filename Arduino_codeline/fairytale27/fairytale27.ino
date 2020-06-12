@@ -649,7 +649,7 @@ uint8_t lastSoundVolume = 40;         // from this value, which is the previous 
                   0x0000cc663366cc00,   //  Previous
                   0x00003366cc663300,   //  Next
                   0x000c1c3c7c3c1c0c,   //  Play
-                  //0xff009191d3b59300,   //  NOPN53 - Didn't find PN53x board
+                  //0x007e425a5a527600,   //  NOPN53 - Didn't find PN53x board
                   0x060e0c0808281800,   //  NOTE1
                   //0x066eecc88898f000,   //  NOTE2
                   //0x00082a1c771c2a08,   //  SONNE
