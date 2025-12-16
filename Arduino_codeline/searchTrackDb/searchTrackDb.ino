@@ -18,6 +18,7 @@ __asm volatile ("nop");
 // make sure to comment this out before uploading in production as it turns on lots and lots of serial messages
 // if it is not define, no Serial.print is possible, as also Serial.begin() is omitted
 #define DEBUG 1
+#define TRACEOUT 1
 // to enable periodic output of free RAM during playBack, uncomment the following line.
 //#define RAMCHECK 1
 
@@ -171,7 +172,7 @@ char nextTrackToPlay        = 1;                         // the track number to 
                   //0x0000cc663366cc00,   //  Previous
                   0x00003366cc663300,   //  Next
                   //0x000c1c3c7c3c1c0c,   //  Play
-                  0x00088cafaf8c0800,   //  NOPN53 - Didn't find PN53x board
+                  0x007e425a5a527600,   //  NOPN53 - Didn't find PN53x board
                   //0x060e0c0808281800,   //  NOTE1
                   //0x066eecc88898f000,   //  NOTE2
                   //0x00082a1c771c2a08,   //  SONNE
@@ -268,6 +269,7 @@ void setup() {
   #ifdef DEBUG
     // in case we want debug output
     Serial.begin(BAUDRATE);
+    Serial.print(F("searchTrackDB v"));Serial.println(VERSION);
   #endif
   #ifdef RAMCHECK
     // or at least print out available RAM
@@ -334,10 +336,25 @@ void setup() {
         Serial.println(F("SD Card reader initialized"));
       #endif
       #ifdef NFCTRACKDB
-        //printDirectory(SD.open("/"), 1);
-        if (!SD.exists(trackDbDir)) SD.mkdir(trackDbDir);
-        #ifdef DEBUG
-          printDirectory(SD.open("/TRACKDB0"), 1);
+        #ifdef TRACEOUT
+          Serial.println(F("content of SD Card"));
+          printDirectory(SD.open("/"), 1);
+        #endif
+        if (!SD.exists(trackDbDir)) {
+          #ifdef DEBUG
+            Serial.print(F("creating trackDB Dir "));
+          #endif
+          #ifdef TRACEOUT
+            Serial.print(trackDbDir);
+          #endif
+          #ifdef DEBUG
+            Serial.print(F("\n"));
+          #endif
+          SD.mkdir(trackDbDir);
+        }
+        #ifdef TRACEOUT
+          Serial.print(F("content of TrackDB Dir "));Serial.println(trackDbDir);
+          printDirectory(SD.open(trackDbDir), 1);
           Serial.print(F("\n"));
         #endif
         //deleteFilesFromDir(SD.open(trackDbDir));
