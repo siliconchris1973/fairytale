@@ -2,6 +2,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
+secrets.py
 
 # exclude all the media files from being pushed to github
 data/
