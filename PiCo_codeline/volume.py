@@ -11,6 +11,8 @@ from config import (
                     _DEBUG_VOL as _DEBUG
                 )
 
+import utime
+
 if VOLUME_IMPL == "poti":
     from config import POTI_ADC_PIN
     try:
@@ -36,8 +38,6 @@ elif VOLUME_IMPL in ("mock", "fake", "none", "off", "null", ""):
     if _DEBUG: print("Mock Volume implementation")
 else:
     raise ValueError("Unbekanntes Volume Control: {}".format(VOLUME_IMPL))
-
-import utime
 
 
 class _BaseVolume:

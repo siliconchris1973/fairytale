@@ -74,6 +74,39 @@ class PlayerController:
         
         utime.sleep_ms(2)
     
+    def loop_audio_only(self):
+        """
+        Für Core1: nur VS1053 füttern. KEIN Display, KEINE Trigger.
+        """
+        if self.play_state != "PLAY":
+            # Im Idle/Stop/Pause: NICHT spammen und CPU schonen
+            if _DEBUG:
+                if not hasattr(self, "_feed_skip_ctr"):
+                    self._feed_skip_ctr = 0
+                self._feed_skip_ctr += 1
+                if _DEBUG and (self._feed_skip_ctr % 500 == 0):
+                    print("[CTRL] FEED skip, state=", self.play_state)
+            utime.sleep_ms(20)   # << wichtig: entlastet massiv
+            return
+        self._audio_lock_acquire()
+        try:
+            self.audio.feed()
+            if _DEBUG:
+                if not hasattr(self, "_fed_once"):
+                    self._fed_once = True
+                    print("[FEED] after first feed: pos=", getattr(self.audio, "pos_bytes", "NA"),
+                          "playing=", getattr(self.audio, "is_playing", "NA"))
+                
+                if not hasattr(self, "_feed_dbg"):
+                    self._feed_dbg = 0
+                self._feed_dbg += 1
+                if self._feed_dbg % 1000 == 0:
+                    print("[FEED] pos=", getattr(self.audio, "pos_bytes", None))
+        except Exception:
+            pass
+        finally:
+            self._audio_lock_release()
+    
     def stop(self):
         # entspricht STOP-Trigger
         self._handle_stop()
@@ -234,6 +267,7 @@ class PlayerController:
     def _start_play(self, resume=True):
         f = self._current_file()
         if not f:
+            if _DEBUG: print("[CTRL] Error file " +str(f)+ " not found")
             return
         
         if _DEBUG: print("[CTRL] start playback:", f, "resume=", resume)
@@ -251,6 +285,14 @@ class PlayerController:
         self._audio_lock_acquire()
         try:
             self.audio.start(f, self.offset)
+            if _DEBUG:
+                print("[AUDIO] type:", type(self.audio))
+                print("[AUDIO] attrs: has pos_bytes?", hasattr(self.audio, "pos_bytes"),
+                      "has total_bytes?", hasattr(self.audio, "total_bytes"),
+                      "has is_playing?", hasattr(self.audio, "is_playing"))
+                print("[AUDIO] pos_bytes:", getattr(self.audio, "pos_bytes", "NA"),
+                      "total_bytes:", getattr(self.audio, "total_bytes", "NA"),
+                      "is_playing:", getattr(self.audio, "is_playing", "NA"))
         finally:
             self._audio_lock_release()
         
@@ -325,50 +367,6 @@ class PlayerController:
         self.offset = 0
         self._start_play(resume=False)
     
-    def _feed_audio_and_update_progress(self):
-        alive = self.audio.feed()
-        if not alive:
-            total = getattr(self.audio, "total_bytes", 0) or 0
-            pos   = getattr(self.audio, "pos_bytes", 0) or 0
-            
-            # Wenn wir die Länge kennen und noch NICHT am Ende sind, dann war's kein EOF
-            if total > 0 and pos < (total - 1024):
-                # nur ein kurzer "nicht alive"-Moment -> weiter versuchen, nicht stoppen
-                return
-            
-            # end of file -> next chapter or stop
-            self.track_index += 1
-            self.offset = 0
-            if self.track_index >= len(self.track_files):
-                self._save_progress()
-                self._handle_stop()
-                return
-            # WICHTIG: neuen Track-Stand sofort persistieren,
-            # damit ein Neustart nicht am alten Track hängen bleibt
-            self._save_progress()
-            self._start_play(resume=False)
-            return
-        
-        # track offset from audio driver if available
-        try:
-            self.offset = int(getattr(self.audio, "pos_bytes", self.offset) or self.offset)
-        except Exception:
-            pass
-        
-        # update progress text not too frequently
-        now_ms = utime.ticks_ms()
-        if utime.ticks_diff(now_ms, self._last_progress_ms) < 250:
-            return
-        self._last_progress_ms = now_ms
-        
-        total = getattr(self.audio, "total_bytes", 0) or 0
-        pos = getattr(self.audio, "pos_bytes", 0) or 0
-        if total > 0:
-            pct = int((pos * 100) // total)
-            if pct != self._last_progress_pct:
-                self._last_progress_pct = pct
-                getattr(self.display, "set_progress_text", lambda *_: None)("{}%".format(pct))
-    
     def _audio_lock_acquire(self):
         if self._audio_lock:
             self._audio_lock.acquire()
@@ -379,20 +377,6 @@ class PlayerController:
                 self._audio_lock.release()
             except Exception:
                 pass
-    
-    def feed_audio_only(self):
-        """
-        Für Core1: nur VS1053 füttern. KEIN Display, KEINE Trigger.
-        """
-        if self.play_state != "PLAY":
-            return
-        self._audio_lock_acquire()
-        try:
-            self.audio.feed()
-        except Exception:
-            pass
-        finally:
-            self._audio_lock_release()
     
     def _update_progress_only(self):
         """

@@ -16,7 +16,6 @@ from config import (MOUNT_DIR
 
 # wait routine prior initializing all the hardware - set to 0 in config to do direct jump start
 if _DEBUG == True:
-    import utime
     print("waiting {} milliseconds so you may interrupt initialization".format(start_sleep_ms))
     utime.sleep_ms(start_sleep_ms)
     print("letse go")
@@ -130,6 +129,18 @@ def is_prog_mode(prog_switch):
         return True
     return prog_switch.value() == 0  # active low
 
+def _audio_task(pc):
+    if _DEBUG:
+        print("[AUDIO_THREAD] globals has utime?", "utime" in globals())
+        print("[AUDIO_THREAD] utime ref:", globals().get("utime", None))
+    while True:
+        try:
+            pc.loop_audio_only()
+        except Exception as e:
+            print("[AUDIO_THREAD] error:", e)
+            pass
+        utime.sleep_ms(5)
+
 
 # --- Objekt-Erzeugung ---
 prog_switch = Pin(PROG_MODE_PIN, Pin.IN, Pin.PULL_UP) if (PROG_MODE_SOURCE or "PIN").upper() == "PIN" else None
@@ -170,13 +181,10 @@ if hasattr(buttons, "attach_dispatcher"):
     if _DEBUG: print("[MAIN] setting up buttons for controller")
     buttons.attach_dispatcher(pc)
 
-def _audio_task(pc):
-    # Core1: nur feed, so schnell wie nötig
-    while True:
-        pc.feed_audio_only()
-        utime.sleep_ms(1)  # 0..1ms ist ok, 1ms ist meist stabiler
-
 # Audio-Feeding auf Core1 starten
+if _DEBUG:
+    print("[MAIN] utime before thread:", utime)
+    print("[MAIN] globals has utime?", "utime" in globals())
 _thread.start_new_thread(_audio_task, (pc,))
 
 # --- Programmiermodus-gesteuerter Upload & WLAN ---

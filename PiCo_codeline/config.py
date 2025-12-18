@@ -109,7 +109,7 @@ DISPLAY_IMPL = "sh1106"    # Display Backends: lcd1602, sh1106, ssd1306, tft ode
 NFC_IMPL     = "pn532_spi" # NFC Backends:     pn532_spi oder mock
 RTC_IMPL     = "ds3231"    # RTC Backends:     ds3231 oder mock
 VOLUME_IMPL  = "poti"      # Volume backend:   poti, buttons / btn / key oder mock
-PROG_MODE_SOURCE = "pin"   # can either be pin, active (mocked active) or inactive (mocked inactive)
+PROG_MODE_SOURCE = "inactive"   # can either be pin, active (mocked active) or inactive (mocked inactive)
 
 start_sleep_ms = 5000 # number of milliseconds the main rountine shall wait before initializing all the hardware
 
