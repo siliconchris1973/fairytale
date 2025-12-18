@@ -125,34 +125,52 @@ def ensure_album_dir(uid: str) -> str:
 
 def list_tracks_for_uid(uid: str, exts=(".mp3", ".wav")):
     """
-    Gibt (album_dir, [Dateinamen]) SORTIERT für alle Tracks einer
-    UID zurück. Nur Dateien mit der angegebenen Erweiterung werden
-    geliefert. Dateinamen sind relativ zum Album-Verzeichnis (ohne Pfad).
+    Gibt (album_dir, [Dateinamen]) für alle Tracks einer UID zurück.
+    RAM-schonend via os.ilistdir() wenn verfügbar.
+    Optional: nutzt Index-Datei ".idx.json" im Album-Ordner, falls vorhanden.
     """
     d = album_dir_for_uid(uid)
     if not exists(d):
         return d, []
     
+    # optionaler Index (wird z.B. im Prog-Mode nach Upload generiert)
+    idx_path = d.rstrip("/") + "/.idx.json"
     try:
-        files = listdir(d)
+        if exists(idx_path):
+            idx = load_state(os.path.basename(idx_path), default=None)
+            # load_state liest aus STATE_DIR; deshalb: direkt öffnen statt load_state
+            with open(idx_path, "r") as f:
+                import json
+                obj = json.load(f)
+            tracks = obj.get("tracks", [])
+            # filter by ext
+            tracks = [x for x in tracks if any(x.lower().endswith(e) for e in exts)]
+            return d, tracks
+    except Exception:
+        pass
+    
+    files = []
+    try:
+        if hasattr(os, "ilistdir"):
+            for entry in os.ilistdir(d):
+                # micropython: (name, type, inode?) oder (name, type, inode, size)
+                name = entry[0]
+                typ = entry[1] if len(entry) > 1 else 0
+                # typ: 0x4000 dir, 0x8000 file (je nach Port); sicherheitshalber:
+                if name and not name.startswith("."):
+                    if any(name.lower().endswith(e) for e in exts):
+                        files.append(name)
+        else:
+            # fallback (RAM-hungriger)
+            for name in listdir(d):
+                if name and not name.startswith(".") and any(name.lower().endswith(e) for e in exts):
+                    files.append(name)
     except Exception:
         return d, []
     
-    exts_l = tuple(e.lower() for e in exts)
-    tracks = [f for f in files if any(f.lower().endswith(ext) for ext in exts_l)]
-    if not tracks:
-        return d, []
-    
-    # sort by numeric prefix if possible, otherwise by name
-    def num_key(name):
-        try:
-            return int(name.split(".", 1)[0])
-        except Exception:
-            return 999999
-    
-    tracks_sorted = sorted(tracks, key=lambda f: (num_key(f), f))
-    if _DEBUG: print("[STOR] tracks for uid", uid, "in", d, "->", tracks)
-    return d, tracks_sorted
+    # sortieren wie bisher
+    files.sort()
+    return d, files
 
 def pick_first_track(uid: str, exts=(".mp3", ".wav")):
     """
@@ -266,3 +284,4 @@ def map_uid_to_album(uid: str, album_id: str) -> None:
     mapping = load_tag_album_map()
     mapping[uid] = album_id
     save_tag_album_map(mapping)
+

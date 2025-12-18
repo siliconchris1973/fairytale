@@ -1,5 +1,10 @@
 # controller.py
 import utime
+import json
+try:
+    import _thread
+except Exception:
+    _thread = None
 
 from config import (
                     PROG_MODE_SOURCE
@@ -44,6 +49,13 @@ class PlayerController:
         self._last_progress_ms = 0
         self._last_progress_pct = None
         
+        # --- audio thread safety / multicore feed support ---
+        self._audio_lock = _thread.allocate_lock() if _thread else None
+        
+        # --- lazy id3 support ---
+        self._id3_pending_path = None
+        self._id3_pending_set_ms = 0
+        
         # init clock display immediately
         self._update_clock(force=True)
         
@@ -51,11 +63,12 @@ class PlayerController:
     # Hauptloop (Single Thread)
     # -------------------------------------------------
     def loop(self):
-        if self.play_state=="PLAY":
-            self._feed_audio_and_update_progress()
+        # Core0 macht UI/Trigger/Clock/Volume + Progress read-only
+        if self.play_state == "PLAY":
+            self._update_progress_only()
+            self._maybe_load_id3_lazy()
         
         self._handle_triggers()
-        
         self._update_clock()
         self._apply_volume_if_changed()
         
@@ -225,19 +238,22 @@ class PlayerController:
         
         if _DEBUG: print("[CTRL] start playback:", f, "resume=", resume)
         
-        # read ID3 meta (best-effort)
+        # lazy ID3: erst später laden (wenn Audio schon läuft)
         if _USE_ID3_TAG:
-            try:
-                self.meta = id3.read_id3(f)
-            except Exception:
-                self.meta = {"title": "", "album": "", "artist": "", "track": ""}
+            self.meta = {"title": "", "album": "", "artist": "", "track": ""}
+            self._id3_pending_path = f
+            self._id3_pending_set_ms = utime.ticks_ms()
         self._display_now_playing()
         
         self.offset = self.offset if resume else 0
-        getattr(self.display, "set_progress_text", lambda *_: None)("0%")
-        self.audio.start(f, self.offset)
         
-        self._last_progress_pct = None
+        # Audio Start thread-safe
+        self._audio_lock_acquire()
+        try:
+            self.audio.start(f, self.offset)
+        finally:
+            self._audio_lock_release()
+        
         self.play_state = "PLAY"
         
         # set intial volume
@@ -255,29 +271,38 @@ class PlayerController:
     
     def _stop_play(self):
         if self.play_state in ("PLAY", "PAUSE"):
+            self._audio_lock_acquire()
             try:
                 self.audio.stop()
             except Exception:
                 pass
+            finally:
+                self._audio_lock_release()
+            
             self._save_progress()
-        
         self.play_state = "IDLE"
         self._display_idle()
     
     def _pause_toggle(self):
         if self.play_state == "PLAY":
+            self._audio_lock_acquire()
             try:
                 self.audio.pause()
             except Exception:
                 pass
+            finally:
+                self._audio_lock_release()
             self.play_state = "PAUSE"
             self._save_progress()
 
         elif self.play_state == "PAUSE":
+            self._audio_lock_acquire()
             try:
                 self.audio.resume()
             except Exception:
                 pass
+            finally:
+                self._audio_lock_release()
             self.play_state = "PLAY"
         
         self._display_now_playing()
@@ -343,6 +368,98 @@ class PlayerController:
             if pct != self._last_progress_pct:
                 self._last_progress_pct = pct
                 getattr(self.display, "set_progress_text", lambda *_: None)("{}%".format(pct))
+    
+    def _audio_lock_acquire(self):
+        if self._audio_lock:
+            self._audio_lock.acquire()
+    
+    def _audio_lock_release(self):
+        if self._audio_lock:
+            try:
+                self._audio_lock.release()
+            except Exception:
+                pass
+    
+    def feed_audio_only(self):
+        """
+        Für Core1: nur VS1053 füttern. KEIN Display, KEINE Trigger.
+        """
+        if self.play_state != "PLAY":
+            return
+        self._audio_lock_acquire()
+        try:
+            self.audio.feed()
+        except Exception:
+            pass
+        finally:
+            self._audio_lock_release()
+    
+    def _update_progress_only(self):
+        """
+        Für Core0: Fortschritt aus audio.pos_bytes/total_bytes lesen und Display aktualisieren.
+        """
+        # total/pos nur lesen (kein feed!)
+        try:
+            total = int(getattr(self.audio, "total_bytes", 0) or 0)
+            pos = int(getattr(self.audio, "pos_bytes", 0) or 0)
+        except Exception:
+            return
+        
+        if total > 0:
+            pct = int((pos * 100) // total)
+            if pct < 0: pct = 0
+            if pct > 100: pct = 100
+            getattr(self.display, "set_progress_text", lambda *_: None)("{:3d}%".format(pct))
+        
+        # offset für persistenz “mitziehen”
+        try:
+            self.offset = int(getattr(self.audio, "pos_bytes", self.offset) or self.offset)
+        except Exception:
+            pass
+    
+    def _maybe_load_id3_lazy(self):
+        """
+        Lädt ID3 erst, wenn Audio schon läuft (vermeidet Start-Lag/Block).
+        """
+        if not _USE_ID3_TAG:
+            return
+        if not self._id3_pending_path:
+            return
+        if self.play_state != "PLAY":
+            return
+        
+        # heuristik: erst nach etwas “Pufferzeit”
+        try:
+            now_ms = utime.ticks_ms()
+            if utime.ticks_diff(now_ms, self._id3_pending_set_ms) < 300:
+                return
+        except Exception:
+            pass
+        
+                # 1) metadata.json schneller Weg
+        try:
+            album_dir = self.album_dir or ""
+            meta_path = album_dir.rstrip("/") + "/metadata.json"
+            with open(meta_path, "r") as f:
+                m = json.load(f)
+            # key z.B. track filename
+            k = p.split("/")[-1]
+            if k in m:
+                self.meta = m[k]
+                self._display_now_playing()
+                return
+        except Exception:
+            pass
+        
+        p = self._id3_pending_path
+        self._id3_pending_path = None
+        
+        try:
+            self.meta = id3.read_id3(p)
+        except Exception:
+            self.meta = {"title": "", "album": "", "artist": "", "track": ""}
+        
+        self._display_now_playing()
     
     # ----------------------------
     # Volume + RTC

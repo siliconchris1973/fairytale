@@ -1,6 +1,9 @@
 # main.py
 # threads are used for the loop, so we can utilize kernel 0 or AUDIO and 1 for NFC
 from machine import Pin, RTC as PicoRTC
+import _thread
+import utime
+
 from config import (MOUNT_DIR
                     , PROG_MODE_PIN
                     , PROG_MODE_SOURCE
@@ -166,6 +169,15 @@ pc = PlayerController(display
 if hasattr(buttons, "attach_dispatcher"):
     if _DEBUG: print("[MAIN] setting up buttons for controller")
     buttons.attach_dispatcher(pc)
+
+def _audio_task(pc):
+    # Core1: nur feed, so schnell wie nötig
+    while True:
+        pc.feed_audio_only()
+        utime.sleep_ms(1)  # 0..1ms ist ok, 1ms ist meist stabiler
+
+# Audio-Feeding auf Core1 starten
+_thread.start_new_thread(_audio_task, (pc,))
 
 # --- Programmiermodus-gesteuerter Upload & WLAN ---
 active_uid = None
