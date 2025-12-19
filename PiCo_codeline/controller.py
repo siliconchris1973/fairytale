@@ -80,28 +80,11 @@ class PlayerController:
         """
         if self.play_state != "PLAY":
             # Im Idle/Stop/Pause: NICHT spammen und CPU schonen
-            if _DEBUG:
-                if not hasattr(self, "_feed_skip_ctr"):
-                    self._feed_skip_ctr = 0
-                self._feed_skip_ctr += 1
-                if _DEBUG and (self._feed_skip_ctr % 500 == 0):
-                    print("[CTRL] FEED skip, state=", self.play_state)
             utime.sleep_ms(20)   # << wichtig: entlastet massiv
             return
         self._audio_lock_acquire()
         try:
             self.audio.feed()
-            if _DEBUG:
-                if not hasattr(self, "_fed_once"):
-                    self._fed_once = True
-                    print("[FEED] after first feed: pos=", getattr(self.audio, "pos_bytes", "NA"),
-                          "playing=", getattr(self.audio, "is_playing", "NA"))
-                
-                if not hasattr(self, "_feed_dbg"):
-                    self._feed_dbg = 0
-                self._feed_dbg += 1
-                if self._feed_dbg % 1000 == 0:
-                    print("[FEED] pos=", getattr(self.audio, "pos_bytes", None))
         except Exception:
             pass
         finally:
@@ -148,9 +131,6 @@ class PlayerController:
     def _handle_start(self, uid):
         if self.play_state == "PLAY":
             return
-        
-        if _DEBUG: print("[CTRL] START triggered for UID", uid)
-        
         self.current_uid = uid
         if not self._load_book(uid):
             if _DEBUG: print("[CTRL] Error: no content for uid found")
@@ -160,8 +140,6 @@ class PlayerController:
         self._start_play(resume=True)
     
     def _handle_stop(self, show_idle=True):
-        if _DEBUG: print("[CTRL] STOP triggered")
-        
         if self.play_state == "PLAY":
             self._stop_play()
         
@@ -258,7 +236,6 @@ class PlayerController:
             book = self.current_uid or ""
             artist = ""
             chapter = self.track_files[self.track_index] if self.track_files else ""
-        
         try:
             self.display.show_play(book, chapter, artist, self.play_state)
         except Exception:
@@ -285,14 +262,6 @@ class PlayerController:
         self._audio_lock_acquire()
         try:
             self.audio.start(f, self.offset)
-            if _DEBUG:
-                print("[AUDIO] type:", type(self.audio))
-                print("[AUDIO] attrs: has pos_bytes?", hasattr(self.audio, "pos_bytes"),
-                      "has total_bytes?", hasattr(self.audio, "total_bytes"),
-                      "has is_playing?", hasattr(self.audio, "is_playing"))
-                print("[AUDIO] pos_bytes:", getattr(self.audio, "pos_bytes", "NA"),
-                      "total_bytes:", getattr(self.audio, "total_bytes", "NA"),
-                      "is_playing:", getattr(self.audio, "is_playing", "NA"))
         finally:
             self._audio_lock_release()
         
@@ -442,6 +411,8 @@ class PlayerController:
             self.meta = id3.read_id3(p)
         except Exception:
             self.meta = {"title": "", "album": "", "artist": "", "track": ""}
+        
+        if _DEBUG: print("[CTRL] meta data {} {} {} {}", self.meta.get("book"), self.meta.get("chapter"), self.meta.get("artist"))
         
         self._display_now_playing()
     

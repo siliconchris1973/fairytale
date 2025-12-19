@@ -1,5 +1,7 @@
 # config.py
 from machine import Pin, I2C, SPI
+import _thread
+
 """
         ┌────────── I²C1-BUS (OLED / RTC) ──────────────┐
         │                                               │
@@ -65,7 +67,7 @@ _DEBUG_RTC = False
 _DEBUG_DISP = False
 _DEBUG_BTN = False
 _DEBUG_STAT = True
-_DEBUG_STOR = True # für SD und Storage
+_DEBUG_STOR = False
 _DEBUG_WEB = False
 _DEBUG_ID3 = False
 _DEBUG_TRIG = False
@@ -170,6 +172,7 @@ VS1053_DREQ_PIN    = 7 # → an D3 VS1053 DREQ
 VS1053_RST_PIN     = -1 #17
 
 SD_CS_PIN          = 8 # → an D4 SD CS
+
 # SPI-Bus für Audio und SD Karte - sollte in audio verschoben werden:
 if _DEBUG_CNF == True:
     print("[CONF] initializing audio/sd spi on spi"
@@ -183,6 +186,7 @@ if _DEBUG_CNF == True:
 audio_spi = SPI(AUDIO_SPI_ID, baudrate=8_000_000, polarity=0, phase=0,
           sck=Pin(AUDIO_SPI_SCK_PIN), mosi=Pin(AUDIO_SPI_MOSI_PIN), miso=Pin(AUDIO_SPI_MISO_PIN))
 
+SPI_AUDIO_LOCK = _thread.allocate_lock()
 
 # -------- TFT Touch Display über SPI ---------- 
 #TFT_SPI_ID     = 1

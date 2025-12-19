@@ -10,7 +10,10 @@ from micropython import const
 #from machine import SPI, Pin
 import time
 
-from config import _DEBUG_STOR as _DEBUG
+from config import (
+                    SPI_AUDIO_LOCK as SPI_LOCK
+                    , _DEBUG_STOR as _DEBUG
+                    )
 
 #_CMD_TIMEOUT = const(100)
 _CMD_TIMEOUT = const(5_000)
@@ -26,10 +29,13 @@ _TOKEN_CMD25 = const(0xFC)
 _TOKEN_STOP_TRAN = const(0xFD)
 _TOKEN_DATA = const(0xFE)
 
-# set to high data rate now that it's initialised
-# CHANGED FOR DEBUGGING PURPOSES
-#_SD_SPI_RATE=400000
-_SD_SPI_RATE=1_320_000
+# we start with a low SPI rate during SD init
+# afterwards we increase the rate to make sure audio and sd
+# card access to the ssame spi is noit throttled, did cause
+# jittering and VERY slow audio once we moved Audio and SD
+# Card operations to it's own thread
+#_SD_SPI_RATE=1_320_000 # SPI rate before introducing to threads
+_SD_SPI_RATE=8_000_000
 _SD_SPI_INIT_RATE=100_000
 
 class SDCard:
@@ -49,9 +55,12 @@ class SDCard:
         self.init_card()
     
     def init_spi(self, baudrate):
-        # vereinfacht, da nur für PiCo gedacht
         if _DEBUG: print("[SD] init spi with speed", baudrate)
-        self.spi.init(baudrate=baudrate, phase=0, polarity=0)
+        SPI_LOCK.acquire()
+        try:
+            self.spi.init(baudrate=baudrate, phase=0, polarity=0)
+        finally:
+            SPI_LOCK.release()
     
     def init_card(self):
         if _DEBUG: print("[SD] init SD Card with speed ", _SD_SPI_INIT_RATE)
@@ -61,8 +70,12 @@ class SDCard:
         self.init_spi(_SD_SPI_INIT_RATE)
         
         # clock card at least 100 cycles with cs high
-        for i in range(16):
-            self.spi.write(b"\xff")
+        SPI_LOCK.acquire()
+        try:
+            for i in range(16):
+                self.spi.write(b"\xff")
+        finally:
+            SPI_LOCK.release()
         
         # CMD0: init card; should return _R1_IDLE_STATE (allow 5 attempts)
         for _ in range(5):
@@ -128,83 +141,107 @@ class SDCard:
         raise OSError("timeout waiting for v2 card")
     
     def cmd(self, cmd, arg, crc, final=0, release=True, skip1=False):
-        self.cs(0)
-        # create and send the command
-        buf = self.cmdbuf
-        buf[0] = 0x40 | cmd
-        buf[1] = arg >> 24
-        buf[2] = arg >> 16
-        buf[3] = arg >> 8
-        buf[4] = arg
-        buf[5] = crc
-        self.spi.write(buf)
-        
-        if skip1:
-            self.spi.readinto(self.tokenbuf, 0xFF)
-        
-        # wait for the response (response[7] == 0)
-        for i in range(_CMD_TIMEOUT):
-            self.spi.readinto(self.tokenbuf, 0xFF)
-            response = self.tokenbuf[0]
-            if not (response & 0x80):
-                # this could be a big-endian integer that we are getting here
-                for j in range(final):
-                    self.spi.write(b"\xff")
-                if release:
-                    self.cs(1)
-                    self.spi.write(b"\xff")
-                return response
-        # timeout
-        self.cs(1)
-        self.spi.write(b"\xff")
-        return -1
-    
-    def readinto(self, buf):
-        self.cs(0)
-        # read until start byte (0xff)
-        for i in range(_CMD_TIMEOUT):
-            self.spi.readinto(self.tokenbuf, 0xFF)
-            if self.tokenbuf[0] == _TOKEN_DATA:
-                break
-        else:
-            self.cs(1)
-            raise OSError("timeout waiting for response")
-        # read data
-        mv = self.dummybuf_memoryview
-        if len(buf) != len(mv):
-            mv = mv[: len(buf)]
-        self.spi.write_readinto(mv, buf)
-        # read checksum
-        self.spi.write(b"\xff")
-        self.spi.write(b"\xff")
-        self.cs(1)
-        self.spi.write(b"\xff")
-    
-    def write(self, token, buf):
-        self.cs(0)
-        # send: start of block, data, checksum
-        self.spi.write(bytearray([token]))
-        self.spi.write(buf)
-        self.spi.write(b"\xff")
-        self.spi.write(b"\xff")
-        # check the response
-        if (self.spi.read(1, 0xFF)[0] & 0x1F) != 0x05:
+        SPI_LOCK.acquire()
+        try:
+            self.cs(0)
+            # create and send the command
+            buf = self.cmdbuf
+            buf[0] = 0x40 | cmd
+            buf[1] = arg >> 24
+            buf[2] = arg >> 16
+            buf[3] = arg >> 8
+            buf[4] = arg
+            buf[5] = crc
+            
+            self.spi.write(buf)
+            
+            if skip1:
+                self.spi.readinto(self.tokenbuf, 0xFF)
+            
+            # wait for the response (response[7] == 0)
+            for i in range(_CMD_TIMEOUT):
+                self.spi.readinto(self.tokenbuf, 0xFF)
+                response = self.tokenbuf[0]
+                if not (response & 0x80):
+                    # extra clocks for multi-byte responses
+                    for j in range(final):
+                        self.spi.write(b"\xff")
+                    
+                    if release:
+                        self.cs(1)
+                        self.spi.write(b"\xff")
+                    return response
+            
+            # timeout
             self.cs(1)
             self.spi.write(b"\xff")
-            return
-        while self.spi.read(1, 0xFF)[0] == 0:
-            pass
-        self.cs(1)
-        self.spi.write(b"\xff")
+            return -1
+        finally:
+            SPI_LOCK.release()
+    
+    def readinto(self, buf):
+        SPI_LOCK.acquire()
+        try:
+            self.cs(0)
+            # read until start byte (0xff)
+            for i in range(_CMD_TIMEOUT):
+                self.spi.readinto(self.tokenbuf, 0xFF)
+                if self.tokenbuf[0] == _TOKEN_DATA:
+                    break
+            else:
+                self.cs(1)
+                raise OSError("timeout waiting for response")
+            
+            # read data
+            mv = self.dummybuf_memoryview
+            if len(buf) != len(mv):
+                mv = mv[: len(buf)]
+            
+            self.spi.write_readinto(mv, buf)
+            
+            # read checksum
+            self.spi.write(b"\xff")
+            self.spi.write(b"\xff")
+            self.cs(1)
+            self.spi.write(b"\xff")
+        finally:
+            SPI_LOCK.release()
+    
+    def write(self, token, buf):
+        SPI_LOCK.acquire()
+        try:
+            self.cs(0)
+            self.spi.write(bytearray([token]))
+            self.spi.write(buf)
+            self.spi.write(b"\xff")
+            self.spi.write(b"\xff")
+            
+            # check response
+            if (self.spi.read(1, 0xFF)[0] & 0x1F) != 0x05:
+                self.cs(1)
+                self.spi.write(b"\xff")
+                return
+            
+            while self.spi.read(1, 0xFF)[0] == 0:
+                pass
+            
+            self.cs(1)
+            self.spi.write(b"\xff")
+        finally:
+            SPI_LOCK.release()
     
     def write_token(self, token):
-        self.cs(0)
-        self.spi.write(bytearray([token]))
-        self.spi.write(b"\xff")
-        while self.spi.read(1, 0xFF)[0] == 0x00:
-            pass
-        self.cs(1)
-        self.spi.write(b"\xff")
+        SPI_LOCK.acquire()
+        try:
+            self.cs(0)
+            self.spi.write(bytearray([token]))
+            self.spi.write(b"\xff")
+            while self.spi.read(1, 0xFF)[0] == 0x00:
+                pass
+            self.cs(1)
+            self.spi.write(b"\xff")
+        finally:
+            SPI_LOCK.release()
     
     def readblocks(self, block_num, buf):
         nblocks = len(buf) // 512
